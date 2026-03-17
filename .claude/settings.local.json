@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"Read the docmgr and diary skills (/docmgr, /diary), and going forward don't forget to keep a diary and commit as you go. Don't forget to commit at appropriate intervals.\"",
+            "command": "echo 'POST-COMPACT: Read the /docmgr and /diary skills to restore context.' && cat ./INSTRUCTIONS.md 2>/dev/null || echo '(INSTRUCTIONS.md not found)'",
             "timeout": 5
           }
         ]

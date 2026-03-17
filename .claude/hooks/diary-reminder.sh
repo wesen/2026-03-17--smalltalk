@@ -1,9 +1,13 @@
 #!/bin/bash
 # Debounced diary reminder: only fires if 2+ minutes since last reminder.
 # Uses a stamp file to track last fire time.
+# Reads INSTRUCTIONS.md and includes it in the reminder.
 
 STAMP="/tmp/.claude-diary-reminder-stamp"
 INTERVAL=120 # seconds
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+INSTRUCTIONS="$PROJECT_DIR/INSTRUCTIONS.md"
 
 now=$(date +%s)
 
@@ -16,4 +20,11 @@ if [ -f "$STAMP" ]; then
 fi
 
 echo "$now" > "$STAMP"
-echo "Don't forget to update your diary (see /diary skill) if you haven't already, otherwise continue. Don't forget to commit at appropriate intervals."
+
+echo "REMINDER — check your working instructions:"
+echo ""
+if [ -f "$INSTRUCTIONS" ]; then
+  cat "$INSTRUCTIONS"
+else
+  echo "(INSTRUCTIONS.md not found at $INSTRUCTIONS)"
+fi
