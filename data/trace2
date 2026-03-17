@@ -1,0 +1,611 @@
+Copyright (c) 1983 Xerox Corp.  All rights reserved.
+
+Bytecode <131> Single Extended Send
+[cycle=1]  aSystemDictionary isNil
+Bytecode <122> Return false From Method
+^ (method) of false
+Bytecode <107> Pop and Store Temporary Variable 3
+Bytecode <19> Push Temporary Variable 3
+Bytecode <17> Push Temporary Variable 1
+Bytecode <132> Double Extended Send
+[cycle=6]  false & aTrue
+Bytecode <120> Return self From Method
+^ (method) of false
+Bytecode <157> Pop and Jump on False 6
+Bytecode <92> Push Literal Variable 28
+Bytecode <132> Double Extended Send
+[cycle=10]  aMetaclass postSnapshot
+Bytecode <65> Push Literal Variable 1
+Bytecode <115> Push nil
+Bytecode <228> Send Literal Selector #4 With One Argument
+[cycle=13]  nil ~~ nil
+Bytecode <112> Push self
+Bytecode <16> Push Temporary Variable 0
+Bytecode <198> Send ==
+Bytecode <208> Send Literal Selector #0 With No Arguments
+[cycle=17]  aTrue not
+Bytecode <122> Return false From Method
+^ (method) of false
+Bytecode <124> Return Stack Top From Method
+^ (method) of false
+Bytecode <172> Pop and Jump on False 
+Bytecode <70> Push Literal Variable 6
+Bytecode <213> Send Literal Selector #5 With No Arguments
+[cycle=22]  aSemaphore signal
+Primitive #85
+Bytecode <135> Pop Stack
+Bytecode <120> Return self From Method
+^ (method) of aMetaclass
+Bytecode <135> Pop Stack
+Bytecode <88> Push Literal Variable 24
+Bytecode <18> Push Temporary Variable 2
+Bytecode <131> Single Extended Send
+[cycle=28]  aMetaclass displayHeight: 480
+Bytecode <112> Push self
+Bytecode <112> Push self
+Bytecode <210> Send Literal Selector #2 With No Arguments
+[cycle=31]  aMetaclass boundingBox
+Bytecode <65> Push Literal Variable 1
+Bytecode <208> Send Literal Selector #0 With No Arguments
+[cycle=33]  aDisplayScreen boundingBox
+Bytecode <112> Push self
+Bytecode <208> Send Literal Selector #0 With No Arguments
+[cycle=35]  aDisplayScreen computeBoundingBox
+Bytecode <117> Push 0
+Bytecode <117> Push 0
+Bytecode <187> Send @
+Bytecode <1> Push Receiver Instance Variable 1
+Bytecode <2> Push Receiver Instance Variable 2
+Bytecode <187> Send @
+Bytecode <224> Send Literal Selector #0 With One Argument
+[cycle=42]  aPoint extent: aPoint
+Bytecode <65> Push Literal Variable 1
+Bytecode <112> Push self
+Bytecode <16> Push Temporary Variable 0
+Bytecode <240> Send Literal Selector #0 With Two Arguments
+[cycle=46]  aMetaclass origin:extent: aPoint aPoint
+Bytecode <112> Push self
+Bytecode <204> Send new
+[cycle=48]  aMetaclass new
+Primitive #70
+Bytecode <16> Push Temporary Variable 0
+Bytecode <17> Push Temporary Variable 1
+Bytecode <240> Send Literal Selector #0 With Two Arguments
+[cycle=51]  aRectangle origin:extent: aPoint aPoint
+Bytecode <16> Push Temporary Variable 0
+Bytecode <96> Pop and Store Instance Variable 0
+Bytecode <0> Push Receiver Instance Variable 0
+Bytecode <17> Push Temporary Variable 1
+Bytecode <176> Send +
+[cycle=56]  aPoint + aPoint
+Bytecode <16> Push Temporary Variable 0
+Bytecode <208> Send Literal Selector #0 With No Arguments
+[cycle=58]  aPoint asPoint
+Bytecode <105> Pop and Store Temporary Variable 1
+Bytecode <0> Push Receiver Instance Variable 0
+Bytecode <17> Push Temporary Variable 1
+Bytecode <206> Send x
+[cycle=62]  aPoint x
+Bytecode <176> Send +
+Bytecode <1> Push Receiver Instance Variable 1
+Bytecode <17> Push Temporary Variable 1
+Bytecode <207> Send y
+[cycle=66]  aPoint y
+Bytecode <176> Send +
+Bytecode <187> Send @
+Bytecode <124> Return Stack Top From Method
+^ (method) of aPoint
+Bytecode <97> Pop and Store Instance Variable 1
+Bytecode <120> Return self From Method
+^ (method) of aRectangle
+Bytecode <124> Return Stack Top From Method
+^ (method) of aRectangle
+Bytecode <124> Return Stack Top From Method
+^ (method) of aRectangle
+Bytecode <124> Return Stack Top From Method
+^ (method) of aRectangle
+Bytecode <124> Return Stack Top From Method
+^ (method) of aRectangle
+Bytecode <124> Return Stack Top From Method
+^ (method) of aRectangle
+Bytecode <209> Send Literal Selector #1 With No Arguments
+[cycle=77]  aRectangle width
+Bytecode <1> Push Receiver Instance Variable 1
+Bytecode <206> Send x
+[cycle=79]  aPoint x
+Bytecode <0> Push Receiver Instance Variable 0
+Bytecode <206> Send x
+[cycle=81]  aPoint x
+Bytecode <177> Send -
+Bytecode <124> Return Stack Top From Method
+^ (method) of 640
+Bytecode <16> Push Temporary Variable 0
+Bytecode <187> Send @
+Bytecode <224> Send Literal Selector #0 With One Argument
+[cycle=86]  aMetaclass displayExtent: aPoint
+Bytecode <16> Push Temporary Variable 0
+Bytecode <206> Send x
+[cycle=88]  aPoint x
+Bytecode <33> Push Literal Constant 1
+Bytecode <224> Send Literal Selector #0 With One Argument
+[cycle=90]  640 truncateTo: 32
+Bytecode <112> Push self
+Bytecode <16> Push Temporary Variable 0
+Bytecode <224> Send Literal Selector #0 With One Argument
+[cycle=93]  640 quo: 32
+Primitive #13
+Bytecode <16> Push Temporary Variable 0
+Bytecode <184> Send *
+Bytecode <124> Return Stack Top From Method
+^ (method) of 640
+Bytecode <105> Pop and Store Temporary Variable 1
+Bytecode <16> Push Temporary Variable 0
+Bytecode <207> Send y
+[cycle=99]  aPoint y
+Bytecode <119> Push 2
+Bytecode <224> Send Literal Selector #0 With One Argument
+[cycle=101]  480 truncateTo: 2
+Bytecode <112> Push self
+Bytecode <16> Push Temporary Variable 0
+Bytecode <224> Send Literal Selector #0 With One Argument
+[cycle=104]  480 quo: 2
+Primitive #13
+Bytecode <16> Push Temporary Variable 0
+Bytecode <184> Send *
+Bytecode <124> Return Stack Top From Method
+^ (method) of 480
+Bytecode <106> Pop and Store Temporary Variable 2
+Bytecode <67> Push Literal Variable 3
+Bytecode <67> Push Literal Variable 3
+Bytecode <204> Send new
+[cycle=111]  aMetaclass new
+Primitive #70
+Bytecode <17> Push Temporary Variable 1
+Bytecode <37> Push Literal Constant 5
+Bytecode <187> Send @
+Bytecode <117> Push 0
+Bytecode <117> Push 0
+Bytecode <187> Send @
+Bytecode <70> Push Literal Variable 6
+Bytecode <17> Push Temporary Variable 1
+Bytecode <37> Push Literal Constant 5
+Bytecode <189> Send //
+Bytecode <37> Push Literal Constant 5
+Bytecode <184> Send *
+Bytecode <205> Send new:
+[cycle=124]  aMetaclass new: 640
+Primitive #71
+Bytecode <131> Single Extended Send
+[cycle=125]  aDisplayScreen extent:offset:bits: aPoint aPoint aDisplayBitmap
+Bytecode <16> Push Temporary Variable 0
+Bytecode <206> Send x
+[cycle=127]  aPoint x
+Bytecode <97> Pop and Store Instance Variable 1
+Bytecode <16> Push Temporary Variable 0
+Bytecode <207> Send y
+[cycle=130]  aPoint y
+Bytecode <98> Pop and Store Instance Variable 2
+Bytecode <17> Push Temporary Variable 1
+Bytecode <99> Pop and Store Instance Variable 3
+Bytecode <18> Push Temporary Variable 2
+Bytecode <96> Pop and Store Instance Variable 0
+Bytecode <120> Return self From Method
+^ (method) of aDisplayScreen
+Bytecode <226> Send Literal Selector #2 With One Argument
+[cycle=137]  aMetaclass currentDisplay: aDisplayScreen
+Bytecode <16> Push Temporary Variable 0
+Bytecode <199> Send class
+Bytecode <112> Push self
+Bytecode <198> Send ==
+Bytecode <172> Pop and Jump on False 
+Bytecode <16> Push Temporary Variable 0
+Bytecode <214> Send Literal Selector #6 With No Arguments
+[cycle=144]  aDisplayScreen bits
+Bytecode <199> Send class
+Bytecode <71> Push Literal Variable 7
+Bytecode <198> Send ==
+Bytecode <158> Pop and Jump on False 7
+Bytecode <68> Push Literal Variable 4
+Bytecode <16> Push Temporary Variable 0
+Bytecode <227> Send Literal Selector #3 With One Argument
+[cycle=151]  aDisplayScreen become: aDisplayScreen
+Primitive #72
+Bytecode <135> Pop Stack
+Bytecode <68> Push Literal Variable 4
+Bytecode <213> Send Literal Selector #5 With No Arguments
+[cycle=154]  aDisplayScreen beDisplay
+Primitive #102
+Bytecode <146> Jump 3
+Bytecode <146> Jump 3
+Bytecode <135> Pop Stack
+Bytecode <120> Return self From Method
+^ (method) of aMetaclass
+Bytecode <135> Pop Stack
+Bytecode <67> Push Literal Variable 3
+Bytecode <67> Push Literal Variable 3
+Bytecode <204> Send new
+[cycle=162]  aMetaclass new
+Primitive #70
+Bytecode <17> Push Temporary Variable 1
+Bytecode <18> Push Temporary Variable 2
+Bytecode <187> Send @
+Bytecode <117> Push 0
+Bytecode <117> Push 0
+Bytecode <187> Send @
+Bytecode <70> Push Literal Variable 6
+Bytecode <17> Push Temporary Variable 1
+Bytecode <37> Push Literal Constant 5
+Bytecode <189> Send //
+Bytecode <18> Push Temporary Variable 2
+Bytecode <184> Send *
+[cycle=174]  40 * 480
+Primitive #9
+Bytecode <112> Push self
+Bytecode <117> Push 0
+Bytecode <182> Send =
+Bytecode <153> Pop and Jump on False 2
+Bytecode <112> Push self
+Bytecode <16> Push Temporary Variable 0
+Bytecode <133> Single Send to Super
+Bytecode <16> Push Temporary Variable 0
+Bytecode <214> Send Literal Selector #6 With No Arguments
+[cycle=183]  480 isInteger
+Bytecode <121> Return true From Method
+^ (method) of aTrue
+Bytecode <172> Pop and Jump on False 
+Bytecode <112> Push self
+Bytecode <16> Push Temporary Variable 0
+Bytecode <112> Push self
+Bytecode <213> Send Literal Selector #5 With No Arguments
+[cycle=189]  40 negative
+Bytecode <112> Push self
+Bytecode <117> Push 0
+Bytecode <178> Send <
+Bytecode <124> Return Stack Top From Method
+^ (method) of false
+Bytecode <16> Push Temporary Variable 0
+Bytecode <213> Send Literal Selector #5 With No Arguments
+[cycle=195]  480 negative
+Bytecode <112> Push self
+Bytecode <117> Push 0
+Bytecode <178> Send <
+Bytecode <124> Return Stack Top From Method
+^ (method) of false
+Bytecode <228> Send Literal Selector #4 With One Argument
+[cycle=200]  false ~~ false
+Bytecode <112> Push self
+Bytecode <16> Push Temporary Variable 0
+Bytecode <198> Send ==
+Bytecode <208> Send Literal Selector #0 With No Arguments
+[cycle=204]  aTrue not
+Bytecode <122> Return false From Method
+^ (method) of false
+Bytecode <124> Return Stack Top From Method
+^ (method) of false
+Bytecode <243> Send Literal Selector #3 With Two Arguments
+[cycle=207]  40 digitMultiply:neg: 480 false
+Bytecode <16> Push Temporary Variable 0
+Bytecode <118> Push 1
+Bytecode <225> Send Literal Selector #1 With One Argument
+[cycle=210]  480 digitAt: 1
+Bytecode <16> Push Temporary Variable 0
+Bytecode <118> Push 1
+Bytecode <182> Send =
+Bytecode <172> Pop and Jump on False 
+Bytecode <112> Push self
+Bytecode <117> Push 0
+Bytecode <178> Send <
+Bytecode <157> Pop and Jump on False 6
+Bytecode <112> Push self
+Bytecode <37> Push Literal Constant 5
+Bytecode <190> Send bitAnd:
+Bytecode <124> Return Stack Top From Method
+^ (method) of 224
+Bytecode <117> Push 0
+Bytecode <182> Send =
+Bytecode <156> Pop and Jump on False 5
+Bytecode <114> Push false
+Bytecode <153> Pop and Jump on False 2
+Bytecode <112> Push self
+Bytecode <208> Send Literal Selector #0 With No Arguments
+[cycle=229]  40 digitLength
+Bytecode <112> Push self
+Bytecode <33> Push Literal Constant 1
+Bytecode <178> Send <
+Bytecode <155> Pop and Jump on False 4
+Bytecode <112> Push self
+Bytecode <32> Push Literal Constant 0
+Bytecode <179> Send >
+Bytecode <144> Jump 1
+Bytecode <153> Pop and Jump on False 2
+Bytecode <118> Push 1
+Bytecode <124> Return Stack Top From Method
+^ (method) of 1
+Bytecode <16> Push Temporary Variable 0
+Bytecode <208> Send Literal Selector #0 With No Arguments
+[cycle=242]  480 digitLength
+Bytecode <112> Push self
+Bytecode <33> Push Literal Constant 1
+Bytecode <178> Send <
+Bytecode <155> Pop and Jump on False 4
+Bytecode <114> Push false
+Bytecode <153> Pop and Jump on False 2
+Bytecode <67> Push Literal Variable 3
+Bytecode <210> Send Literal Selector #2 With No Arguments
+[cycle=250]  aMetaclass maxBytes
+Bytecode <104> Pop and Store Temporary Variable 0
+Bytecode <16> Push Temporary Variable 0
+Bytecode <119> Push 2
+Bytecode <182> Send =
+Bytecode <153> Pop and Jump on False 2
+Bytecode <119> Push 2
+Bytecode <124> Return Stack Top From Method
+^ (method) of 2
+Bytecode <176> Send +
+Bytecode <107> Pop and Store Temporary Variable 3
+Bytecode <67> Push Literal Variable 3
+Bytecode <19> Push Temporary Variable 3
+Bytecode <17> Push Temporary Variable 1
+Bytecode <242> Send Literal Selector #2 With Two Arguments
+[cycle=263]  aMetaclass new:neg: 3 false
+Bytecode <17> Push Temporary Variable 1
+Bytecode <155> Pop and Jump on False 4
+Bytecode <64> Push Literal Variable 0
+Bytecode <16> Push Temporary Variable 0
+Bytecode <205> Send new:
+[cycle=268]  aMetaclass new: 3
+Primitive #71
+Bytecode <124> Return Stack Top From Method
+^ (method) of aLargePositiveInteger
+Bytecode <106> Pop and Store Temporary Variable 2
+Bytecode <118> Push 1
+Bytecode <112> Push self
+Bytecode <208> Send Literal Selector #0 With No Arguments
+[cycle=273]  40 digitLength
+Bytecode <112> Push self
+Bytecode <33> Push Literal Constant 1
+Bytecode <178> Send <
+Bytecode <155> Pop and Jump on False 4
+Bytecode <112> Push self
+Bytecode <32> Push Literal Constant 0
+Bytecode <179> Send >
+Bytecode <144> Jump 1
+Bytecode <153> Pop and Jump on False 2
+Bytecode <118> Push 1
+Bytecode <124> Return Stack Top From Method
+^ (method) of 1
+Bytecode <137> Push Active Context
+Bytecode <118> Push 1
+Bytecode <200> Send blockCopy:
+Bytecode <164> Jump 
+Bytecode <244> Send Literal Selector #4 With Two Arguments
+[cycle=289]  1 to:do: 1 aBlockContext
+Bytecode <112> Push self
+Bytecode <106> Pop and Store Temporary Variable 2
+Bytecode <18> Push Temporary Variable 2
+Bytecode <16> Push Temporary Variable 0
+Bytecode <180> Send <=
+Bytecode <172> Pop and Jump on False 
+Bytecode <17> Push Temporary Variable 1
+Bytecode <18> Push Temporary Variable 2
+Bytecode <202> Send value:
+Bytecode <110> Pop and Store Temporary Variable 6
+Bytecode <112> Push self
+Bytecode <22> Push Temporary Variable 6
+Bytecode <225> Send Literal Selector #1 With One Argument
+[cycle=302]  40 digitAt: 1
+Bytecode <16> Push Temporary Variable 0
+Bytecode <118> Push 1
+Bytecode <182> Send =
+Bytecode <172> Pop and Jump on False 
+Bytecode <112> Push self
+Bytecode <117> Push 0
+Bytecode <178> Send <
+Bytecode <157> Pop and Jump on False 6
+Bytecode <112> Push self
+Bytecode <37> Push Literal Constant 5
+Bytecode <190> Send bitAnd:
+Bytecode <124> Return Stack Top From Method
+^ (method) of 40
+Bytecode <129> Extended Store
+Bytecode <117> Push 0
+Bytecode <183> Send ~=
+Bytecode <172> Pop and Jump on False 
+Bytecode <22> Push Temporary Variable 6
+Bytecode <130> Extended Pop and Store
+Bytecode <117> Push 0
+Bytecode <108> Pop and Store Temporary Variable 4
+Bytecode <21> Push Temporary Variable 5
+Bytecode <37> Push Literal Constant 5
+Bytecode <188> Send bitShift:
+Bytecode <130> Extended Pop and Store
+Bytecode <21> Push Temporary Variable 5
+Bytecode <38> Push Literal Constant 6
+Bytecode <190> Send bitAnd:
+Bytecode <130> Extended Pop and Store
+Bytecode <118> Push 1
+Bytecode <16> Push Temporary Variable 0
+Bytecode <208> Send Literal Selector #0 With No Arguments
+[cycle=333]  480 digitLength
+Bytecode <112> Push self
+Bytecode <33> Push Literal Constant 1
+Bytecode <178> Send <
+Bytecode <155> Pop and Jump on False 4
+Bytecode <114> Push false
+Bytecode <153> Pop and Jump on False 2
+Bytecode <67> Push Literal Variable 3
+Bytecode <210> Send Literal Selector #2 With No Arguments
+[cycle=341]  aMetaclass maxBytes
+Bytecode <104> Pop and Store Temporary Variable 0
+Bytecode <16> Push Temporary Variable 0
+Bytecode <119> Push 2
+Bytecode <182> Send =
+Bytecode <153> Pop and Jump on False 2
+Bytecode <119> Push 2
+Bytecode <124> Return Stack Top From Method
+^ (method) of 2
+Bytecode <137> Push Active Context
+Bytecode <118> Push 1
+Bytecode <200> Send blockCopy:
+Bytecode <164> Jump 
+Bytecode <244> Send Literal Selector #4 With Two Arguments
+[cycle=353]  1 to:do: 2 aBlockContext
+Bytecode <112> Push self
+Bytecode <106> Pop and Store Temporary Variable 2
+Bytecode <18> Push Temporary Variable 2
+Bytecode <16> Push Temporary Variable 0
+Bytecode <180> Send <=
+Bytecode <172> Pop and Jump on False 
+Bytecode <17> Push Temporary Variable 1
+Bytecode <18> Push Temporary Variable 2
+Bytecode <202> Send value:
+Bytecode <111> Pop and Store Temporary Variable 7
+Bytecode <16> Push Temporary Variable 0
+Bytecode <23> Push Temporary Variable 7
+Bytecode <225> Send Literal Selector #1 With One Argument
+[cycle=366]  480 digitAt: 1
+Bytecode <16> Push Temporary Variable 0
+Bytecode <118> Push 1
+Bytecode <182> Send =
+Bytecode <172> Pop and Jump on False 
+Bytecode <112> Push self
+Bytecode <117> Push 0
+Bytecode <178> Send <
+Bytecode <157> Pop and Jump on False 6
+Bytecode <112> Push self
+Bytecode <37> Push Literal Constant 5
+Bytecode <190> Send bitAnd:
+Bytecode <124> Return Stack Top From Method
+^ (method) of 224
+Bytecode <25> Push Temporary Variable 9
+Bytecode <184> Send *
+Bytecode <130> Extended Pop and Store
+Bytecode <16> Push Temporary Variable 0
+Bytecode <23> Push Temporary Variable 7
+Bytecode <225> Send Literal Selector #1 With One Argument
+[cycle=384]  480 digitAt: 1
+Bytecode <16> Push Temporary Variable 0
+Bytecode <118> Push 1
+Bytecode <182> Send =
+Bytecode <172> Pop and Jump on False 
+Bytecode <112> Push self
+Bytecode <117> Push 0
+Bytecode <178> Send <
+Bytecode <157> Pop and Jump on False 6
+Bytecode <112> Push self
+Bytecode <37> Push Literal Constant 5
+Bytecode <190> Send bitAnd:
+Bytecode <124> Return Stack Top From Method
+^ (method) of 224
+Bytecode <26> Push Temporary Variable 10
+Bytecode <184> Send *
+Bytecode <28> Push Temporary Variable 12
+Bytecode <38> Push Literal Constant 6
+Bytecode <190> Send bitAnd:
+Bytecode <39> Push Literal Constant 7
+Bytecode <188> Send bitShift:
+Bytecode <176> Send +
+Bytecode <20> Push Temporary Variable 4
+Bytecode <176> Send +
+Bytecode <18> Push Temporary Variable 2
+Bytecode <24> Push Temporary Variable 8
+Bytecode <225> Send Literal Selector #1 With One Argument
+[cycle=409]  aLargePositiveInteger digitAt: 1
+Primitive #60
+Bytecode <176> Send +
+Bytecode <130> Extended Pop and Store
+Bytecode <28> Push Temporary Variable 12
+Bytecode <37> Push Literal Constant 5
+Bytecode <188> Send bitShift:
+Bytecode <27> Push Temporary Variable 11
+Bytecode <40> Push Literal Constant 8
+Bytecode <188> Send bitShift:
+Bytecode <176> Send +
+Bytecode <108> Pop and Store Temporary Variable 4
+Bytecode <18> Push Temporary Variable 2
+Bytecode <24> Push Temporary Variable 8
+Bytecode <27> Push Temporary Variable 11
+Bytecode <42> Push Literal Constant 10
+Bytecode <190> Send bitAnd:
+Bytecode <249> Send Literal Selector #9 With Two Arguments
+[cycle=425]  aLargePositiveInteger digitAt:put: 1 0
+Primitive #61
+Bytecode <135> Pop Stack
+Bytecode <24> Push Temporary Variable 8
+Bytecode <118> Push 1
+Bytecode <176> Send +
+Bytecode <129> Extended Store
+Bytecode <125> Return Stack Top From Block
+^ (block) of 2
+Bytecode <135> Pop Stack
+Bytecode <18> Push Temporary Variable 2
+Bytecode <118> Push 1
+Bytecode <176> Send +
+Bytecode <106> Pop and Store Temporary Variable 2
+Bytecode <163> Jump 
+Bytecode <18> Push Temporary Variable 2
+Bytecode <16> Push Temporary Variable 0
+Bytecode <180> Send <=
+Bytecode <172> Pop and Jump on False 
+Bytecode <17> Push Temporary Variable 1
+Bytecode <18> Push Temporary Variable 2
+Bytecode <202> Send value:
+Bytecode <111> Pop and Store Temporary Variable 7
+Bytecode <16> Push Temporary Variable 0
+Bytecode <23> Push Temporary Variable 7
+Bytecode <225> Send Literal Selector #1 With One Argument
+[cycle=448]  480 digitAt: 2
+Bytecode <16> Push Temporary Variable 0
+Bytecode <118> Push 1
+Bytecode <182> Send =
+Bytecode <172> Pop and Jump on False 
+Bytecode <112> Push self
+Bytecode <117> Push 0
+Bytecode <178> Send <
+Bytecode <172> Pop and Jump on False 
+Bytecode <112> Push self
+Bytecode <35> Push Literal Constant 3
+Bytecode <16> Push Temporary Variable 0
+Bytecode <36> Push Literal Constant 4
+Bytecode <188> Send bitShift:
+Bytecode <177> Send -
+Bytecode <188> Send bitShift:
+Bytecode <37> Push Literal Constant 5
+Bytecode <190> Send bitAnd:
+Bytecode <124> Return Stack Top From Method
+^ (method) of 1
+Bytecode <25> Push Temporary Variable 9
+Bytecode <184> Send *
+Bytecode <130> Extended Pop and Store
+Bytecode <16> Push Temporary Variable 0
+Bytecode <23> Push Temporary Variable 7
+Bytecode <225> Send Literal Selector #1 With One Argument
+[cycle=472]  480 digitAt: 2
+Bytecode <16> Push Temporary Variable 0
+Bytecode <118> Push 1
+Bytecode <182> Send =
+Bytecode <172> Pop and Jump on False 
+Bytecode <112> Push self
+Bytecode <117> Push 0
+Bytecode <178> Send <
+Bytecode <172> Pop and Jump on False 
+Bytecode <112> Push self
+Bytecode <35> Push Literal Constant 3
+Bytecode <16> Push Temporary Variable 0
+Bytecode <36> Push Literal Constant 4
+Bytecode <188> Send bitShift:
+Bytecode <177> Send -
+Bytecode <188> Send bitShift:
+Bytecode <37> Push Literal Constant 5
+Bytecode <190> Send bitAnd:
+Bytecode <124> Return Stack Top From Method
+^ (method) of 1
+Bytecode <26> Push Temporary Variable 10
+Bytecode <184> Send *
+Bytecode <28> Push Temporary Variable 12
+Bytecode <38> Push Literal Constant 6
+Bytecode <190> Send bitAnd:
+Bytecode <39> Push Literal Constant 7
+Bytecode <188> Send bitShift:
+Bytecode <176> Send +
+Bytecode <20> Push Temporary Variable 4

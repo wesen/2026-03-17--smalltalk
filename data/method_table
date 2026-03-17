@@ -1,0 +1,4499 @@
+0064	<Collection class>with:with:with:with:
+0068	<Collection class>with:
+006A	<Collection class>with:with:with:
+006C	<Collection class>with:with:
+007E	<ClassOrganizer class>new
+013A	<Object>nextInstance
+0140	<Object>printString
+0154	<Stream class>new
+017A	<Stream>nextPut:
+017C	<Stream>contents
+017E	<Stream>atEnd
+0180	<Stream>next:
+01D4	<Collection>collect:
+01D6	<Collection>errorNotKeyed
+01DE	<Collection>maxPrint
+01E0	<Collection>growSize
+01E8	<Collection>maxSize
+01EC	<Collection>addAll:
+01EE	<Collection>errorNotFound
+01F2	<Collection>occurrencesOf:
+01F4	<Collection>detect:ifNone:
+01F6	<Collection>emptyCheck
+01F8	<Collection>remove:ifAbsent:
+01FA	<Collection>includes:
+01FC	<Collection>size
+01FE	<Collection>printOn:
+020A	<Collection>reject:
+020C	<Collection>removeAll:
+020E	<Collection>errorEmptyCollection
+0212	<Collection>asSortedCollection
+0224	<SortedCollection class>sortBlock:
+0228	<SortedCollection class>new:
+0246	<SortedCollection>sort:to:
+024C	<SortedCollection>sortBlock
+024E	<SortedCollection>at:put:
+0252	<SortedCollection>copy
+0254	<SortedCollection>=
+0256	<SortedCollection>collect:
+0258	<SortedCollection>sortBlock:
+025C	<SortedCollection>add:
+0262	<SortedCollection>addAll:
+0264	<SortedCollection>indexForInserting:
+0266	<SortedCollection>swap:with:
+0268	<SortedCollection>copyEmpty
+026A	<SortedCollection>grow
+026C	<SortedCollection>reSort
+0284	<RemoteString class>newString:onFileNumber:toFile:
+0288	<RemoteString class>newString:onFileNumber:
+028C	<RemoteString class>newFileNumber:position:
+02A0	<RemoteString>position
+02A2	<RemoteString>string:onFileNumber:toFile:
+02A6	<RemoteString>string:onFileNumber:
+02D2	<ReadWriteStream>timeStamp
+02DC	<ReadWriteStream>close
+02DE	<ReadWriteStream>fileIn
+033A	<DisplayObject>displayAt:
+0350	<DisplayScreen class>currentDisplay:
+035E	<DisplayScreen class>boundingBox
+0360	<DisplayScreen class>displayHeight:
+0362	<DisplayScreen class>displayExtent:
+037E	<ControlManager class>newScheduler:
+0384	<ControlManager class>new
+03B6	<ControlManager>deactivate
+03B8	<ControlManager>searchForActiveController
+03C2	<ControlManager>scheduledControllers
+03C4	<ControlManager>interruptName:
+03E2	<View class>new
+03E6	<View class>identityTransformation
+03FA	<WindowingTransformation class>scale:translation:
+03FE	<WindowingTransformation class>window:viewport:
+0408	<WindowingTransformation class>identity
+0428	<WindowingTransformation>align:with:
+042A	<WindowingTransformation>scaleBy:
+042C	<WindowingTransformation>translateBy:
+042E	<WindowingTransformation>checkScale:
+0432	<WindowingTransformation>applyInverseTo:
+0438	<WindowingTransformation>applyTo:
+043A	<WindowingTransformation>scale
+043E	<WindowingTransformation>compose:
+0440	<WindowingTransformation>scrollBy:
+0442	<WindowingTransformation>translation
+0444	<WindowingTransformation>noScale
+0446	<WindowingTransformation>scaleOfOne
+044A	<WindowingTransformation>printOn:
+0452	<WindowingTransformation>storeOn:
+045C	<WindowingTransformation>setScale:translation:
+0492	<Set>fixCollisionsFrom:
+0494	<Set>atNewIndex:put:
+0496	<Set>noCheckAdd:
+0498	<Set>rehash
+049A	<Set>find:ifAbsent:
+049C	<Set>fullCheck
+049E	<Set>findElementOrNil:
+04A0	<Set>setTally
+04A2	<Set>at:
+04A4	<Set>at:put:
+04A6	<Set>collect:
+04AC	<Set>add:
+04AE	<Set>occurrencesOf:
+04B0	<Set>do:
+04B4	<Set>remove:ifAbsent:
+04B6	<Set>includes:
+04B8	<Set>size
+04BA	<Set>swap:with:
+04BC	<Set>grow
+04D4	<IdentitySet>findElementOrNil:
+052A	<Dictionary>declare:from:
+052C	<Dictionary>includesAssociation:
+0532	<Dictionary>errorValueNotFound
+0536	<Dictionary>removeAssociation:ifAbsent:
+0538	<Dictionary>removeAssociation:
+053A	<Dictionary>findKey:ifAbsent:
+053C	<Dictionary>errorKeyNotFound
+0540	<Dictionary>keysDo:
+0544	<Dictionary>associationAt:ifAbsent:
+0546	<Dictionary>keyAtValue:ifAbsent:
+0548	<Dictionary>keys
+054A	<Dictionary>at:ifAbsent:
+054C	<Dictionary>removeKey:ifAbsent:
+054E	<Dictionary>associationsDo:
+0550	<Dictionary>values
+055E	<Bag class>new
+0576	<Bag>at:
+0578	<Bag>at:put:
+057A	<Bag>setDictionary
+057C	<Bag>add:
+057E	<Bag>occurrencesOf:
+0580	<Bag>do:
+0584	<Bag>sortedElements
+0586	<Bag>sortedCounts
+058E	<Bag>remove:ifAbsent:
+0590	<Bag>size
+0592	<Bag>includes:
+0594	<Bag>add:withOccurrences:
+05A6	<Dictionary>collect:
+05A8	<Dictionary>associations
+05AA	<Dictionary>associationAt:
+05AC	<Dictionary>removeKey:
+05AE	<Dictionary>includesKey:
+05B0	<Dictionary>keyAtValue:
+05B2	<Dictionary>at:
+05B4	<Dictionary>occurrencesOf:
+05B6	<Dictionary>at:put:
+05B8	<Dictionary>rehash
+05BA	<Dictionary>remove:ifAbsent:
+05BC	<Dictionary>includes:
+05BE	<Dictionary>printOn:
+05C4	<Dictionary>asSortedCollection
+05C6	<Dictionary>remove:
+05C8	<Dictionary>inspect
+05DE	<InspectorView class>open:
+05E2	<InspectorView class>view:in:of:
+06AA	<View>getController
+06AC	<View>transform:
+06AE	<View>getWindow
+06B0	<View>clear:
+06B4	<View>model:controller:
+06B8	<View>isTopView
+06BA	<View>subViewContaining:
+06BE	<View>displayTransformation
+06C0	<View>insertSubView:above:
+06C8	<View>insertSubView:before:ifCyclic:
+06CC	<View>displayBox
+06D0	<View>deEmphasize
+06D2	<View>scrollBy:
+06D4	<View>clear
+06D6	<View>insetWindow
+06DA	<View>defaultControllerClass
+06E8	<Controller class>new
+0710	<Controller>sensor:
+0712	<Controller>controlLoop
+0714	<Controller>isControlWanted
+0716	<Controller>controlInitialize
+0718	<Controller>view
+071A	<Controller>controlTerminate
+071C	<Controller>centerCursorInView
+0722	<Controller>view:
+0724	<Controller>sensor
+0726	<Controller>initialize
+073A	<InputSensor class>install
+0748	<InputState class>initialize
+0790	<InputState>primCursorLocPut:
+0792	<InputState>primMousePt
+0794	<InputState>leftShiftDown
+0796	<InputState>nextEvent:with:
+07B0	<Link class>nextLink:
+07C2	<Link>nextLink:
+07C4	<Link>nextLink
+07E0	<Process class>forContext:priority:
+07FE	<Process>suspendingList
+0800	<Process>offList
+0802	<Process>suspend
+080A	<Process>suspendedContext:
+080C	<Process>priority:
+0812	<Process>terminate
+0818	<Process>suspendedContext
+081A	<Process>priority
+081C	<Process>install:
+0820	<Process>printOn:
+0824	<Process>resume
+0826	<Process>popTo:
+084C	<BlockContext>newProcess
+0852	<InputState>install
+086C	<SharedQueue class>new
+086E	<SharedQueue class>new:
+0884	<SharedQueue>makeRoomAtEnd
+0886	<SharedQueue>nextPut:
+088C	<SharedQueue>init:
+0894	<SharedQueue>isEmpty
+0896	<SharedQueue>size
+0898	<SharedQueue>next
+089C	<SharedQueue>release
+089E	<SharedQueue>peek
+08C4	<InputState>run
+08C6	<InputState>keyAt:put:
+08D6	<KeyboardEvent class>code:meta:
+08F0	<KeyboardEvent>keyCharacter
+08F2	<KeyboardEvent>metaState
+08F4	<KeyboardEvent>hasCtrl
+08F8	<KeyboardEvent>hasLock
+08FA	<KeyboardEvent>hasShift
+08FC	<KeyboardEvent>key:meta:
+091A	<InputState>primCursorLocPutAgain:
+091C	<InputState>primSampleInterval:
+091E	<InputState>primInputWord
+0920	<InputState>cursorPoint:
+0922	<InputState>primInputSemaphore:
+0924	<InputState>initState
+0928	<InputState>mouseButtons
+092A	<InputState>keyboardNext
+092C	<InputState>currentTime
+092E	<InputState>keyboardPeek
+0930	<InputState>mousePoint
+0964	<InputSensor class>new
+096A	<InputSensor class>default
+0974	<InputSensor class>initialize
+0A2A	<InputSensor class>initSensor
+0A64	<InputSensor>primMousePt
+0A66	<InputSensor>leftShiftDown
+0A68	<InputSensor>cursorPoint:
+0A7E	<ArrayedCollection class>with:with:
+0A80	<ArrayedCollection class>with:with:with:with:
+0A82	<ArrayedCollection class>new
+0A84	<ArrayedCollection class>with:
+0A86	<ArrayedCollection class>new:withAll:
+0A8A	<ArrayedCollection class>with:with:with:
+0A9E	<ArrayedCollection>storeElementsFrom:to:on:
+0AA4	<ArrayedCollection>defaultElement
+0AA6	<ArrayedCollection>add:
+0AA8	<ArrayedCollection>size
+0AAE	<ArrayedCollection>storeOn:
+0ACC	<Text class>fromUser
+0AE0	<StringHolder class>new
+0AE4	<StringHolder class>initialize
+0AE6	<StringHolder class>workspace
+0AFC	<StringHolder>lock
+0AFE	<StringHolder>initialize
+0B00	<StringHolder>contents
+0B02	<StringHolder>defaultContents
+0B06	<StringHolder>doItContext
+0B08	<StringHolder>doItReceiver
+0B0A	<StringHolder>contents:
+0B0C	<StringHolder>unlock
+0B0E	<StringHolder>isUnlocked
+0B12	<StringHolder>isLocked
+0B86	<ChangeList>selection
+0B8A	<ChangeList>removeCurrent
+0B8C	<ChangeList>scheduleMessageBrowser
+0BAC	<BrowserView class>openListBrowserOn:label:
+0BAE	<BrowserView class>openOn:
+0BC0	<Browser class>flushMenus
+0BDE	<PopUpMenu class>labels:lines:
+0BF2	<TextStyle class>default
+0C48	<StrikeFont>displayLine:at:
+0C88	<DisplayMedium>white
+0C8A	<DisplayMedium>reverse
+0C8C	<DisplayMedium>black
+0C8E	<DisplayMedium>fill:mask:
+0C90	<DisplayMedium>darkGray:
+0C92	<DisplayMedium>fill:
+0C94	<DisplayMedium>lightGray
+0C96	<DisplayMedium>copyBits:from:at:clippingBox:rule:mask:
+0C9C	<DisplayMedium>gray:
+0C9E	<DisplayMedium>border:widthRectangle:mask:clippingBox:
+0CA4	<DisplayMedium>white:
+0CA6	<DisplayMedium>black:
+0CA8	<DisplayMedium>border:width:mask:
+0CC4	<Rectangle class>originFromUser:grid:
+0CCA	<Rectangle class>originFromUser:
+0CCC	<Rectangle class>left:right:top:bottom:
+0CCE	<Rectangle class>fromUserAspectRatio:
+0CDA	<Rectangle class>origin:corner:
+0CDC	<Rectangle class>fromUser:
+0CE8	<Rectangle class>origin:extent:
+0CEA	<Rectangle class>fromUser
+0D28	<Rectangle>bottomCenter
+0D2A	<Rectangle>merge:
+0D2C	<Rectangle>leftCenter
+0D2E	<Rectangle>insetOriginBy:cornerBy:
+0D30	<Rectangle>left
+0D32	<Rectangle>bottomRight
+0D34	<Rectangle>top
+0D36	<Rectangle>align:with:
+0D38	<Rectangle>scaleBy:
+0D3A	<Rectangle>translateBy:
+0D3C	<Rectangle>bottom
+0D3E	<Rectangle>width:
+0D40	<Rectangle>storeOn:
+0D46	<Rectangle>top:
+0D48	<Rectangle>extent
+0D4A	<Rectangle>topLeft:
+0D4C	<Rectangle>center
+0D4E	<Rectangle>area
+0D50	<Rectangle>rightCenter
+0D52	<Rectangle>bottomRight:
+0D54	<Rectangle>contains:
+0D56	<Rectangle>intersects:
+0D58	<Rectangle>height:
+0D5A	<Rectangle>rounded
+0D5C	<Rectangle>width
+0D5E	<Rectangle>height
+0D60	<Rectangle>right
+0D62	<Rectangle>hashMappedBy:
+0D64	<Rectangle>topRight
+0D66	<Rectangle>bottom:
+0D68	<Rectangle>moveTo:
+0D6A	<Rectangle>containsPoint:
+0D6C	<Rectangle>areasOutside:
+0D6E	<Rectangle>intersect:
+0D70	<Rectangle>printOn:
+0D74	<Rectangle>origin:corner:
+0D76	<Rectangle>origin:extent:
+0D78	<Rectangle>bottomLeft
+0D7A	<Rectangle>topLeft
+0D7C	<Rectangle>extent:
+0D7E	<Rectangle>hash
+0D82	<Rectangle>expandBy:
+0D84	<Rectangle>origin
+0D86	<Rectangle>corner
+0D88	<Rectangle>copy
+0D8A	<Rectangle>insetBy:
+0D8C	<Rectangle>=
+0D8E	<Rectangle>origin:
+0D90	<Rectangle>corner:
+0D92	<Rectangle>right:
+0D94	<Rectangle>topCenter
+0D96	<Rectangle>amountToTranslateWithin:
+0D98	<Rectangle>left:
+0D9A	<Rectangle>moveBy:
+0DA8	<Quadrangle class>region:borderWidth:borderColor:insideColor:
+0DAC	<Quadrangle class>new
+0DC6	<Quadrangle>borderWidthLeft:right:top:bottom:
+0DC8	<Quadrangle>displayOn:align:with:clippingBox:
+0DCA	<Quadrangle>displayAlign:with:clippingBox:
+0DCC	<Quadrangle>borderColor
+0DCE	<Quadrangle>borderColor:
+0DD0	<Quadrangle>borderWidth
+0DD2	<Quadrangle>align:with:
+0DD8	<Quadrangle>scaleBy:
+0DDA	<Quadrangle>translateBy:
+0DDC	<Quadrangle>display
+0DDE	<Quadrangle>borderWidth:
+0DE0	<Quadrangle>insideColor:
+0DE2	<Quadrangle>insideColor
+0DE4	<Quadrangle>displayOn:transformation:clippingBox:
+0DE6	<Quadrangle>intersect:
+0DE8	<Quadrangle>region:borderWidth:borderColor:insideColor:
+0DEA	<Quadrangle>displayOn:
+0DEC	<Quadrangle>initialize
+0DEE	<Quadrangle>inside
+0DF0	<Quadrangle>region
+0DF2	<Quadrangle>region:
+0E1E	<CharacterBlock class>stringIndex:character:boundingRectangle:
+0E22	<CharacterBlock class>stringIndex:character:topLeft:extent:
+0E3E	<CharacterBlock>newStringIndex:Character:BoundingRectangle:
+0E44	<CharacterBlock>printOn:
+0E4C	<CharacterBlock>newStringIndex:Character:TopLeft:Extent:
+0E4E	<CharacterBlock><
+0E50	<CharacterBlock>character
+0E52	<CharacterBlock><=
+0E54	<CharacterBlock>>=
+0E56	<CharacterBlock>stringIndex
+0E58	<CharacterBlock>>
+0E5A	<CharacterBlock>=
+0E5C	<CharacterBlock>copy
+10AC	<DisplayMedium>lightGray:
+10AE	<DisplayMedium>border:width:
+10B0	<DisplayMedium>veryLightGray:
+10B2	<DisplayMedium>veryLightGray
+10B4	<DisplayMedium>reverse:mask:
+10B6	<DisplayMedium>gray
+10B8	<DisplayMedium>border:widthRectangle:mask:
+10BA	<DisplayMedium>fill:rule:mask:
+10BC	<DisplayMedium>reverse:
+10BE	<DisplayMedium>drawLine:from:to:clippingBox:rule:mask:
+10C0	<DisplayMedium>darkGray
+110C	<Form>reflect:
+110E	<Form>rotateBy:
+1116	<Form>storeOn:base:
+1124	<Form>isAllWhite
+1128	<Form>rotate2:
+112A	<Form>offset:
+112C	<Form>computeBoundingBox
+112E	<Form>deepCopy
+1134	<Form>storeOn:
+113E	<Form>offset
+1140	<Form>displayOn:transformation:clippingBox:align:with:rule:mask:
+1144	<Form>displayOn:at:clippingBox:rule:mask:
+1146	<Form>borderWidth:
+1148	<Form>bits
+114A	<Form>copyBits:from:at:clippingBox:rule:mask:
+1164	<BitBlt class>exampleTwo
+116A	<BitBlt class>exampleOne
+117A	<Path class>new
+1180	<Path class>example
+1186	<Path class>new:
+11AA	<Path>form:
+11AC	<Path>displayOn:transformation:clippingBox:rule:mask:
+11AE	<Path>last
+11B0	<Path>initializeCollectionOfPoints:
+11B2	<Path>computeBoundingBox
+11B4	<Path>scaleBy:
+11B6	<Path>translateBy:
+11B8	<Path>at:
+11BA	<Path>firstPoint
+11BC	<Path>secondPoint
+11BE	<Path>removeAllSuchThat:
+11C0	<Path>first
+11C2	<Path>collect:
+11C4	<Path>firstPoint:
+11C6	<Path>thirdPoint:
+11C8	<Path>thirdPoint
+11CA	<Path>secondPoint:
+11CC	<Path>at:put:
+11CE	<Path>offset
+11D0	<Path>form
+11D2	<Path>displayOn:at:clippingBox:rule:mask:
+11D4	<Path>size
+11D6	<Path>select:
+11D8	<Path>isEmpty
+11DA	<Path>add:
+11DC	<Path>initializeCollectionOfPoints
+11E8	<Spline class>example
+1202	<Spline>displayOn:transformation:clippingBox:rule:mask:
+1204	<Spline>computeCurve
+120A	<Spline>displayOn:at:clippingBox:rule:mask:
+121A	<Line class>new
+121E	<Line class>from:to:withForm:
+1222	<Line class>example
+1238	<Line>displayOn:transformation:clippingBox:rule:mask:
+123A	<Line>beginPoint:
+123C	<Line>beginPoint
+123E	<Line>endPoint:
+1240	<Line>endPoint
+1242	<Line>displayOn:at:clippingBox:rule:mask:
+1258	<Spline>isCyclic
+125A	<Spline>derivs:first:second:third:
+1268	<Spline>derivativePointsAt:
+1282	<LinearFit class>example
+1294	<LinearFit>displayOn:transformation:clippingBox:rule:mask:
+1296	<LinearFit>displayOn:at:clippingBox:rule:mask:
+12AC	<Curve class>example
+12B2	<Curve class>new
+12C2	<Curve>displayOn:transformation:clippingBox:rule:mask:
+12C4	<Curve>displayOn:at:clippingBox:rule:mask:
+12DC	<Arc class>example
+12FE	<Arc>center
+1300	<Arc>radius:
+1302	<Arc>displayOn:transformation:clippingBox:rule:mask:
+1304	<Arc>center:
+1306	<Arc>quadrant:
+1308	<Arc>center:radius:quadrant:
+130A	<Arc>quadrant
+130C	<Arc>radius
+130E	<Arc>center:radius:
+1310	<Arc>displayOn:at:clippingBox:rule:mask:
+132E	<Circle class>exampleOne
+1334	<Circle class>exampleTwo
+1342	<Circle>displayOn:transformation:clippingBox:rule:mask:
+1344	<Circle>displayOn:at:clippingBox:rule:mask:
+1346	<Circle>computeBoundingBox
+1378	<BitBlt class>exampleAt:rule:mask:
+137A	<BitBlt class>toReverse:
+137C	<BitBlt class>destForm:sourceForm:halftoneForm:combinationRule:destOrigin:sourceOrigin:extent:clipRect:
+13B8	<BitBlt>clipRect
+13BA	<BitBlt>destForm:
+13BC	<BitBlt>copyBitsAgain
+13BE	<BitBlt>sourceOrigin:
+13C0	<BitBlt>destRect:
+13C2	<BitBlt>sourceRect:
+13C4	<BitBlt>combinationRule:
+13C6	<BitBlt>destX:
+13C8	<BitBlt>destY:
+13CA	<BitBlt>clipX:
+13CC	<BitBlt>width:
+13CE	<BitBlt>clipRect:
+13D0	<BitBlt>clipWidth:
+13D2	<BitBlt>paintBits
+13D8	<BitBlt>clipHeight:
+13DA	<BitBlt>mask:
+13DC	<BitBlt>sourceX:
+13DE	<BitBlt>sourceY:
+13E0	<BitBlt>clipY:
+13E2	<BitBlt>drawLoopX:Y:
+13E6	<BitBlt>sourceForm:
+13E8	<BitBlt>drawFrom:to:
+13EA	<BitBlt>height:
+13EC	<BitBlt>copyBits
+13EE	<BitBlt>destOrigin:
+13F0	<BitBlt>setDestForm:sourceForm:halftoneForm:combinationRule:destOrigin:sourceOrigin:extent:clipRect:
+1412	<CharacterScanner>doesDisplaying
+1414	<CharacterScanner>initializeFromParagraph:clippedBy:
+1420	<CharacterScanner>setStopConditions
+142C	<CharacterScanner>scanCharactersFrom:to:in:rightX:stopConditions:displaying:
+1432	<CharacterScanner>characterNotInFont
+1454	<CompositionScanner>space
+1456	<CompositionScanner>rightX
+1458	<CompositionScanner>resetFont
+145C	<CompositionScanner>composeLine:fromCharacterIndex:inParagraph:
+147A	<Interval class>from:to:
+147E	<Interval class>new
+1484	<Interval class>from:to:by:
+1496	<Interval>reverseDo:
+1498	<Interval>remove:
+149C	<Interval>last
+149E	<Interval>hash
+14A0	<Interval>increment
+14A2	<Interval>at:
+14A4	<Interval>at:put:
+14A8	<Interval>copy
+14AA	<Interval>first
+14AC	<Interval>=
+14AE	<Interval>collect:
+14B0	<Interval>hashMappedBy:
+14B2	<Interval>add:
+14B4	<Interval>species
+14B6	<Interval>do:
+14B8	<Interval>size
+14BA	<Interval>printOn:
+14C0	<Interval>storeOn:
+14C2	<Interval>setFrom:to:by:
+14E0	<TextLineInterval class>start:stop:internalSpaces:paddingWidth:
+1502	<TextLineInterval>slide:
+1504	<TextLineInterval>internalSpaces:paddingWidth:
+1506	<TextLineInterval>deepCopy
+1508	<TextLineInterval>internalSpaces
+150A	<TextLineInterval>justifiedTabDeltaFor:
+150C	<TextLineInterval>stop:
+150E	<TextLineInterval>paddingWidth:
+1510	<TextLineInterval>internalSpaces:
+1512	<TextLineInterval>justifiedPadFor:
+1514	<TextLineInterval>=
+1516	<TextLineInterval>paddingWidth
+1530	<CompositionScanner>in:
+1534	<CompositionScanner>setStopConditions
+1536	<CompositionScanner>cr
+1538	<CompositionScanner>tab
+153C	<CompositionScanner>endOfRun
+153E	<CompositionScanner>crossedX
+1540	<CompositionScanner>onePixelSpace
+1542	<CompositionScanner>onePixelBackspace
+1576	<DisplayScanner>doesDisplaying
+1578	<DisplayScanner>initializeFromParagraph:clippedBy:
+157C	<DisplayScanner>setStopConditions
+1582	<DisplayScanner>cr
+1584	<DisplayScanner>tab
+1588	<DisplayScanner>endOfRun
+158A	<DisplayScanner>crossedX
+158C	<DisplayScanner>onePixelSpace
+158E	<DisplayScanner>onePixelBackspace
+1590	<DisplayScanner>checkEmphasis
+1596	<DisplayScanner>displayLines:in:clippedBy:
+15A2	<DisplayScanner>paddedSpace
+15A4	<DisplayScanner>fontAscentDelta
+15D6	<CharacterBlockScanner>setStopConditions
+15DC	<CharacterBlockScanner>buildCharacterBlockIn:
+15E4	<CharacterBlockScanner>characterNotInFont
+15E6	<CharacterBlockScanner>characterBlockForIndex:in:
+15EA	<CharacterBlockScanner>characterBlockAtPoint:in:
+15EC	<CharacterBlockScanner>cr
+15F4	<CharacterBlockScanner>tab
+15F6	<CharacterBlockScanner>endOfRun
+15F8	<CharacterBlockScanner>crossedX
+15FA	<CharacterBlockScanner>onePixelSpace
+15FC	<CharacterBlockScanner>onePixelBackspace
+15FE	<CharacterBlockScanner>paddedSpace
+164A	<Pen class>example
+1656	<Pen class>new
+168A	<Pen>dragon:
+168C	<Pen>filberts:side:
+168E	<Pen>frame
+1690	<Pen>up
+1692	<Pen>white
+1694	<Pen>black
+1696	<Pen>width:
+169A	<Pen>sourceForm:
+169C	<Pen>defaultNib:
+16A0	<Pen>go:
+16A4	<Pen>turn:
+16A6	<Pen>frame:
+16A8	<Pen>down
+16AA	<Pen>home
+16AC	<Pen>north
+16B0	<Pen>mandala:diameter:
+16B4	<Pen>place:
+16B6	<Pen>direction
+16B8	<Pen>location
+16BA	<Pen>goto:
+16BC	<Pen>color:
+16BE	<Pen>hilberts:
+16C0	<Pen>spiral:angle:
+16C2	<Pen>hilbert:side:
+16C4	<Pen>fillIn:
+170C	<Form>extent:offset:bits:
+170E	<Form>fill:rule:mask:
+1710	<Form>drawLine:from:to:clippingBox:rule:mask:
+1712	<Form>size
+1714	<Form>extent:
+1716	<Form>wrapAround:
+1718	<Form>bitEdit
+1746	<MouseMenuController>yellowButtonActivity
+174E	<MouseMenuController>redButtonActivity
+1752	<MouseMenuController>redButtonMenu:redButtonMessages:
+1754	<MouseMenuController>blueButtonMenu:blueButtonMessages:
+1756	<MouseMenuController>blueButtonActivity
+175A	<MouseMenuController>yellowButtonMenu:yellowButtonMessages:
+175C	<MouseMenuController>menuMessageReceiver
+175E	<MouseMenuController>reset
+1760	<MouseMenuController>release
+1762	<MouseMenuController>isControlActive
+1764	<MouseMenuController>controlActivity
+1774	<StandardSystemController class>ScheduledBlueButtonMenu
+1796	<PopUpMenu>markerOff
+1798	<PopUpMenu>buttonPressed:
+17A0	<PopUpMenu>manageMarker
+17A2	<PopUpMenu>topLeft
+17A4	<PopUpMenu>startUp:withHeading:
+17A6	<PopUpMenu>rescan
+17A8	<PopUpMenu>startUpAndWaitForSelectionAt:
+17AC	<PopUpMenu>borderWidth
+17AE	<PopUpMenu>startUpRedButton
+17B0	<PopUpMenu>markerTop:
+17B2	<PopUpMenu>markerOn:
+17B6	<PopUpMenu>displayAt:during:
+17B8	<PopUpMenu>startUpBlueButton
+17BA	<PopUpMenu>startUp:
+17BC	<PopUpMenu>startUpYellowButton
+17BE	<PopUpMenu>center
+17C0	<PopUpMenu>labels:font:lines:
+17DC	<DisplayText class>text:
+17E0	<DisplayText class>text:textStyle:offset:
+17E2	<DisplayText class>text:textStyle:
+17E4	<DisplayText class>example
+17FE	<DisplayText>offset:
+1800	<DisplayText>boundingBox
+1802	<DisplayText>computeBoundingBox
+180A	<DisplayText>text
+180C	<DisplayText>text:
+180E	<DisplayText>textStyle
+1810	<DisplayText>lineGrid
+1812	<DisplayText>string
+1814	<DisplayText>setText:textStyle:offset:
+1816	<DisplayText>numberOfLines
+1818	<DisplayText>form
+181A	<DisplayText>offset
+181C	<DisplayText>displayOn:transformation:clippingBox:align:with:rule:mask:
+1822	<DisplayText>displayOn:at:clippingBox:rule:mask:
+1824	<DisplayText>textStyle:
+1826	<DisplayText>composeForm
+182A	<DisplayText>asParagraph
+184E	<Paragraph class>withText:style:
+185E	<Paragraph class>withText:
+1860	<Paragraph class>withText:style:compositionRectangle:clippingRectangle:
+1866	<Paragraph class>new
+186C	<Paragraph class>initialize
+186E	<Paragraph class>example
+18DE	<Paragraph>displayAt:
+18E0	<Paragraph>boundingBox
+18E2	<Paragraph>computeBoundingBox
+18E4	<Paragraph>destinationForm
+18E6	<Paragraph>outputMedium
+18E8	<Paragraph>mask
+18EA	<Paragraph>rule
+18EC	<Paragraph>scrollBy:
+18EE	<Paragraph>asForm
+18F0	<Paragraph>displayOn:
+18F2	<Paragraph>displayOn:transformation:clippingBox:align:with:rule:mask:
+18F4	<Paragraph>clippingRectangle
+18F6	<Paragraph>height
+18F8	<Paragraph>displayOn:at:clippingBox:rule:mask:
+18FA	<Paragraph>flash
+18FC	<Paragraph>compositionRectangle:text:style:offset:outputMedium:fitWidth:
+18FE	<Paragraph>leftMarginForCompositionForLine:
+1902	<Paragraph>rightMarginForComposition
+1906	<Paragraph>clippingRectangle:
+1908	<Paragraph>asText
+190A	<Paragraph>characterBlockForIndex:
+190C	<Paragraph>recomposeIn:clippingBox:
+190E	<Paragraph>toggleAlignment
+1910	<Paragraph>clearVisibleRectangle
+1912	<Paragraph>outline
+1914	<Paragraph>reverseFrom:to:
+1916	<Paragraph>displayCaretAt:
+1918	<Paragraph>fit
+191A	<Paragraph>updateCompositionHeight
+191C	<Paragraph>visibleRectangle
+191E	<Paragraph>repositionAt:clippingBox:
+1920	<Paragraph>displayCaretForBlock:
+1922	<Paragraph>dyForPoint:
+1924	<Paragraph>deltaMarginTabsLevel:
+1926	<Paragraph>reverseRectangle:
+1928	<Paragraph>characterBlockAtPoint:
+192A	<Paragraph>leftFlush
+192C	<Paragraph>compositionRectangle:
+192E	<Paragraph>displayLines:
+1932	<Paragraph>composeAll
+1934	<Paragraph>destinationForm:
+1936	<Paragraph>marginTabsLevel
+1938	<Paragraph>mask:
+193A	<Paragraph>rightMarginForDisplay
+193C	<Paragraph>marginTabsLevel:
+1940	<Paragraph>leftMarginForDisplayForLine:
+1944	<Paragraph>topAtLineIndex:
+1946	<Paragraph>lineAt:
+1948	<Paragraph>outputMedium:
+194A	<Paragraph>textAt:
+194C	<Paragraph>lines
+194E	<Paragraph>baseline
+1950	<Paragraph>rule:
+1952	<Paragraph>centered
+1954	<Paragraph>lines:
+1958	<Paragraph>copyLines:
+195A	<Paragraph>justified
+195C	<Paragraph>selectWord:
+1966	<Paragraph>rightFlush
+1968	<Paragraph>scrollBy:grid:
+196A	<Paragraph>compositionRectangleDelta
+196C	<Paragraph>removeFirstChars:
+1970	<Paragraph>lineAt:put:
+1972	<Paragraph>gridWithLead:
+1974	<Paragraph>text:
+1976	<Paragraph>trimLinesTo:
+1978	<Paragraph>mouseSelect:to:
+199A	<Delay class>untilMilliseconds:
+199E	<Delay class>forSeconds:
+19A2	<Delay class>postSnapshot
+19EC	<Delay class>preSnapshot
+19EE	<Delay class>testRelativeDelayOf:for:label:
+1A02	<TextCollector class>example
+1A08	<TextCollector class>newTranscript:
+1A24	<TextCollector>space
+1A26	<TextCollector>endEntry
+1A28	<TextCollector>print:
+1A2A	<TextCollector>beginEntry
+1A2C	<TextCollector>appendEntry
+1A2E	<TextCollector>characterLimit
+1A30	<TextCollector>refresh
+1A32	<TextCollector>nextEntry
+1A34	<TextCollector>cr
+1A36	<TextCollector>crtab:
+1A38	<TextCollector>clear
+1A3E	<TextCollector>nextPut:
+1A40	<TextCollector>crtab
+1A42	<TextCollector>tab
+1A44	<TextCollector>store:
+1A46	<TextCollector>nextPutAll:
+1A48	<TextCollector>show:
+1A4A	<TextCollector>next:put:
+1A4C	<TextCollector>initialize
+1A78	<RunArray class>readFrom:
+1A7C	<RunArray class>runs:values:
+1A80	<RunArray class>new
+1A82	<RunArray class>new:withAll:
+1A9A	<RunArray>copyFrom:to:
+1AA0	<RunArray>addFirst:
+1AA2	<RunArray>copyReplaceFrom:to:with:
+1AA4	<RunArray>runs
+1AA6	<RunArray>at:
+1AA8	<RunArray>runLengthAt:
+1AAA	<RunArray>,
+1AAC	<RunArray>at:setRunOffsetAndValue:
+1AB0	<RunArray>values
+1AB2	<RunArray>addLast:
+1AB6	<RunArray>writeOn:
+1ABA	<RunArray>size
+1ABC	<RunArray>storeOn:
+1AC2	<RunArray>setRuns:setValues:
+1ADE	<AltoFileAddressArray>at:
+1AE6	<AltoFileAddressArray>shortenTo:
+1AEA	<AltoFileAddressArray>directory:
+1AEC	<AltoFileAddressArray>addLast:
+1B18	<Delay class>testAbsoluteDelayOf:for:label:
+1B1A	<Delay class>howToUse
+1B1C	<Delay class>millisecondClockValue
+1B3C	<Time class>millisecondClockValue
+1B42	<Time class>dateAndTimeNow
+1B46	<Time class>timeWords
+1B72	<ByteArray>asString
+1B76	<ByteArray>defaultElement
+1B78	<ByteArray>wordAt:
+1B7A	<ByteArray>wordAt:put:
+1B7C	<ByteArray>doubleWordAt:
+1B7E	<ByteArray>primReplaceFrom:to:with:startingAt:
+1B80	<ByteArray>replaceFrom:to:withString:startingAt:
+1B82	<ByteArray>replaceFrom:to:with:startingAt:
+1B84	<ByteArray>packBits:into:
+1B86	<ByteArray>unpackBits:into:
+1B88	<ByteArray>packBits:startBit:into:
+1B8A	<ByteArray>doubleWordAt:put:
+1B9C	<Time class>fromSeconds:
+1BA0	<Time class>totalSeconds
+1BA4	<Time class>millisecondsToRun:
+1BA6	<Time class>secondClockInto:
+1BAA	<Time class>currentTime:
+1BD4	<Date class>daysInYear:
+1BD6	<Date class>newDay:month:year:
+1BE8	<Date class>nameOfDay:
+1BFE	<Date class>today
+1C00	<Date class>nameOfMonth:
+1C20	<Date class>leapYear:
+1C22	<Date class>newDay:year:
+1C24	<Date class>daysInMonth:forYear:
+1C28	<Date class>indexOfMonth:
+1C30	<Date class>dateAndTimeNow
+1C32	<Date class>fromDays:
+1C38	<Date class>readFrom:
+1C48	<Number class>readFrom:
+1CA2	<Number>raisedTo:
+1CA4	<Number>floorLog:
+1CA6	<Number>sin
+1CA8	<Number>rounded
+1CAA	<Number>cos
+1CAC	<Number>asInteger
+1CAE	<Number>asPoint
+1CB0	<Number>negated
+1CB2	<Number>rem:
+1CB4	<Number>quo:
+1CB6	<Number>truncated
+1CB8	<Number>to:
+1CBC	<Number>abs
+1CBE	<Number>radiansToDegrees
+1CC0	<Number>arcSin
+1CC2	<Number>sqrt
+1CC4	<Number>arcTan
+1CC6	<Number>strictlyPositive
+1CC8	<Number>exp
+1CCA	<Number>arcCos
+1CCC	<Number>log:
+1CCE	<Number>tan
+1CD0	<Number>squared
+1CD2	<Number>ln
+1CD4	<Number>raisedToInteger:
+1CD8	<Number>*
+1CDA	<Number>\\
+1CDC	<Number>/
+1CDE	<Number>roundTo:
+1CE0	<Number>//
+1CE2	<Number>+
+1CE4	<Number>floor
+1CE6	<Number>ceiling
+1CEA	<Number>@
+1CF0	<Number>to:by:
+1CF2	<Number>truncateTo:
+1CF4	<Number>to:by:do:
+1CF6	<Number>negative
+1CF8	<Number>odd
+1CFA	<Number>positive
+1CFC	<Number>generality
+1CFE	<Number>reciprocal
+1D02	<Number>coerce:
+1D04	<Number>retry:coercing:
+1D08	<Number>even
+1D0A	<Number>degreesToRadians
+1D0C	<Number>-
+1D0E	<Number>to:do:
+1D10	<Number>sign
+1D12	<Number>storeOn:
+1D20	<Fraction class>numerator:denominator:
+1D38	<Fraction>asFloat
+1D3A	<Fraction>truncated
+1D3C	<Fraction>+
+1D44	<Fraction>hash
+1D46	<Fraction>generality
+1D48	<Fraction>reciprocal
+1D4C	<Fraction>coerce:
+1D4E	<Fraction>=
+1D50	<Fraction>-
+1D52	<Fraction>setNumerator:denominator:
+1D56	<Fraction>asFraction
+1D58	<Fraction>reduced
+1D5C	<Fraction>denominator
+1D5E	<Fraction>numerator
+1D60	<Fraction><
+1D62	<Fraction>printOn:
+1D66	<Fraction>*
+1D68	<Fraction>negated
+1D6A	<Fraction>/
+1D98	<Integer class>readFrom:
+1D9A	<Integer class>new:neg:
+1DA8	<LargeNegativeInteger class>initialize
+1DCA	<LargeNegativeInteger>digitAt:put:
+1DCC	<LargeNegativeInteger>asObject
+1DD0	<LargeNegativeInteger>highBit
+1DD4	<LargeNegativeInteger>digitLength
+1DD6	<LargeNegativeInteger>truncated
+1DDC	<LargeNegativeInteger>digitAt:
+1DDE	<LargeNegativeInteger>negative
+1DE0	<LargeNegativeInteger>positive
+1DE2	<LargeNegativeInteger>abs
+1DE4	<LargeNegativeInteger>printOn:base:
+1DE6	<LargeNegativeInteger>negated
+1DFA	<Integer class>readFrom:radix:
+1E30	<Integer>asFloat
+1E36	<Integer>digitLogic:op:length:
+1E38	<Integer>digitLshift:bytes:lookfirst:
+1E3A	<Integer>lastDigit
+1E3C	<Integer>allMask:
+1E3E	<Integer>noMask:
+1E40	<Integer>storeStringRadix:
+1E46	<Integer>bitAnd:
+1E48	<Integer>bitOr:
+1E4A	<Integer>bitShift:
+1E4C	<Integer>rounded
+1E4E	<Integer>digitRshift:bytes:lookfirst:
+1E50	<Integer>lastDigitGet:
+1E52	<Integer>printOn:base:
+1E56	<Integer>growto:
+1E58	<Integer>isLiteral
+1E5A	<Integer>asInteger
+1E5C	<Integer>bitInvert
+1E5E	<Integer>digitCompare:
+1E60	<Integer>digitAdd:
+1E62	<Integer>asFraction
+1E64	<Integer><
+1E66	<Integer>denominator
+1E68	<Integer>numerator
+1E6A	<Integer><=
+1E6C	<Integer>>=
+1E6E	<Integer>>
+1E70	<Integer>quo:
+1E72	<Integer>digitSubtract:
+1E74	<Integer>digitMultiply:neg:
+1E76	<Integer>truncated
+1E78	<Integer>lcm:
+1E7A	<Integer>digitDiv:neg:
+1E7C	<Integer>factorial
+1E80	<Integer>gcd:
+1E82	<Integer>*
+1E84	<Integer>\\
+1E86	<Integer>/
+1E88	<Integer>bitXor:
+1E8A	<Integer>timesRepeat:
+1E8C	<Integer>//
+1E90	<Integer>+
+1E92	<Integer>floor
+1E94	<Integer>ceiling
+1E96	<Integer>generality
+1E98	<Integer>coerce:
+1E9A	<Integer>even
+1E9C	<Integer>-
+1E9E	<Integer>bitAt:
+1EA0	<Integer>printOn:
+1EA2	<Integer>~=
+1EA4	<Integer>highBit
+1EA6	<Integer>hash
+1EA8	<Integer>growby:
+1EAA	<Integer>anyBitTo:
+1EAE	<Integer>=
+1EB0	<Integer>copyto:
+1EB2	<Integer>isInteger
+1EB4	<Integer>anyMask:
+1EB6	<Integer>asCharacter
+1ECE	<Date class>initialize
+1EDE	<Date class>dayOfWeek:
+1F16	<Date>firstDayOfMonth
+1F18	<Date>daysInYear
+1F1A	<Date>daysLeftInYear
+1F1C	<Date>weekday
+1F1E	<Date>addDays:
+1F20	<Date>day
+1F22	<Date>previous:
+1F24	<Date>year
+1F26	<Date>leap
+1F28	<Date>printOn:format:
+1F2A	<Date>monthIndex
+1F2E	<Date>daysInMonth
+1F30	<Date><
+1F32	<Date>printOn:
+1F36	<Date>hash
+1F38	<Date>=
+1F3A	<Date>day:year:
+1F3C	<Date>subtractDate:
+1F3E	<Date>subtractDays:
+1F40	<Date>dayOfMonth
+1F42	<Date>monthName
+1F44	<Date>weekdayIndex
+1F46	<Date>asSeconds
+1F48	<Date>printFormat:
+1F4A	<Date>storeOn:
+1F50	<Date>firstDayOfMonthIndex:
+1F6C	<Time class>now
+1F6E	<Time class>millisecondClockInto:
+1F72	<Time class>readFrom:
+1F92	<Time>minutes
+1F94	<Time>addTime:
+1F96	<Time>subtractTime:
+1F98	<Time>hash
+1F9A	<Time>=
+1F9C	<Time>hours:minutes:seconds:
+1F9E	<Time>seconds
+1FA0	<Time>hours:
+1FA2	<Time>hours
+1FA4	<Time><
+1FA6	<Time>asSeconds
+1FA8	<Time>printOn:
+1FB2	<Time>storeOn:
+1FCC	<Delay class>initializeTimingProcess
+1FCE	<Delay class>initialize
+1FD0	<Delay class>forMilliseconds:
+1FE6	<Delay>postSnapshot
+1FEA	<Delay>preSnapshot
+1FF0	<Delay>delayInProgress:
+1FF2	<Delay>activate
+1FF8	<Delay>resumptionTime
+1FFA	<Delay>wait
+1FFC	<Delay>resumption:
+1FFE	<Delay>delay:
+2000	<Delay>disable
+2004	<Delay>setResumption
+200A	<Delay>reactivate
+200C	<Delay>resume
+2026	<Paragraph>lineGrid
+2028	<Paragraph>restIndent
+202A	<Paragraph>compositionRectangle
+202C	<Paragraph>numberOfLines
+202E	<Paragraph>lineIndexOfTop:
+2030	<Paragraph>clearIndents
+2032	<Paragraph>firstIndent:
+2034	<Paragraph>lineIndexOfCharacterIndex:
+2036	<Paragraph>restIndent:
+2038	<Paragraph>rightIndent:
+203A	<Paragraph>rightIndent
+203C	<Paragraph>firstIndent
+203E	<Paragraph>form
+2040	<Paragraph>asString
+2042	<Paragraph>replaceFrom:to:with:displaying:
+2050	<TextList class>initialize
+2086	<TextList class>onList:
+2096	<TextList>textAt:
+2098	<TextList>compositionRectangle:list:style:offset:outputMedium:
+209E	<TextList>lineAt:
+20E8	<PopUpMenu>selection
+20EA	<PopUpMenu>width
+20EC	<PopUpMenu>height
+20EE	<PopUpMenu>startUp
+20F0	<PopUpMenu>reset
+20F2	<PopUpMenu>displayAt:withHeading:during:
+213C	<StandardSystemController class>initialize
+2150	<StandardSystemController class>ScheduledBlueButtonMessages
+216C	<StandardSystemController>controlInitialize
+2172	<StandardSystemController>move
+2176	<StandardSystemController>controlTerminate
+217C	<StandardSystemController>expand
+2180	<StandardSystemController>collapse
+2182	<StandardSystemController>close
+2184	<StandardSystemController>closeAndUnschedule
+2186	<StandardSystemController>closeAndUnscheduleNoErase
+2188	<StandardSystemController>open
+218A	<StandardSystemController>openDisplayAt:
+218C	<StandardSystemController>under
+218E	<StandardSystemController>initializeBlueButtonMenu
+2190	<StandardSystemController>openNoTerminate
+2192	<StandardSystemController>openNoTerminateDisplayAt:
+2196	<StandardSystemController>menuMessageReceiver
+2198	<StandardSystemController>initialize
+219E	<StandardSystemController>isControlActive
+21AA	<NotifierController class>initialize
+21EA	<NotifierController>model:
+21FA	<NotifierController>initializeYellowButtonMenu
+21FC	<NotifierController>correct
+2200	<NotifierController>proceed
+2202	<NotifierController>debug
+2216	<Debugger class>interruptProcess:
+221A	<Debugger class>context:
+221C	<Debugger class>openFullViewOn:label:
+223C	<TextView class>on:aspect:change:menu:
+2254	<TextView>newText:
+225C	<TextView>getText
+225E	<TextView>accept:from:
+2262	<TextView>yellowButtonMenu
+2264	<TextView>display
+226E	<TextView>displayView
+2270	<TextView>update:
+2272	<TextView>updateRequest
+2278	<TextView>defaultControllerClass
+22BE	<ScrollController>controlInitialize
+22C4	<ScrollController>controlTerminate
+22C6	<ScrollController>markerDelta
+22C8	<ScrollController>computeMarkerRegion
+22CA	<ScrollController>viewDelta
+22CC	<ScrollController>scrollView:
+22CE	<ScrollController>canScroll
+22D0	<ScrollController>scrollBarContainsCursor
+22D2	<ScrollController>markerContainsCursor
+22D4	<ScrollController>changeCursor:
+22D6	<ScrollController>scrollDown
+22D8	<ScrollController>scrollAbsolute
+22DC	<ScrollController>scroll
+22DE	<ScrollController>markerRegion:
+22E0	<ScrollController>moveMarker
+22E2	<ScrollController>scrollViewDown
+22E4	<ScrollController>scrollViewUp
+22E6	<ScrollController>scrollUp
+22E8	<ScrollController>scrollView
+22EA	<ScrollController>moveMarker:
+22EC	<ScrollController>scrollAmount
+22EE	<ScrollController>isControlWanted
+22F0	<ScrollController>initialize
+22F2	<ScrollController>isControlActive
+22F4	<ScrollController>controlActivity
+235C	<ParagraphEditor>controlActivity
+235E	<ParagraphEditor>selectFrom:to:
+2360	<ParagraphEditor>controlInitialize
+2366	<ParagraphEditor>changeParagraph:
+2368	<ParagraphEditor>controlTerminate
+236A	<ParagraphEditor>align
+236C	<ParagraphEditor>normalCharacter:
+236E	<ParagraphEditor>enclose:
+2376	<ParagraphEditor>backspace:
+2378	<ParagraphEditor>displayIfTrue:
+237C	<ParagraphEditor>displayIfFalse:
+2380	<ParagraphEditor>paste:
+2382	<ParagraphEditor>changeEmphasis:
+238A	<ParagraphEditor>backWord:
+238C	<ParagraphEditor>leaveBrackets:
+2390	<ParagraphEditor>selectCurrentTypeIn:
+23A0	<ParagraphEditor>cut:
+23A2	<ParagraphEditor>displayDate:
+23A4	<ParagraphEditor>findAndSelect:
+23A8	<ParagraphEditor>selectAndScrollFrom:to:
+23AA	<ParagraphEditor>selection
+23AC	<ParagraphEditor>againOnce
+23BC	<ParagraphEditor>processRedButton
+23BE	<ParagraphEditor>processYellowButton
+23C0	<ParagraphEditor>deselect
+23C2	<ParagraphEditor>processBlueButton
+23C4	<ParagraphEditor>selectAndScroll
+23C6	<ParagraphEditor>emphasisDefault:keyedTo:
+23D0	<ParagraphEditor>scrollRectangleHeight
+23D2	<ParagraphEditor>flash
+23D4	<ParagraphEditor>processMouseButtons
+23D6	<ParagraphEditor>selectionAsStream
+23E6	<ReadStream class>on:from:to:
+2404	<PositionableStream>upTo:
+2406	<PositionableStream>reset
+2408	<PositionableStream>nextChunk
+240C	<PositionableStream>position
+240E	<PositionableStream>position:
+2410	<PositionableStream>on:
+2412	<PositionableStream>peekFor:
+2414	<PositionableStream>isEmpty
+2416	<PositionableStream>skip:
+2418	<PositionableStream>contents
+241A	<PositionableStream>atEnd
+2420	<PositionableStream>next:
+2422	<PositionableStream>skipTo:
+2424	<PositionableStream>skipSeparators
+2428	<PositionableStream>setToEnd
+242A	<PositionableStream>positionError
+242E	<PositionableStream>through:
+2432	<PositionableStream>peek
+2450	<ReadStream>nextPut:
+2452	<ReadStream>on:from:to:
+2454	<ReadStream>next
+2462	<ParagraphEditor>readKeyboard
+246A	<ParagraphEditor>closeTypeIn
+246C	<ParagraphEditor>updateMarker
+246E	<ParagraphEditor>processKeyboard
+2470	<ParagraphEditor>processKeyset
+2474	<ParagraphEditor>scrollBy:
+2476	<ParagraphEditor>setEmphasisHere
+2478	<ParagraphEditor>selectAt:
+247A	<ParagraphEditor>displayAt:clippingBox:rule:mask:
+247C	<ParagraphEditor>select
+247E	<ParagraphEditor>initializeSelection
+2480	<ParagraphEditor>recomputeSelection
+2482	<ParagraphEditor>reverseSelection
+2484	<ParagraphEditor>replaceSelectionWith:
+2486	<ParagraphEditor>scrollToTop
+2488	<ParagraphEditor>resetState
+248A	<ParagraphEditor>display
+248C	<ParagraphEditor>again
+248E	<ParagraphEditor>undo
+2490	<ParagraphEditor>copySelection
+2492	<ParagraphEditor>cut
+2494	<ParagraphEditor>paste
+2496	<ParagraphEditor>accept
+2498	<ParagraphEditor>cancel
+249A	<ParagraphEditor>initialize
+249C	<ParagraphEditor>text
+249E	<ParagraphEditor>fit
+24A0	<ParagraphEditor>markerDelta
+24A2	<ParagraphEditor>computeMarkerRegion
+24A4	<ParagraphEditor>viewDelta
+24A6	<ParagraphEditor>scrollView:
+24A8	<ParagraphEditor>canScroll
+24AA	<ParagraphEditor>scroll
+24AC	<ParagraphEditor>scrollAmount
+24AE	<ParagraphEditor>copy
+24B0	<ParagraphEditor>initializeYellowButtonMenu
+24DA	<ParagraphEditor>copySelection:
+24DC	<ParagraphEditor>isControlActive
+24E8	<StringHolderController class>initialize
+2538	<StringHolderController>replaceSelectionWith:
+253E	<StringHolderController>doIt
+2548	<StringHolderController>printIt
+254A	<StringHolderController>accept
+254C	<StringHolderController>cancel
+254E	<StringHolderController>model:
+2552	<StringHolderController>initializeYellowButtonMenu
+2554	<StringHolderController>turnLockingOn
+2556	<StringHolderController>turnLockingOff
+2558	<StringHolderController>isLockingOn
+255A	<StringHolderController>isLockingOff
+255C	<StringHolderController>lockModel
+255E	<StringHolderController>insertAndSelect:at:
+2562	<StringHolderController>unlockModel
+2564	<StringHolderController>afterSelectionInsertAndSelect:
+2566	<StringHolderController>initialize
+2572	<ProjectController class>initialize
+25C0	<ProjectController>enter
+25C2	<ProjectController>initializeYellowButtonMenu
+25EE	<TextCollectorController>selectWithoutComp:
+25F0	<TextCollectorController>changeText:
+25F2	<TextCollectorController>viewToTop
+25F4	<TextCollectorController>appendEntry
+2616	<ChangeController>accept
+263A	<FillInTheBlankController>accept
+2642	<FillInTheBlankController>controlTerminate
+2648	<FillInTheBlankController>resetState
+264A	<FillInTheBlankController>isControlActive
+264C	<FillInTheBlankController>isControlWanted
+2666	<CRFillInTheBlankController>cr:
+2668	<CRFillInTheBlankController>controlInitialize
+266A	<CRFillInTheBlankController>controlTerminate
+2670	<CRFillInTheBlankController>readKeyboard
+26D4	<ListController>scrollView:
+26DA	<ListController>isControlActive
+26E0	<ListController>redButtonActivity
+26E6	<ListController>scrollViewDown
+26E8	<ListController>scrollViewUp
+26EA	<ListController>changeModelSelection:
+26EC	<ListController>markerDelta
+26EE	<ListController>computeMarkerRegion
+26F0	<ListController>scrollAmount
+26F2	<ListController>viewDelta
+26F4	<ListController>canScroll
+270C	<SelectionInListController>yellowButtonActivity
+2714	<SelectionInListController>redButtonActivity
+2716	<SelectionInListController>isControlWanted
+273A	<LockedListController>feedbackResponseTest
+273C	<LockedListController>normalResponseTest
+273E	<LockedListController>controlActivity
+274E	<ChangeListController class>initialize
+279E	<ChangeListController>doThis
+27A0	<ChangeListController>removeItem
+27A2	<ChangeListController>browse
+27A4	<ChangeListController>restoreItem
+27A6	<ChangeListController>check
+27A8	<ChangeListController>checkWithSystem
+27AA	<ChangeListController>copyView
+27BA	<ChangeListView class>open
+27C0	<ChangeListView class>openSwitches:topView:at:model:
+27FA	<SwitchView>display
+27FC	<SwitchView>update:
+27FE	<SwitchView>defaultControllerClass
+281C	<SwitchController>isControlWanted
+281E	<SwitchController>controlInitialize
+2820	<SwitchController>controlTerminate
+2822	<SwitchController>cursor:
+2824	<SwitchController>addArgument:
+2826	<SwitchController>sendMessage
+2828	<SwitchController>selector:
+282A	<SwitchController>arguments:
+282C	<SwitchController>arguments
+282E	<SwitchController>selector
+2830	<SwitchController>initialize
+2836	<SwitchController>isControlActive
+2838	<SwitchController>controlActivity
+2850	<LockedSwitchController>isControlWanted
+2874	<IndicatorOnSwitchController>sendMessage
+2896	<SwitchView>defaultWindow
+2898	<SwitchView>window:
+289A	<SwitchView>deEmphasizeView
+289C	<SwitchView>displayView
+289E	<SwitchView>centerLabel
+28A0	<SwitchView>displayNormal
+28A2	<SwitchView>displayComplemented
+28A4	<SwitchView>key:
+28A6	<SwitchView>indicatorReverse
+28A8	<SwitchView>label:
+28AA	<SwitchView>label
+28AC	<SwitchView>release
+28AE	<SwitchView>selector:
+28B0	<SwitchView>arguments:
+28B2	<SwitchView>indicatorOnDuring:
+28B4	<SwitchView>arguments
+28B6	<SwitchView>displaySpecialComplemented
+28B8	<SwitchView>selector
+28BA	<SwitchView>displaySpecial
+28BC	<SwitchView>highlightForm:
+28BE	<SwitchView>initialize
+28C4	<SwitchView>containsKey:
+28C6	<SwitchView>interrogateModel
+28D4	<BooleanView class>on:aspect:label:change:value:
+28E4	<BooleanView>update:
+28EA	<BooleanView>interrogateModel
+291A	<ChangeListView class>recover
+291C	<ChangeListView class>openOn:
+293E	<StandardSystemView>resizeMinimumCenteredAt:
+2940	<StandardSystemView>defaultControllerClass
+2942	<StandardSystemView>minimumSize:
+2944	<StandardSystemView>deEmphasizeLabel
+2946	<StandardSystemView>labelFrame
+2948	<StandardSystemView>minimumSize
+294A	<StandardSystemView>getFrame
+294C	<StandardSystemView>labelFrame:
+294E	<StandardSystemView>maximumSize:
+2950	<StandardSystemView>reverseLabel
+2952	<StandardSystemView>clippingBox
+2954	<StandardSystemView>maximumSize
+2956	<StandardSystemView>emphasizeLabel
+2958	<StandardSystemView>deEmphasizeView
+295A	<StandardSystemView>expand
+295C	<StandardSystemView>collapse
+2960	<StandardSystemView>erase
+2962	<StandardSystemView>displayView
+2964	<StandardSystemView>release
+2966	<StandardSystemView>label:
+2968	<StandardSystemView>label
+296C	<StandardSystemView>containsPoint:
+296E	<StandardSystemView>displayEmphasized
+2970	<StandardSystemView>isCollapsed
+2972	<StandardSystemView>labelDisplayBox
+2974	<StandardSystemView>initialize
+2976	<StandardSystemView>resize
+29EE	<StringHolderView class>open
+29F6	<StringHolderView class>open:label:
+29F8	<StringHolderView class>container
+29FA	<StringHolderView class>openSystemWorkspace
+29FE	<StringHolderView class>open:
+2A02	<StringHolderView class>container:
+2A1C	<StringHolderView>editString:
+2A1E	<StringHolderView>displayContents
+2A20	<StringHolderView>display
+2A22	<StringHolderView>updateDisplayContents
+2A24	<StringHolderView>positionDisplayContents
+2A26	<StringHolderView>displayView
+2A28	<StringHolderView>getContents
+2A2A	<StringHolderView>paragraphInset
+2A2C	<StringHolderView>update:
+2A2E	<StringHolderView>model:
+2A30	<StringHolderView>defaultControllerClass
+2A32	<StringHolderView>updateRequest
+2A36	<StringHolderView>defaultController
+2A3A	<StringHolderView>deEmphasizeView
+2A3C	<StringHolderView>initialize
+2A4A	<TextCollectorView class>open
+2A4E	<TextCollectorView class>open:label:
+2A5E	<TextCollectorView>update:
+2A62	<TextCollectorView>defaultControllerClass
+2A64	<TextCollectorView>DoIt
+2A86	<FillInTheBlankView class>on:message:displayAt:centered:
+2A88	<FillInTheBlankView class>buildAnswerView:frameWidth:
+2A8A	<FillInTheBlankView class>buildMessageView:
+2AA0	<DisplayTextView class>example4
+2AA4	<DisplayTextView class>example2
+2AC2	<NoController>startUp
+2AC4	<NoController>isControlActive
+2AC6	<NoController>isControlWanted
+2AD4	<DisplayTextView class>example1
+2ADA	<DisplayTextView class>example3
+2AF4	<DisplayTextView>display
+2AF6	<DisplayTextView>displayView
+2AF8	<DisplayTextView>paragraphInset
+2AFA	<DisplayTextView>mask
+2AFC	<DisplayTextView>rule
+2AFE	<DisplayTextView>model:
+2B00	<DisplayTextView>defaultControllerClass
+2B02	<DisplayTextView>defaultWindow
+2B04	<DisplayTextView>window:
+2B06	<DisplayTextView>mask:
+2B08	<DisplayTextView>defaultController
+2B0A	<DisplayTextView>isCentered
+2B0C	<DisplayTextView>rule:
+2B0E	<DisplayTextView>centered
+2B10	<DisplayTextView>positionText
+2B12	<DisplayTextView>centerText
+2B14	<DisplayTextView>defaultRule
+2B16	<DisplayTextView>initialize
+2B18	<DisplayTextView>defaultMask
+2B1A	<DisplayTextView>deEmphasizeView
+2B30	<FillInTheBlankView class>on:message:displayAt:centered:useCRController:
+2B4E	<BinaryChoiceController>startUp
+2B52	<BinaryChoiceController>centerCursorInView
+2B54	<BinaryChoiceController>isControlActive
+2B62	<FillInTheBlankView class>openOn:message:displayAt:centered:
+2B72	<FillInTheBlankView>defaultControllerClass
+2B88	<ProjectView class>open
+2B98	<Project class>current
+2BAE	<ChangeSet class>superclassOrder:
+2BB2	<ChangeSet class>new
+2BF0	<ChangeSet>addDoIt:
+2BF2	<ChangeSet>fileOutOn:
+2C1E	<SystemOrganizer>superclassOrder:
+2C24	<SystemOrganizer>fileOutCategory:on:
+2C2C	<SystemOrganizer>fileOutCategory:
+2C4C	<FileDirectory class>addExternalReference:
+2C54	<FileDirectory class>directory:directoryName:
+2C58	<FileDirectory class>releaseExternalReferences
+2C5C	<FileDirectory class>directoryFromName:setFileName:
+2C5E	<FileDirectory class>removeExternalReference:
+2C60	<FileDirectory class>documentation
+2C62	<FileDirectory class>initialize
+2C64	<FileDirectory class>initializeExternalReferences
+2CB8	<FileDirectory>removeKey:
+2CBC	<FileDirectory>includesKey:
+2CBE	<FileDirectory>newPage
+2CC4	<FileDirectory>file:
+2CC8	<FileDirectory>reset
+2CCA	<FileDirectory>setDirectory:directoryName:
+2CCC	<FileDirectory>store:
+2CCE	<FileDirectory>add:
+2CD8	<FileDirectory>do:
+2CDA	<FileDirectory>initFileName:
+2CDE	<FileDirectory>listFilesOn:
+2CE0	<FileDirectory>checkNameOfFile:fixErrors:
+2CE2	<FileDirectory>retrieveFrom:copyTo:
+2CE6	<FileDirectory>directoryName
+2CE8	<FileDirectory>storeFrom:copyTo:
+2CEA	<FileDirectory>newFile:
+2CEC	<FileDirectory>initFile:
+2CEE	<FileDirectory>rename:newName:
+2CF0	<FileDirectory>findOrAdd:
+2CF2	<FileDirectory>allocate:after:
+2CF4	<FileDirectory>flush
+2CF6	<FileDirectory>deallocate:
+2CF8	<FileDirectory>versionNumbers
+2CFA	<FileDirectory>findKey:
+2CFE	<FileDirectory>checkNameOfFile:
+2D00	<FileDirectory>retrieve:
+2D02	<FileDirectory>addNew:
+2D04	<FileDirectory>removeOld:
+2D06	<FileDirectory>filesMatching:
+2D08	<FileDirectory>allocateSN:
+2D0A	<FileDirectory>freePages
+2D0C	<FileDirectory>fileClass
+2D0E	<FileDirectory>find:ifAbsentDo:
+2D12	<FileDirectory>remove:ifAbsentDo:
+2D14	<FileDirectory>fullName
+2D18	<FileDirectory>isLegalOldFileName:
+2D1A	<FileDirectory>oldFile:
+2D1C	<FileDirectory>closed
+2D1E	<FileDirectory>next
+2D20	<FileDirectory>find:
+2D22	<FileDirectory>checkName:fixErrors:
+2D28	<FileDirectory>includes:
+2D2A	<FileDirectory>isLegalFileName:
+2D2C	<FileDirectory>printOn:
+2D34	<FileDirectory>addKey:
+2D36	<FileDirectory>findOrAddKey:
+2D38	<FileDirectory>remove:
+2D3C	<FileDirectory>close
+2D3E	<FileDirectory>release
+2D40	<FileDirectory>open
+2D78	<AltoFileDirectory class>directory:directoryName:
+2D7C	<AltoFileDirectory class>new
+2D9C	<AltoFileDirectory>rename:newName:
+2DAA	<AltoFileDirectory>diskID
+2DB0	<AltoFileDirectory>configure:
+2DB2	<AltoFileDirectory>deleteEntry:
+2DB6	<AltoFileDirectory>diskNumber
+2DB8	<AltoFileDirectory>addEntry:
+2DBC	<AltoFileDirectory>fileSize:
+2DBE	<AltoFileDirectory>findFileOrHole:
+2DC0	<AltoFileDirectory>nextFile:
+2DC6	<AltoFileDirectory>allocate:after:
+2DDE	<AltoFileDirectory>flush
+2DE0	<AltoFileDirectory>deallocate:
+2DE6	<AltoFileDirectory>checkNameOfFile:
+2DE8	<AltoFileDirectory>addNew:
+2DF4	<AltoFileDirectory>removeOld:
+2DF8	<AltoFileDirectory>filesMatching:
+2E00	<AltoFileDirectory>allocateSN:
+2E02	<AltoFileDirectory>freePages
+2E04	<AltoFileDirectory>fileClass
+2E14	<File class>initialize
+2E1A	<File class>documentation
+2E58	<File>text
+2E5A	<File>error:
+2E66	<File>fileName
+2E68	<File>readWrite:
+2E6A	<File>readOrAdd:
+2E70	<File>read:
+2E72	<File>findLastPageNumber
+2E74	<File>doCommand:page:error:
+2E76	<File>errorString:
+2E78	<File>serialNumber
+2E7A	<File>readWrite
+2E7C	<File>size
+2E7E	<File>printOn:
+2E80	<File>error
+2E82	<File>pageClass
+2E84	<File>readOrAddPageNumber:
+2E86	<File>initPageNumber:
+2E8A	<File>readPageNumber:
+2E8C	<File>beSnapshotFile
+2E8E	<File>directory
+2E90	<File>sameAsStoredFile
+2E92	<File>initPage:
+2E94	<File>reopen
+2E96	<File>isBinary
+2E98	<File>isText
+2E9A	<File>fileName:
+2E9C	<File>characterSize
+2E9E	<File>pageNumberFrom:
+2EA0	<File>lastPageNumber
+2EA2	<File>release
+2EA4	<File>directory:
+2EA6	<File>reinitialize
+2EAA	<File>asFileStream
+2EB0	<File>write:
+2EB2	<File>match:
+2EB4	<File>close
+2EB6	<File>fullName
+2EB8	<File>rename:
+2EBA	<File>size:
+2EBC	<File>serialNumber:
+2EBE	<File>binary
+2EC0	<File>open
+2EC2	<File>endFile:
+2EF2	<AltoFile class>initialize
+2F5C	<AltoFile>sameAsStoredFile
+2F82	<ExternalStream>nextStringPut:
+2F84	<ExternalStream>padTo:
+2F86	<ExternalStream>nextString
+2F88	<ExternalStream>skipWords:
+2F8A	<ExternalStream>nextNumber:put:
+2F8E	<ExternalStream>nextNumber:
+2F90	<ExternalStream>next:
+2F92	<ExternalStream>padToNextWord
+2F94	<ExternalStream>wordPosition
+2F96	<ExternalStream>padToNextWordPut:
+2F98	<ExternalStream>padTo:put:
+2F9A	<ExternalStream>resetContents
+2F9C	<ExternalStream>nextWordPut:
+2F9E	<ExternalStream>nextWord
+2FA0	<ExternalStream>wordPosition:
+2FA2	<ExternalStream>nextSignedInteger
+2FB6	<AltoFile>readFromDirectory:
+2FB8	<AltoFile>close
+2FBA	<AltoFile>write:
+2FC4	<AltoFile>leader
+2FC6	<AltoFile>beSnapshotSerialNumber:leaderVirtualDiskAddr:
+2FC8	<AltoFile>pageAddresses:
+2FCA	<AltoFile>dskprim:address:command:page:semaphore:
+2FCC	<AltoFile>release
+2FCE	<AltoFile>reinitialize
+2FD0	<AltoFile>open
+2FD2	<AltoFile>readOrAdd:
+2FD4	<AltoFile>read:
+2FDA	<AltoFile>findLastPageNumber
+2FDE	<AltoFile>doCommand:page:error:
+2FE4	<AltoFile>errorString:
+3000	<AltoFile>leader:
+3002	<AltoFile>updateLeader:
+3006	<AltoFile>pageClass
+3016	<FilePage class>documentation
+3044	<FilePage>fromFileStream:
+3046	<FilePage>at:
+3048	<FilePage>at:put:
+304A	<FilePage>write
+304C	<FilePage>dataString
+304E	<FilePage>pageSize
+3050	<FilePage>pageWordAt:put:
+3052	<FilePage>pageWordAt:
+3054	<FilePage>trailerSize
+3056	<FilePage>dataIndex:size:
+305A	<FilePage>page:
+305C	<FilePage>headerSize
+305E	<FilePage>endFile
+3060	<FilePage>dataBeginning
+3062	<FilePage>dataEnd:
+3064	<FilePage>dataEnd
+3066	<FilePage>dataMaxEnd
+3068	<FilePage>allocatePage
+306A	<FilePage>serialNumber
+306C	<FilePage>readOrAddPageNumber:
+306E	<FilePage>readPageNumber:
+3070	<FilePage>reopen
+3072	<FilePage>isBinary
+3074	<FilePage>file:
+3076	<FilePage>isText
+3078	<FilePage>binary
+307A	<FilePage>wordAt:
+307C	<FilePage>wordAt:put:
+307E	<FilePage>asFileStream:
+3080	<FilePage>lastPage
+3082	<FilePage>pageNumber
+3084	<FilePage>pageNumber:
+3086	<FilePage>text
+3088	<FilePage>file:page:
+308A	<FilePage>file
+308C	<FilePage>size
+308E	<FilePage>headerWordAt:put:
+3090	<FilePage>isFull
+3092	<FilePage>isEmpty
+3094	<FilePage>address:
+3096	<FilePage>doCommand:error:
+3098	<FilePage>headerWordAt:
+309A	<FilePage>reinitialize
+309C	<FilePage>page
+309E	<FilePage>address
+30A0	<FilePage>serialNumber:
+30A2	<FilePage>size:
+30A4	<FilePage>dataSize
+30D4	<AltoFilePage>freePage
+30D6	<AltoFilePage>address:
+30D8	<AltoFilePage>reinitialize
+30DC	<AltoFilePage>lastPage
+30DE	<AltoFilePage>address
+30E0	<AltoFilePage>label
+30E2	<AltoFilePage>serialNumber:
+30E4	<AltoFilePage>pageNumber
+30E6	<AltoFilePage>pageNumber:
+30E8	<AltoFilePage>size:
+30EA	<AltoFilePage>serialNumber
+30EC	<AltoFilePage>headerSize
+30EE	<AltoFilePage>size
+3102	<AltoFile>endFile:
+3106	<AltoFile>writeTime
+3108	<AltoFile>beSnapshotFile
+310A	<AltoFile>storeOnDirectory:
+3122	<AltoFileDirectory>find:ifAbsentDo:
+3126	<AltoFileDirectory>remove:ifAbsentDo:
+3128	<AltoFileDirectory>checkName:fixErrors:
+3134	<AltoFileDirectory>checkName:
+3136	<AltoFileDirectory>reset
+3138	<AltoFileDirectory>close
+313A	<AltoFileDirectory>release
+313C	<AltoFileDirectory>virtualToReal:
+3158	<AltoFileDirectory>open
+315C	<AltoFileDirectory>realToVirtual:
+315E	<AltoFileDirectory>next
+31AA	<SystemOrganizer>printOutCategory:
+31AC	<SystemOrganizer>changeFromString:
+32E6	<ChangeSet>asSortedCollection
+32F4	<ChangeSet>addSelector:class:
+32F8	<ChangeSet>changeSelector:class:
+32FC	<ChangeSet>changeClass:
+32FE	<ChangeSet>removeSelector:class:
+3302	<ChangeSet>fileOutChangesFor:on:
+330E	<ChangeSet>commentClass:
+3312	<ChangeSet>changedClasses
+3314	<ChangeSet>fileOutClassChanges:on:
+3324	<ChangeSet>removeClassChanges:
+3326	<ChangeSet>removeClass:
+3328	<ChangeSet>classNamed:
+332C	<ChangeSet>atSelector:class:put:
+333A	<IdentityDictionary>noCheckAdd:
+333C	<IdentityDictionary>setTally
+333E	<IdentityDictionary>associationAt:ifAbsent:
+3340	<IdentityDictionary>keyAtValue:ifAbsent:
+3342	<IdentityDictionary>at:put:
+3344	<IdentityDictionary>at:ifAbsent:
+3346	<IdentityDictionary>removeKey:ifAbsent:
+3348	<IdentityDictionary>associationsDo:
+334A	<IdentityDictionary>copy
+334C	<IdentityDictionary>add:
+334E	<IdentityDictionary>do:
+3350	<IdentityDictionary>noCheckAdd:with:
+3352	<IdentityDictionary>removeDangerouslyKey:ifAbsent:
+3354	<IdentityDictionary>swap:with:
+3356	<IdentityDictionary>findKeyOrNil:
+336C	<ChangeSet>atSelector:class:
+3370	<ChangeSet>removeSelectorChanges:class:
+3372	<ChangeSet>oldNameFor:
+3384	<Scanner class>isLiteralSymbol:
+33B0	<Scanner class>new
+33B6	<Scanner class>initialize
+33EA	<Scanner>on:
+33EC	<Scanner>xBinary
+33F2	<Scanner>xDelimiter
+33F4	<Scanner>xDoubleQuote
+33F8	<Scanner>xLitQuote
+3404	<Scanner>xDollar
+3408	<Scanner>xSingleQuote
+340C	<Scanner>scanLitWord
+340E	<Scanner>scan:
+3410	<Scanner>xDigit
+3412	<Scanner>scanLitVec
+3414	<Scanner>scanFieldNames:
+3416	<Scanner>xLetter
+3418	<Scanner>scanToken
+341C	<Scanner>step
+341E	<Scanner>offEnd:
+3420	<Scanner>notify:
+3422	<Scanner>initScanner
+3424	<Scanner>scanTokens:
+347E	<Parser>notify:
+3480	<Parser>match:
+3482	<Parser>blockExpression
+348A	<Parser>pattern:inContext:
+3496	<Parser>addComment
+349A	<Parser>notify:at:
+349E	<Parser>method:context:
+34B6	<ParseNode class>initialize
+357A	<ParseNode>comment
+357C	<ParseNode>comment:
+357E	<ParseNode>printOn:
+3584	<ParseNode>emitForReturn:on:
+3588	<ParseNode>isReturningIf
+358A	<ParseNode>printCommentOn:indent:
+358C	<ParseNode>nextWordFrom:setCharacter:
+358E	<ParseNode>printSingleComment:on:indent:
+3594	<ParseNode>asReturnNode
+35B6	<ReturnNode>emitForReturn:on:
+35B8	<ReturnNode>emitForValue:on:
+35BA	<ReturnNode>asReturnNode
+35BC	<ReturnNode>printOn:indent:
+35BE	<ReturnNode>expr:
+35C0	<ReturnNode>isReturnSelf
+35EE	<LeafNode>key
+35F0	<LeafNode>sizeForEffect:
+35F2	<LeafNode>key:code:
+35F4	<LeafNode>reserve:
+35F8	<LeafNode>emitLong:on:
+35FC	<LeafNode>emitForEffect:on:
+35FE	<LeafNode>name:key:code:
+3600	<LeafNode>code:type:
+3602	<LeafNode>name:key:index:type:
+3604	<LeafNode>size:
+3606	<LeafNode>key:index:type:
+3608	<LeafNode>sizeForValue:
+360A	<LeafNode>code
+3622	<LiteralNode>printOn:indent:
+3624	<LiteralNode>emitForValue:on:
+3650	<SelectorNode>printOn:indent:
+3652	<SelectorNode>size:args:super:
+3654	<SelectorNode>emit:args:on:
+3656	<SelectorNode>emit:args:on:super:
+367E	<VariableNode class>initialize
+36CC	<Encoder>autoBind:
+36D4	<Encoder>encodeVariable:
+36D6	<Encoder>lookupInPools:ifFound:
+36DC	<Encoder>literals:nArgs:
+36DE	<Encoder>name:key:class:type:set:
+36E0	<Encoder>encodeLiteral:
+36E4	<Encoder>init:context:notifying:
+36FA	<MessageNode class>initialize
+3762	<MessageNode>emitForValue:on:
+376C	<MessageNode>transform:
+376E	<MessageNode>transformIfTrue:
+37A4	<BlockNode>isJust:
+37A6	<BlockNode>sizeForEvaluatedEffect:
+37A8	<BlockNode>sizeForEvaluatedValue:
+37AA	<BlockNode>returns
+37AC	<BlockNode>isQuick
+37AE	<BlockNode>arguments:statements:returns:from:sourceEnd:
+37B8	<BlockNode>emitForEvaluatedValue:on:
+37BA	<BlockNode>emitForEvaluatedEffect:on:
+37BC	<BlockNode>emitExceptLast:on:
+37BE	<BlockNode>emitForValue:on:
+37D8	<ParseStack>init
+37DA	<ParseStack>position
+37DC	<ParseStack>max:
+37DE	<ParseStack>push:
+37E0	<ParseStack>size
+37E2	<ParseStack>pop:
+37FC	<BlockNode>sizeExceptLast:
+37FE	<BlockNode>printArgumentsOn:indent:
+3802	<BlockNode>printStatementsOn:indent:
+3804	<BlockNode>isComplex
+3806	<BlockNode>numberOfArguments
+3808	<BlockNode>returnSelfIfNoOther
+380A	<BlockNode>returnLast
+380C	<BlockNode>default
+380E	<BlockNode>pc
+3810	<BlockNode>sizeForValue:
+3816	<BlockNode>code
+3818	<BlockNode>printOn:indent:
+381A	<BlockNode>arguments:
+381C	<BlockNode>statements:returns:
+381E	<BlockNode>canBeSpecialArgument
+383E	<MessageNode>transformIfFalse:
+3840	<MessageNode>transformIfTrueIfFalse:
+3846	<MessageNode>transformIfFalseIfTrue:
+384C	<MessageNode>transformAnd:
+3856	<MessageNode>transformOr:
+3860	<MessageNode>transformWhile:
+3864	<MessageNode>pc
+3866	<MessageNode>emitIf:on:value:
+3868	<MessageNode>sizeForValue:
+386A	<MessageNode>emitWhile:on:value:
+386C	<MessageNode>sizeIf:value:
+386E	<MessageNode>sizeWhile:value:
+3870	<MessageNode>isReturningIf
+3872	<MessageNode>cascadeReceiver
+3874	<MessageNode>checkBlock:as:from:
+387E	<MessageNode>receiver:selector:arguments:precedence:from:sourceRange:
+3880	<MessageNode>isTemp
+3882	<MessageNode>printKeywords:arguments:on:indent:
+3886	<MessageNode>printIfOn:indent:
+3888	<MessageNode>precedence
+388A	<MessageNode>receiver:arguments:precedence:
+388C	<MessageNode>transformBoolean:
+3890	<MessageNode>store:from:
+3898	<MessageNode>receiver:selector:arguments:precedence:
+389A	<MessageNode>printOn:indent:
+389C	<MessageNode>sizeForEffect:
+389E	<MessageNode>canCascade
+38A0	<MessageNode>emitForEffect:on:
+38A2	<MessageNode>printOn:indent:precedence:
+38A8	<MessageNode>receiver:selector:arguments:precedence:from:
+38D2	<Encoder>undeclared:
+38E8	<Encoder>sourceMap:
+38EA	<Encoder>noteSourceRange:forNode:
+38EC	<Encoder>reallyBindTemp:
+38EE	<Encoder>associationForClass
+38F0	<Encoder>declareClassVar:
+38FA	<Encoder>declareCorrect:
+3906	<Encoder>declareTemp:
+3908	<Encoder>tempNames
+390A	<Encoder>declareFailed:
+390C	<Encoder>declareUndeclared:
+3918	<Encoder>supered
+391A	<Encoder>declareGlobal:
+391E	<Encoder>notify:
+3920	<Encoder>maxTemp
+3922	<Encoder>noteSuper
+3924	<Encoder>newTemp:
+3926	<Encoder>associationFor:
+3928	<Encoder>nTemps:literals:class:
+392A	<Encoder>cantStoreInto:
+3944	<Encoder>fillDict:with:mapping:to:
+3946	<Encoder>abort
+3948	<Encoder>global:name:
+394A	<Encoder>initScopeAndLiteralTables
+3966	<LiteralDictionary>findKeyOrNil:
+3A14	<Encoder>encodeSelector:
+3A16	<Encoder>release
+3A18	<Encoder>bindTemp:
+3A1C	<Encoder>litIndex:
+3A60	<VariableNode class>initialize2:
+3A82	<VariableNode>emitForReturn:on:
+3A84	<VariableNode>emitForValue:on:
+3A86	<VariableNode>printOn:indent:
+3A88	<VariableNode>isTemp
+3A8A	<VariableNode>sizeForStorePop:
+3A8C	<VariableNode>isArg:
+3A8E	<VariableNode>name:key:code:
+3A90	<VariableNode>isVariableReference
+3A92	<VariableNode>name:index:type:
+3A94	<VariableNode>name:key:index:type:
+3A96	<VariableNode>canBeSpecialArgument
+3A98	<VariableNode>isArg
+3A9A	<VariableNode>sizeForReturn:
+3A9C	<VariableNode>emitStorePop:on:
+3A9E	<VariableNode>emitStore:on:
+3AA0	<VariableNode>sizeForStore:
+3AB4	<ReturnNode>isVariableReference
+3AB6	<ReturnNode>pc
+3AB8	<ReturnNode>expr:encoder:sourceRange:
+3ABA	<ReturnNode>sizeForValue:
+3ABC	<ReturnNode>code
+3ABE	<ReturnNode>sizeForReturn:
+3AD0	<ParseNode>printOn:indent:
+3AD4	<ParseNode>emitTrueBranch:pop:on:
+3AD6	<ParseNode>encodeSelector:
+3AD8	<ParseNode>sizeForEffect:
+3ADA	<ParseNode>emitBranch:pop:on:
+3ADC	<ParseNode>emitJump:on:
+3ADE	<ParseNode>emitShortOrLong:code:on:
+3AE0	<ParseNode>sizeShortOrLong:
+3AE2	<ParseNode>isReturnSelf
+3AE4	<ParseNode>canCascade
+3AE6	<ParseNode>emitForEffect:on:
+3AE8	<ParseNode>emitLongJump:on:
+3AEA	<ParseNode>isVariableReference
+3AEC	<ParseNode>sizeJump:
+3AEE	<ParseNode>printOn:indent:precedence:
+3AF0	<ParseNode>sizeBranch:
+3AF2	<ParseNode>emitLong:code:on:
+3AF6	<ParseNode>canBeSpecialArgument
+3AF8	<ParseNode>isArg
+3AFA	<ParseNode>sizeForReturn:
+3B16	<AssignmentNode>emitForEffect:on:
+3B18	<AssignmentNode>emitForValue:on:
+3B1A	<AssignmentNode>printOn:indent:precedence:
+3B20	<AssignmentNode>variable:value:
+3B22	<AssignmentNode>sizeForValue:
+3B24	<AssignmentNode>printOn:indent:
+3B28	<AssignmentNode>variable:value:from:
+3B2A	<AssignmentNode>sizeForEffect:
+3B54	<CascadeNode>sizeForValue:
+3B56	<CascadeNode>printOn:indent:
+3B58	<CascadeNode>receiver:messages:
+3B5A	<CascadeNode>emitForValue:on:
+3BA6	<DecompilerConstructor>codeThisContext
+3BA8	<DecompilerConstructor>codeSelector:code:
+3BAA	<DecompilerConstructor>codeAnyLiteral:
+3BAC	<DecompilerConstructor>codeInst:
+3BAE	<DecompilerConstructor>codeAnyLitInd:
+3BB0	<DecompilerConstructor>codeSuper
+3BB2	<DecompilerConstructor>codeAnySelector:
+3BB4	<DecompilerConstructor>codeMethod:block:tempVars:primitive:class:
+3BBE	<DecompilerConstructor>codeAssignTo:value:
+3BC2	<DecompilerConstructor>codeArguments:block:
+3BC4	<DecompilerConstructor>codeBlock:returns:
+3BC6	<DecompilerConstructor>method:class:literals:
+3BC8	<DecompilerConstructor>codeConstants
+3BCA	<DecompilerConstructor>codeTemp:
+3BCE	<DecompilerConstructor>codeMessage:selector:arguments:
+3BD0	<DecompilerConstructor>codeCascadedMessage:arguments:
+3BD2	<DecompilerConstructor>codeCascade:messages:
+3BD6	<DecompilerConstructor>codeEmptyBlock
+3C1A	<MethodNode>generateNoQuick
+3C1E	<MethodNode>generate:
+3C36	<MethodNode>sourceMap
+3C3C	<MethodNode>decompileString
+3C3E	<MethodNode>generateIfQuick:
+3C44	<MethodNode>printOn:
+3C4C	<MethodNode>selector:arguments:precedence:temporaries:block:encoder:primitive:
+3C4E	<MethodNode>tempNames
+3C50	<MethodNode>selector
+3C70	<Parser>parse:class:noPattern:context:notifying:ifFail:
+3C74	<Parser>startOfNextToken
+3C76	<Parser>abort
+3C78	<Parser>init:notifying:failBlock:
+3C7A	<Parser>expected:
+3C7E	<Parser>argumentName
+3C82	<Parser>matchToken:
+3C84	<Parser>parseArgsAndTemps:notifying:
+3C88	<Parser>statements:innerBlock:
+3C92	<Parser>endOfLastToken
+3C94	<Parser>primitive
+3C9C	<Parser>pasteTemp:
+3CA4	<Parser>replaceEditSelectionWith:
+3CA6	<Parser>selectVariable:
+3CA8	<Parser>bareEndOfLastToken
+3CAA	<Parser>makeNewSymbol:startingAt:
+3CC0	<Parser>editor
+3CC2	<Parser>parseSelector:
+3CC4	<Parser>temporaries
+3CCA	<Parser>bindTemp:
+3CCC	<Parser>assignment
+3CD4	<Parser>expression
+3CD6	<Parser>advance
+3CD8	<Parser>offEnd:
+3CDA	<Parser>parseMethodComment:setPattern:
+3CDC	<Parser>primaryExpression
+3CE2	<Parser>initPattern:notifying:return:
+3CE4	<Parser>cascade
+3CEC	<Parser>messagePart:repeat:
+3D20	<ChangeScanner class>new
+3D46	<ChangeScanner>nextChunkStream
+3D48	<ChangeScanner>initChangeScanner
+3D4A	<ChangeScanner>scanClassExpression:do:
+3D5E	<Change class>file:position:
+3D78	<Change>className
+3D7C	<Change>text
+3D7E	<Change>fileIn
+3D96	<Compiler class>evaluate:logged:
+3D98	<Compiler class>evaluate:
+3D9A	<Compiler class>evaluate:for:logged:
+3D9C	<Compiler class>evaluate:for:notifying:logged:
+3D9E	<Compiler class>evaluate:notifying:logged:
+3DA0	<Compiler class>preferredParserClass
+3DBC	<Compiler>evaluate:in:to:notifying:ifFail:
+3DC8	<Compiler>notify:at:
+3DD6	<SyntaxError class>errorInClass:withCode:errorString:
+3DE6	<ProcessHandle class>on:at:interrupted:
+3E04	<ProcessHandle>resumeProcess
+3E0A	<ProcessHandle>proceedValue:
+3E0C	<ProcessHandle>process:controller:interrupted:resumeContext:
+3E0E	<ProcessHandle>terminate
+3E10	<ProcessHandle>proceed
+3E12	<ProcessHandle>topContext
+3E14	<ProcessHandle>topContext:
+3E16	<ProcessHandle>interrupted:
+3E18	<ProcessHandle>release
+3E1A	<ProcessHandle>proceedValue
+3E1C	<ProcessHandle>interrupted
+3E3C	<SyntaxError class>flushMenus
+3E70	<SyntaxError>text
+3E72	<SyntaxError>doItValue:
+3E74	<SyntaxError>proceed
+3E76	<SyntaxError>doItContext
+3E78	<SyntaxError>doItReceiver
+3E7A	<SyntaxError>removeDependent:
+3E7C	<SyntaxError>setClass:code:processHandle:
+3E7E	<SyntaxError>acceptText:from:
+3E84	<SyntaxError>textMenu
+3EA0	<Compiler>editor
+3EA2	<Compiler>compile:in:notifying:ifFail:
+3EA4	<Compiler>format:noPattern:ifFail:
+3EA8	<Compiler>from:class:context:notifying:
+3EAA	<Compiler>translate:noPattern:ifFail:
+3EAC	<Compiler>format:in:notifying:
+3EAE	<Compiler>parse:in:notifying:
+3EC6	<Change>text:
+3EC8	<Change>name
+3ECA	<Change>file:position:
+3ECC	<Change>values
+3ECE	<Change>fileName
+3ED2	<Change>category
+3ED6	<Change>classObject
+3ED8	<Change>parameters
+3EDA	<Change>fileOutOn:previous:next:
+3EDC	<Change>defaultName:
+3EE0	<Change>file
+3EE2	<Change>fileOutOn:
+3EE4	<Change>checkWith:
+3EE6	<Change>selector
+3EF6	<ClassRelatedChange>parameters
+3EF8	<ClassRelatedChange>className:
+3EFA	<ClassRelatedChange>className
+3EFC	<ClassRelatedChange>getSource
+3EFE	<ClassRelatedChange>classObject
+3F32	<ClassDefinitionChange>checkWith:
+3F34	<ClassDefinitionChange>text
+3F38	<ClassDefinitionChange>name
+3F3C	<ClassDefinitionChange>superclassName:classType:otherParameters:
+3F68	<ClassOtherChange>checkWith:
+3F6C	<ClassOtherChange>type:
+3F6E	<ClassOtherChange>type
+3F70	<ClassOtherChange>name
+3F80	<ClassCommentChange class>new
+3F90	<ClassCommentChange>text
+3F96	<ClassCommentChange>checkWith:
+3FC6	<MethodChange>parameters
+3FC8	<MethodChange>category:
+3FCA	<MethodChange>selector
+3FCC	<MethodChange>selector:
+3FCE	<MethodChange>category
+3FEE	<MethodDefinitionChange>text
+3FF8	<MethodDefinitionChange>fileIn
+4004	<MethodDefinitionChange>name
+4008	<MethodDefinitionChange>fileName
+400C	<MethodDefinitionChange>sourceFileAndPosition:
+4012	<MethodDefinitionChange>isInSystem
+4014	<MethodDefinitionChange>fileOutHeaderOn:
+4018	<MethodDefinitionChange>accept:notifying:
+401C	<MethodDefinitionChange>fileOutOn:previous:next:
+401E	<MethodDefinitionChange>getSource
+4020	<MethodDefinitionChange>checkWith:
+4022	<MethodDefinitionChange>fileOutOn:
+4062	<OtherChange>parameters
+4064	<OtherChange>checkWith:
+406C	<OtherChange>text:
+406E	<OtherChange>text
+4072	<OtherChange>name
+40BC	<MethodOtherChange>checkWith:
+40BE	<MethodOtherChange>type:
+40C0	<MethodOtherChange>type
+40C2	<MethodOtherChange>name
+40F0	<ChangeScanner>nextSelector
+40F2	<ChangeScanner>scanChangedMessages:do:
+40FA	<ChangeScanner>scanSpecialDo:
+40FE	<ChangeScanner>nextClass
+4104	<ChangeScanner>scanClassDefinition:className:do:
+4110	<ChangeScanner>scanMethodsClass:category:do:
+4112	<ChangeScanner>scanExpression:do:
+4114	<ChangeScanner>scanFile:do:
+414E	<ChangeSet>reorganizeClass:
+4150	<ChangeSet>renameClass:as:
+4156	<ChangeSet>addClass:
+4158	<ChangeSet>changedMessageList
+415E	<ChangeSet>atClass:add:
+4160	<ChangeSet>atClass:includes:
+4162	<ChangeSet>isNew:
+4166	<ChangeSet>reorganizeSystem
+4168	<ChangeSet>isEmpty
+416A	<ChangeSet>initialize
+41B6	<Project class>new
+41BC	<Project class>initialize
+41D2	<Project>setProjectHolder:
+41D6	<Project>initialProject
+41D8	<Project>noChanges
+41DC	<Project>enter
+41DE	<Project>exit
+41E0	<Project>removeDependent:
+41E2	<Project>release
+41E4	<Project>isUnlocked
+41E6	<Project>isLocked
+41FE	<ProjectView class>open:
+4210	<ProjectView>defaultControllerClass
+4214	<ProjectView>release
+4230	<ChangeListView class>example
+4248	<ChangeListView>model:
+424C	<ChangeListView>defaultControllerClass
+4250	<ChangeListView>selectionIndex:
+4254	<ChangeListView>selectionInterval
+4256	<ChangeListView>selectionBoxOffset:
+4258	<ChangeListView>deselect
+425A	<ChangeListView>displaySelectionBox
+425C	<ChangeListView>release
+425E	<ChangeListView>reverseRemoved
+4260	<ChangeListView>selectionBox:
+426C	<ChangeListController>checkWithSystem:
+4270	<ChangeListController>initialize
+4272	<ChangeListController>getFile:withPrompt:do:
+4278	<ChangeListController>changeLabel
+427A	<ChangeListController>doFrom:
+427C	<ChangeListController>scrollView:
+427E	<ChangeListController>fileIn
+4282	<ChangeListController>changeModelSelection:
+4284	<ChangeListController>initializeYellowButtonMenu
+4286	<ChangeListController>removeAll
+4288	<ChangeListController>fileOut
+428C	<ChangeListController>recover
+428E	<ChangeListController>getChanges
+4290	<ChangeListController>doAll
+4292	<ChangeListController>restoreAll
+4294	<ChangeListController>forget
+42CE	<ParagraphEditor class>new
+42D2	<ParagraphEditor class>initialize
+42DE	<ParagraphEditor class>newParagraph:
+42FC	<TextController>wrappingBox:clippingBox:
+42FE	<TextController>textHasChanged
+4300	<TextController>insertAndSelect:at:
+4304	<TextController>paragraph
+4306	<TextController>accept
+4308	<TextController>yellowButtonActivity
+430A	<TextController>localMenuItem:
+432A	<CodeController>miniFormat
+432E	<CodeController>format
+4336	<CodeController>explain
+4346	<Explainer class>initialize
+4372	<Explainer>explainInst:
+4380	<Explainer>explainTemp:
+438C	<Explainer>explainNumber:
+4396	<Explainer>explainMySel:
+43AA	<Explainer>explainClass:
+43C2	<Explainer>explainDelimitor:
+43D2	<Explainer>explainAnySel:
+43DE	<Explainer>explainCtxt:
+4402	<Explainer>explainScan:
+4404	<Explainer>explainChar:
+442E	<Explainer>explainPartSel:
+4446	<Explainer>explainGlobal:
+4510	<Behavior>compiledMethodAt:
+4512	<Behavior>includesSelector:
+4514	<Behavior>new:
+4516	<Behavior>whichSelectorsAccess:
+451E	<Behavior>recompile:from:
+4522	<Behavior>sourceCodeForMethod:at:
+4526	<Behavior>allSubclasses
+4528	<Behavior>sourceCodeAt:
+452A	<Behavior>sourceCodeTemplate
+452E	<Behavior>printHierarchy
+4532	<Behavior>showVariableMenu:collect:
+4534	<Behavior>allAccessesTo:
+4538	<Behavior>allCallsOn:
+453E	<Behavior>browseAllCallsOn:
+4546	<Behavior>subclasses
+4548	<Behavior>instSize
+454A	<Behavior>subclassDefinerClass
+454C	<Behavior>compileAllFrom:
+454E	<Behavior>new
+4550	<Behavior>browseAllAccessesTo:
+4552	<Behavior>checkSuperAddSelector:
+4558	<Behavior>hasMultipleSuperclasses
+455A	<Behavior>updateInheritanceTables:
+4574	<Behavior>insertClass:selector:in:
+4576	<Behavior>allDynamicSuperclasses
+4578	<Behavior>whichSelectorsReferTo:special:byte:
+4580	<Behavior>compoundSelectorsMatching:
+4586	<Behavior>dynamicMethodDescriptionAt:
+4598	<MethodDescription class>makeConflictingMethods
+459E	<MethodDescription class>makeMethodNotImplemented
+45A2	<MethodDescription class>whichClass:selector:
+45BC	<MethodDescription>selector
+45BE	<MethodDescription>setWhichClass:setSelector:
+45C0	<MethodDescription>method
+45C2	<MethodDescription>sourceCode
+45C4	<MethodDescription>isBad
+45C6	<MethodDescription>whichClass
+45C8	<MethodDescription>isConflictingMethods
+45CA	<MethodDescription>isMethodNotImplemented
+45CC	<MethodDescription>setStatus:
+45CE	<MethodDescription>=
+45D0	<MethodDescription>printOn:
+45EA	<Behavior>dynamicSuperclass
+45EC	<Behavior>superMethodDescriptionAt:
+45EE	<Behavior>removeFromInheritanceTables
+45F0	<Behavior>methodDescriptionAt:
+45F2	<Behavior>tryCopyingCodeFor:
+4600	<Behavior>compileUnchecked:
+4604	<Behavior>isVariable
+4606	<Behavior>checkChangeSelector:
+460C	<Behavior>checkMethodFor:
+4610	<Behavior>compileBroadcastCodeFor:
+4618	<Behavior>poolHas:ifTrue:
+461A	<Behavior>copyMethods
+461E	<Behavior>recompile:
+4620	<Behavior>allSelectors
+4622	<Behavior>parserClass
+4624	<Behavior>format:variable:words:pointers:
+4626	<Behavior>allClassVarNames
+4628	<Behavior>basicNew:
+462A	<Behavior>allSharedPools
+462C	<Behavior>crossReference
+462E	<Behavior>superclass:
+4632	<Behavior>kindOfSubclass
+463C	<Behavior>someInstance
+463E	<Behavior>printOn:
+4642	<Behavior>canUnderstand:
+4644	<Behavior>printMethodChunk:on:moveSource:toFile:
+4648	<Behavior>methodDictionary:
+464A	<Behavior>decompile:
+464E	<Behavior>hasMethods
+4650	<Behavior>compile:notifying:trailer:
+4652	<Behavior>allSuperclasses
+4654	<Behavior>isFixed
+4656	<Behavior>compile:notifying:trailer:ifFail:
+4658	<Behavior>allInstances
+465A	<Behavior>isPointers
+465C	<Behavior>decompilerClass
+466A	<InstructionStream class>initialize
+4672	<InstructionStream class>on:
+4698	<InstructionStream>addFieldIndexTo:
+469A	<InstructionStream>willReturn
+469C	<InstructionStream>nextByte
+469E	<InstructionStream>interpretNextInstructionFor:
+46C2	<InstructionStream>willStorePop
+46C4	<InstructionStream>willSend
+46C6	<InstructionStream>followingByte
+46C8	<InstructionStream>method
+46CA	<InstructionStream>interpretJump
+46CC	<InstructionStream>interpretExtension:in:for:
+46E0	<InstructionStream>addSelectorTo:
+46E2	<InstructionStream>pc
+46E4	<InstructionStream>method:pc:
+46E6	<InstructionStream>scanFor:
+4700	<ContextPart class>trace:
+4706	<ContextPart class>initPrimitives
+4712	<Object>tryPrimitive0
+4716	<Object>tryPrimitive1:
+4718	<Object>tryPrimitive2:with:
+471A	<Object>tryPrimitive3:with:with:
+471C	<Object>tryPrimitive4:with:with:with:
+471E	<ContextPart class>tallyMethods:
+4720	<ContextPart class>tallyInstructions:
+4722	<ContextPart class>runSimulated:
+474E	<ContextPart>runSimulated:contextAtEachStep:
+4756	<ContextPart>depthBelow:
+4758	<ContextPart>top
+475A	<ContextPart>method
+475C	<ContextPart>blockCopy:
+4764	<ContextPart>sender
+4766	<ContextPart>push:
+4768	<ContextPart>releaseTo:
+476A	<ContextPart>tryPrimitiveFor:receiver:args:
+4772	<ContextPart>swapSender:
+4774	<ContextPart>activateMethod:withArgs:receiver:class:
+477A	<ContextPart>send:to:with:super:
+4780	<ContextPart>return:to:
+4782	<ContextPart>singleRelease
+4784	<ContextPart>shortStack
+4786	<ContextPart>pop
+4788	<ContextPart>hasSender:
+478A	<ContextPart>doPrimitive:receiver:args:
+478E	<ContextPart>stack
+4790	<ContextPart>stackOfSize:
+4792	<ContextPart>mclass
+4794	<ContextPart>completeCallee:
+4796	<ContextPart>stepToSendOrReturn
+4798	<ContextPart>home
+479A	<ContextPart>tempAt:
+479C	<ContextPart>tempAt:put:
+479E	<ContextPart>pushReceiverVariable:
+47A0	<ContextPart>pushTemporaryVariable:
+47A2	<ContextPart>pushConstant:
+47A4	<ContextPart>pushLiteralVariable:
+47A6	<ContextPart>popIntoTemporaryVariable:
+47A8	<ContextPart>pc
+47AA	<ContextPart>tempNames
+47AE	<ContextPart>sourceCode
+47B0	<ContextPart>popIntoReceiverVariable:
+47B2	<ContextPart>pushReceiver
+47B4	<ContextPart>methodReturnReceiver
+47B6	<ContextPart>printOn:
+47C0	<ContextPart>methodReturnConstant:
+47C2	<ContextPart>methodReturnTop
+47C4	<ContextPart>send:super:numArgs:
+47C8	<ContextPart>receiver
+47CA	<ContextPart>jump:
+47CC	<ContextPart>jump:if:
+47D0	<ContextPart>storeIntoReceiverVariable:
+47D2	<ContextPart>storeIntoTemporaryVariable:
+47D4	<ContextPart>storeIntoLiteralVariable:
+47D6	<ContextPart>popIntoLiteralVariable:
+47D8	<ContextPart>doPop
+47DA	<ContextPart>doDup
+47DC	<ContextPart>pushActiveContext
+47DE	<ContextPart>release
+47E0	<ContextPart>step
+47E2	<ContextPart>selector
+4812	<InstructionPrinter>storeIntoReceiverVariable:
+4816	<InstructionPrinter>storeIntoTemporaryVariable:
+481A	<InstructionPrinter>print:
+481C	<InstructionPrinter>storeIntoLiteralVariable:
+4820	<InstructionPrinter>popIntoLiteralVariable:
+4824	<InstructionPrinter>doPop
+4828	<InstructionPrinter>doDup
+482C	<InstructionPrinter>pushActiveContext
+4830	<InstructionPrinter>printInstructionsOn:
+4834	<InstructionPrinter>pushReceiverVariable:
+4838	<InstructionPrinter>pushTemporaryVariable:
+483C	<InstructionPrinter>pushConstant:
+4840	<InstructionPrinter>pushLiteralVariable:
+4844	<InstructionPrinter>popIntoTemporaryVariable:
+4848	<InstructionPrinter>popIntoReceiverVariable:
+484C	<InstructionPrinter>pushReceiver
+4850	<InstructionPrinter>methodReturnReceiver
+4854	<InstructionPrinter>methodReturnConstant:
+4858	<InstructionPrinter>methodReturnTop
+485C	<InstructionPrinter>blockReturnTop
+4860	<InstructionPrinter>jump:
+4864	<InstructionPrinter>jump:if:
+486A	<InstructionPrinter>send:super:numArgs:
+4898	<Decompiler class>initialize
+48C4	<Decompiler>decompile:in:method:
+48C6	<Decompiler>decompile:in:
+48C8	<Decompiler>pushReceiverVariable:
+48CA	<Decompiler>pushTemporaryVariable:
+48CC	<Decompiler>pushConstant:
+48CE	<Decompiler>pushLiteralVariable:
+48D0	<Decompiler>popIntoTemporaryVariable:
+48D2	<Decompiler>popIntoReceiverVariable:
+48D4	<Decompiler>pushReceiver
+48D6	<Decompiler>methodReturnReceiver
+48D8	<Decompiler>methodReturnConstant:
+48DA	<Decompiler>blockTo:
+48DC	<Decompiler>initSymbols:
+48E0	<Decompiler>quickMethod
+48E8	<Decompiler>decompile:in:method:using:
+48EE	<Decompiler>doStore:
+48F0	<Decompiler>checkForBlock:
+48F2	<Decompiler>statementsTo:
+48F4	<Decompiler>methodReturnTop
+48F6	<Decompiler>blockReturnTop
+48F8	<Decompiler>jump:
+48FA	<Decompiler>jump:if:
+48FC	<Decompiler>send:super:numArgs:
+48FE	<Decompiler>storeIntoReceiverVariable:
+4900	<Decompiler>storeIntoTemporaryVariable:
+4902	<Decompiler>storeIntoLiteralVariable:
+4904	<Decompiler>popIntoLiteralVariable:
+4906	<Decompiler>doPop
+4908	<Decompiler>doDup
+490A	<Decompiler>pushActiveContext
+490C	<Decompiler>popTo:
+4936	<Behavior>compileAllSubclasses
+4938	<Behavior>subclassInstVarNames
+493A	<Behavior>copy
+493C	<Behavior>instanceCount
+493E	<Behavior>scopeHas:ifTrue:
+4940	<Behavior>allInstancesDo:
+4942	<Behavior>addSelectorUnchecked:withMethod:
+4944	<Behavior>whichSelectorsReferTo:
+4946	<Behavior>compileAll
+4948	<Behavior>allSubInstancesDo:
+494A	<Behavior>allInstVarNames
+494C	<Behavior>flushCache
+494E	<Behavior>inheritsFrom:
+4950	<Behavior>isBytes
+4952	<Behavior>isBits
+4954	<Behavior>selectors
+4956	<Behavior>selectorAtMethod:setClass:
+4958	<Behavior>removeSelectorUnchecked:
+495A	<Behavior>sourceTextAt:
+495C	<Behavior>defaultSelectorForMethod:
+4962	<Behavior>obsolete
+4966	<Behavior>allVarNamesSelect:
+4968	<Behavior>allSubclassesDo:
+496A	<Behavior>removeSelector:
+496C	<Behavior>removeSubclass:
+496E	<Behavior>addSubclass:
+4972	<Behavior>whichClassIncludesSelector:
+4974	<Behavior>allSuperclassesInto:
+4976	<Behavior>sourceMethodAt:
+4978	<Behavior>superclasses
+497E	<Behavior>conflictCodeFor:
+4982	<Behavior>printSubclassesOn:callingSuperclass:level:
+4988	<Behavior>removeFromInheritanceTable:
+498A	<Behavior>unmovedVarsFrom:
+498C	<Behavior>updateInheritanceTable:oldSelf:
+498E	<Behavior>compileConflictCodeFor:
+4992	<Behavior>accumulateInstVarNames:traversedClasses:
+4994	<Behavior>removeClass:selector:in:
+4996	<Behavior>isWords
+4998	<Behavior>format
+499A	<Behavior>compilerClass
+499C	<Behavior>evaluatorClass
+499E	<Behavior>withAllSuperclasses
+49A0	<Behavior>instVarNames
+49A6	<Behavior>basicNew
+49A8	<Behavior>classVarNames
+49AA	<Behavior>superclass
+49AC	<Behavior>sharedPools
+49AE	<Behavior>addSelector:withMethod:
+49B0	<Behavior>removeSelectorSimply:
+49B2	<Behavior>withAllSubclasses
+49F6	<ClassDescription>subclassOf:oldClass:instanceVariableNames:variable:words:pointers:ifBad:
+49FE	<ClassDescription>fileOutChangedMessages:on:
+4A00	<ClassDescription>comment
+4A06	<ClassDescription>fileOutCategory:
+4A0C	<ClassDescription>printOutCategory:
+4A0E	<ClassDescription>definition
+4A20	<ClassDescription>organization
+4A22	<ClassDescription>fileOutOrganizationOn:
+4A26	<ClassDescription>reorganize
+4A28	<ClassDescription>fileOutOn:moveSource:toFile:
+4A2C	<ClassDescription>fileOutOn:
+4A2E	<ClassDescription>isMeta
+4A30	<ClassDescription>removeSelector:
+4A36	<ClassDescription>instVarNames
+4A3A	<ClassDescription>compile:classified:notifying:
+4A42	<ClassDescription>comment:
+4A48	<ClassDescription>category
+4A4A	<ClassDescription>kindOfSubclass
+4A54	<ClassDescription>printMethodChunk:on:moveSource:toFile:
+4A56	<ClassDescription>printOn:
+4A58	<ClassDescription>commentTemplate
+4A5C	<ClassDescription>validateFrom:in:instanceVariableNames:methods:
+4A68	<ClassDescription>methodsFor:
+4A76	<ClassCategoryReader class>class:category:
+4A88	<ClassCategoryReader>setClass:category:
+4A8A	<ClassCategoryReader>scanFrom:
+4AA0	<ClassDescription>copyCategory:from:
+4AA2	<ClassDescription>copyAll:from:classified:
+4AA4	<ClassDescription>copyAll:from:
+4AA6	<ClassDescription>fileOutCategory:on:moveSource:toFile:
+4AAA	<ClassDescription>addInstVarName:
+4AAC	<ClassDescription>removeInstVarName:
+4AAE	<ClassDescription>copyAllCategoriesFrom:
+4AB0	<ClassDescription>copyCategory:from:classified:
+4AB2	<ClassDescription>updateInstancesFrom:
+4AB4	<ClassDescription>copy:from:
+4AB6	<ClassDescription>superclassesString
+4AB8	<ClassDescription>fileOutMessage:on:moveSource:toFile:
+4ABE	<ClassDescription>fileOutMessage:fileName:
+4AC0	<ClassDescription>fileOutMessage:
+4AC6	<ClassDescription>printOutMessage:
+4AC8	<ClassDescription>moveChangesTo:
+4ACC	<ClassDescription>copy:from:classified:
+4AD2	<ClassDescription>fileOutChangedMessages:on:moveSource:toFile:
+4AD8	<ClassDescription>printCategoryChunk:on:
+4ADE	<ClassDescription>errorCategoryName
+4AE2	<ClassDescription>classVariablesString
+4AE4	<ClassDescription>instanceVariablesString
+4AE6	<ClassDescription>name
+4AE8	<ClassDescription>category:
+4AEA	<ClassDescription>removeCategory:
+4AEE	<ClassDescription>compile:notifying:trailer:ifFail:
+4AF0	<ClassDescription>whichCategoryIncludesSelector:
+4AF2	<ClassDescription>obsolete
+4AF4	<ClassDescription>logOrganizationChange
+4AF8	<ClassDescription>compile:classified:
+4AFA	<ClassDescription>storeOn:
+4AFC	<ClassDescription>sharedPoolsString
+4B42	<Explainer>explain:for:
+4B4A	<Explainer>class:selector:instance:context:methodText:
+4B6C	<CodeController>doIt
+4B6E	<CodeController>printIt
+4B70	<CodeController>localMenuItem:
+4B76	<CodeController>DoIt
+4B8E	<OnlyWhenSelectedCodeController>isControlWanted
+4BAC	<AlwaysAcceptCodeController>accept
+4BCE	<TextView>emphasizeView
+4BD0	<TextView>deEmphasizeView
+4BD2	<TextView>on:aspect:change:menu:
+4BD4	<TextView>initialize
+4BF2	<CodeView class>on:aspect:change:menu:initialSelection:
+4C04	<CodeView>update:
+4C08	<CodeView>defaultControllerClass
+4C0A	<CodeView>newText:
+4C0C	<CodeView>initialSelection:
+4C1A	<OnlyWhenSelectedCodeView class>on:aspect:change:menu:initialSelection:selection:
+4C2C	<OnlyWhenSelectedCodeView>isSelected
+4C2E	<OnlyWhenSelectedCodeView>defaultControllerClass
+4C32	<OnlyWhenSelectedCodeView>selectionMsg:
+4C5A	<Debugger class>initialize
+4C60	<Debugger class>flushMenus
+4CAC	<Debugger>resumeProcess
+4CAE	<Debugger>fullStack
+4CB0	<Debugger>text
+4CB2	<Debugger>restart
+4CB4	<Debugger>pcRange
+4CB6	<Debugger>send
+4CB8	<Debugger>context:
+4CBC	<Debugger>process:context:interrupted:
+4CBE	<Debugger>computeSourceMap
+4CC0	<Debugger>revertBlock
+4CC4	<Debugger>resetContext:
+4CC6	<Debugger>updateInspectors
+4CC8	<Debugger>contextList
+4CCA	<Debugger>contextMenu
+4CD2	<Debugger>spawn:
+4CF4	<MethodListBrowser>on:
+4CF6	<MethodListBrowser>removeMethod
+4CF8	<MethodListBrowser>methodName:
+4CFE	<MethodListBrowser>methodMenu
+4D02	<MethodListBrowser>methodName
+4D04	<MethodListBrowser>methodList
+4D06	<MethodListBrowser>acceptText:from:
+4D1E	<Debugger>checkContextSelection
+4D20	<Debugger>spawnEdits:from:
+4D22	<Debugger>openInspectors
+4D2E	<Inspector class>inspect:
+4D30	<Inspector class>flushMenus
+4D96	<Inspector>textMenu
+4D9A	<Inspector>printItems
+4D9C	<Inspector>field
+4D9E	<Inspector>field:
+4DA0	<Inspector>fieldList
+4DA4	<Inspector>fieldMenu
+4DA6	<Inspector>object
+4DA8	<Inspector>evaluateText:from:ifFail:
+4DAA	<Inspector>fieldIndex
+4DAC	<Inspector>fieldValue
+4DB0	<Inspector>text
+4DB2	<Inspector>doItValue:
+4DB4	<Inspector>doItContext
+4DB6	<Inspector>doItReceiver
+4DB8	<Inspector>inspectField
+4DBA	<Inspector>inspect:
+4DBC	<Inspector>update
+4DBE	<Inspector>acceptText:from:
+4DCA	<DictionaryInspector class>flushMenus
+4DF6	<DictionaryInspector class>example
+4E06	<DictionaryInspector>printItems
+4E08	<DictionaryInspector>fieldList
+4E0A	<DictionaryInspector>fieldMenu
+4E16	<DictionaryInspector>insertAndSelect:at:
+4E18	<DictionaryInspector>fieldValue
+4E1A	<DictionaryInspector>browseReferences
+4E1C	<DictionaryInspector>addField
+4E24	<DictionaryInspector>acceptText:from:
+4E26	<DictionaryInspector>removeField
+4E54	<ContextInspector>fieldList
+4E56	<ContextInspector>fieldMenu
+4E5C	<ContextInspector>fieldIndex
+4E5E	<ContextInspector>fieldValue
+4E62	<ContextInspector>doItContext
+4E64	<ContextInspector>doItReceiver
+4E66	<ContextInspector>acceptText:from:
+4E6A	<ContextInspector>inspect:
+4E90	<Debugger>selectedClass
+4E92	<Debugger>context
+4E94	<Debugger>acceptText:from:
+4E9C	<Debugger>proceed
+4E9E	<Debugger>receiverInspector
+4EA0	<Debugger>removeDependent:
+4EA2	<Debugger>release
+4EA6	<Debugger>contextInspector
+4EA8	<Debugger>step
+4EAA	<Debugger>doItValue:
+4EAC	<Debugger>interruptedContext
+4EAE	<Debugger>doItContext
+4EB0	<Debugger>doItReceiver
+4EB2	<Debugger>correct:
+4EDC	<NotifierController>initialize
+4F04	<ScreenController class>initialize
+4F4C	<ScreenController>initialize
+4F50	<ScreenController>centerCursorInView
+4F52	<ScreenController>initializeYellowButtonMenu
+4F54	<ScreenController>openSystemWorkspace
+4F56	<ScreenController>restoreDisplay
+4F58	<ScreenController>exitProject
+4F5A	<ScreenController>openProject
+4F5C	<ScreenController>openFileList
+4F70	<FileModel class>open:named:
+4F72	<FileModel class>open:named:withController:
+4F74	<FileModel class>flushMenus
+4F78	<FileModel class>fileStream:
+4F92	<FileModel>fileItIn:from:
+4F94	<FileModel>getNew:from:
+4F96	<FileModel>setFileName:
+4F98	<FileModel>fileInFile
+4F9C	<FileModel>text
+4FA6	<FileModel>doItValue:
+4FA8	<FileModel>doItContext
+4FAA	<FileModel>doItReceiver
+4FAC	<FileModel>acceptText:from:
+4FB2	<FileModel>setFileStream:
+4FB4	<FileModel>textMenu
+4FD6	<FileList class>open
+4FF2	<FileList class>openOnFileNames:label:
+4FF8	<FileList class>flushMenus
+5058	<FileList>getFile
+505A	<FileList>copyName
+505C	<FileList>renameFile
+5076	<BinaryChoice class>message:
+5078	<BinaryChoice class>message:displayAt:centered:ifTrue:ifFalse:
+5088	<BinaryChoiceView class>openOn:message:displayAt:centered:
+50A6	<BinaryChoiceView class>buildSwitchesFor:width:
+50BC	<BinaryChoiceView>defaultControllerClass
+50CC	<BinaryChoice class>message:displayAt:ifFalse:
+50CE	<BinaryChoice class>message:displayAt:ifTrue:
+50D0	<BinaryChoice class>message:displayAt:ifTrue:ifFalse:
+50D2	<BinaryChoice class>example
+50E6	<BinaryChoice>actionTaken
+50E8	<BinaryChoice>selectTrue
+50EA	<BinaryChoice>selectFalse
+50EC	<BinaryChoice>active
+50EE	<BinaryChoice>initialize
+50F0	<BinaryChoice>trueAction:
+50F2	<BinaryChoice>falseAction:
+5108	<FileList>deleteFile
+510C	<FileList>list:
+510E	<FileList>text
+5112	<FileList>isSelected
+5114	<FileList>fileName:
+5116	<FileList>filesMatching:
+5118	<FileList>pattern
+511A	<FileList>acceptPattern:from:
+5120	<FileList>fileName
+5122	<FileList>patternMenu
+5126	<FileList>fileNameList
+5128	<FileList>fileListMenu
+512C	<FileList>isLegalFileName:
+5144	<ScreenController>openBrowser
+5146	<ScreenController>openWorkspace
+5148	<ScreenController>openTranscript
+514E	<ScreenController>save
+5154	<ScreenController>quit
+515A	<ScreenController>isControlActive
+515C	<ScreenController>isControlWanted
+5186	<FormEditor class>flashCursor:
+518C	<FormEditor class>newForm
+518E	<FormEditor class>initialize
+51BA	<FormEditor class>openOnForm:
+51BC	<FormEditor class>openOnForm:at:
+51BE	<FormEditor class>createOnForm:
+51CC	<FormView class>exampleOne
+51CE	<FormView class>exampleTwo
+51E2	<FormView>displayView
+51E6	<FormView>accept
+51E8	<FormView>cancel
+51EA	<FormView>mask
+51EC	<FormView>changeValueAt:put:
+51EE	<FormView>update:
+51F0	<FormView>defaultControllerClass
+51F4	<FormView>defaultWindow
+51F6	<FormView>rule
+51F8	<FormView>mask:
+51FA	<FormView>rule:
+51FC	<FormView>defaultRule
+51FE	<FormView>defaultMask
+5228	<FormHolderView>model:
+522A	<FormHolderView>updateDisplay
+522C	<FormHolderView>workingForm
+522E	<FormHolderView>accept
+5230	<FormHolderView>cancel
+5232	<FormHolderView>release
+5234	<FormHolderView>displayView
+5236	<FormHolderView>changeValueAt:put:
+5252	<FormMenuView class>initialize
+52BE	<FormButtonCache>form:
+52C0	<FormButtonCache>form
+52C2	<FormButtonCache>offset:
+52C4	<FormButtonCache>offset
+52C6	<FormButtonCache>value:
+52C8	<FormButtonCache>initialState:
+52CA	<FormButtonCache>initialState
+52CC	<FormButtonCache>value
+53E6	<FormMenuView>makeGridSwitch:
+53F6	<Switch class>newOn
+53FC	<Switch class>new
+53FE	<Switch class>newOff
+541E	<Switch>isOn
+5420	<Switch>initializeOff
+5422	<Switch>onAction:
+5424	<Switch>offAction:
+5426	<Switch>isOff
+5428	<Switch>turnOff
+542A	<Switch>doAction:
+542C	<Switch>set
+542E	<Switch>turnOn
+5430	<Switch>removeDependent:
+5432	<Switch>release
+5434	<Switch>clear
+5436	<Switch>switch
+5438	<Switch>initializeOn
+5458	<OneOnSwitch>update:
+545A	<OneOnSwitch>connection
+545C	<OneOnSwitch>isConnectionSet
+545E	<OneOnSwitch>notifyConnection
+5460	<OneOnSwitch>connection:
+5462	<OneOnSwitch>release
+5466	<OneOnSwitch>turnOn
+5482	<Button class>newOn
+5492	<Button>turnOn
+5494	<Button>turnOff
+54BA	<FormMenuView>defaultControllerClass
+54D4	<FormMenuController>isControlWanted
+54D6	<FormMenuController>processMenuKey
+54D8	<FormMenuController>isControlActive
+54DA	<FormMenuController>controlActivity
+54E8	<FormMenuView>makeConnections:
+54EA	<FormMenuView>makeFormEditorMenu
+54EC	<FormMenuView>makeButton:
+54F2	<FormMenuView>makeSwitch:
+54F4	<FormMenuView>makeViews:for:
+54F6	<FormMenuView>makeColorConnections:
+54F8	<FormMenuView>subViewContainingCharacter:
+550C	<FormEditor class>openFullScreenForm
+550E	<FormEditor class>setKeyboardMap
+5564	<FormEditor class>formFromDisplay
+5566	<FormEditor class>newFormAtOrigin
+5568	<FormEditor class>createFullScreenForm
+556A	<FormEditor class>fullScreen
+55B2	<FormEditor>promptRequest:
+55B6	<FormEditor>curve
+55B8	<FormEditor>controlInitialize
+55BA	<FormEditor>line
+55BC	<FormEditor>toolMenu:
+55BE	<FormEditor>controlTerminate
+55C0	<FormEditor>overMode
+55C2	<FormEditor>rubberBandCurve:to:until:
+55C4	<FormEditor>colorWhite
+55C6	<FormEditor>colorBlack
+55C8	<FormEditor>setVariables
+55CA	<FormEditor>block
+55CC	<FormEditor>singleCopy
+55CE	<FormEditor>reverseMode
+55D0	<FormEditor>dragForm
+55D4	<FormEditor>selectTool:
+55D6	<FormEditor>togglexGridding
+55D8	<FormEditor>underMode
+55DA	<FormEditor>colorGray
+55DC	<FormEditor>toggleyGridding
+55DE	<FormEditor>newSourceForm
+55E0	<FormEditor>eraseMode
+55E2	<FormEditor>colorLightGray
+55E4	<FormEditor>fileInForm
+55EA	<FormEditor>changeGridding
+55F4	<FormEditor>fileOutForm
+55FC	<FormEditor>colorDarkGray
+55FE	<FormEditor>magnify
+5604	<FormEditor>changeTool:
+5608	<FormEditor>trackFormUntil:
+560A	<FormEditor>redButtonActivity
+560C	<FormEditor>cursorPoint
+560E	<FormEditor>isControlWanted
+5610	<FormEditor>initialize
+5612	<FormEditor>accept
+5614	<FormEditor>cancel
+5616	<FormEditor>release
+5618	<FormEditor>initializeYellowButtonMenu
+561A	<FormEditor>normalizeColor:
+561C	<FormEditor>rubberBandFrom:until:
+561E	<FormEditor>repeatCopy
+5620	<FormEditor>isControlActive
+5622	<FormEditor>controlActivity
+5674	<BitEditor class>locateMagnifiedView:scale:
+5676	<BitEditor class>openScreenViewOnForm:at:magnifiedAt:scale:
+5678	<BitEditor class>openOnForm:
+567A	<BitEditor class>bitEdit:at:scale:remoteView:
+5690	<OpaqueForm class>example
+5692	<OpaqueForm class>figure:shape:
+5696	<OpaqueForm class>shape:
+5698	<OpaqueForm class>makeStar
+56AA	<OpaqueForm>computeBoundingBox
+56AC	<OpaqueForm>bitEdit
+56AE	<OpaqueForm>valueAt:
+56B0	<OpaqueForm>setFigure:shape:
+56B2	<OpaqueForm>valueAt:put:
+56B4	<OpaqueForm>copyBits:from:at:clippingBox:rule:mask:
+56B6	<OpaqueForm>figure
+56B8	<OpaqueForm>shape
+56BA	<OpaqueForm>deepCopy
+56BC	<OpaqueForm>offset
+56BE	<OpaqueForm>displayOn:transformation:clippingBox:align:with:rule:mask:
+56C0	<OpaqueForm>displayOn:at:clippingBox:rule:mask:
+56C2	<OpaqueForm>storeOn:
+56DA	<BitEditor class>magnifyWithSmall
+56DC	<BitEditor class>magnifyOnScreen
+56DE	<BitEditor class>openOnForm:at:scale:
+56E0	<BitEditor class>openOnForm:at:
+56E2	<BitEditor class>buildColorMenu:colorCount:
+56EC	<BitEditor class>initialize
+5720	<BitEditor>setColor:
+5722	<BitEditor>controlInitialize
+5726	<BitEditor>controlTerminate
+5728	<BitEditor>accept
+572A	<BitEditor>cancel
+572C	<BitEditor>release
+572E	<BitEditor>initializeYellowButtonMenu
+5730	<BitEditor>view:
+5732	<BitEditor>initialize
+5734	<BitEditor>isControlActive
+5736	<BitEditor>controlActivity
+5754	<Form>valueAt:
+5760	<Form>copy:from:in:rule:
+5762	<Form>fromDisplay:
+5764	<Form>valueAt:put:
+5766	<Form>borderWidth:mask:
+5768	<Form>edit
+576A	<Form>editAt:
+576C	<Form>writeOn:
+576E	<Form>nextLifeGeneration
+5774	<Form>convexShapeFill:
+5778	<Form>magnifyBy:
+577A	<Form>scanLineStringAt:
+577E	<Form>setExtent:fromCompactArray:setOffset:
+5782	<Form>extent:offset:
+5784	<Form>bitEditAt:
+5786	<Form>spread:from:by:spacing:direction:
+578A	<Form>setExtent:fromArray:setOffset:
+578C	<Form>bits:
+578E	<Form>shapeFill:interiorPoint:
+5790	<Form>shrinkBy:
+5792	<Form>bitEditAt:scale:
+57C4	<StrikeFont>glyphs:
+57C6	<StrikeFont>xTable
+57C8	<StrikeFont>emphasized:named:
+57CA	<StrikeFont>minAscii
+57CC	<StrikeFont>glyphs
+57CE	<StrikeFont>stopConditions
+57D0	<StrikeFont>widthOf:
+57D2	<StrikeFont>familySizeFace
+57E0	<StrikeFont>ascent
+57E2	<StrikeFont>maxAscii
+57E4	<StrikeFont>subscript:
+57E6	<StrikeFont>superscript:
+57E8	<StrikeFont>name:
+57EA	<StrikeFont>emphasized:
+57EC	<StrikeFont>ascent:
+57EE	<StrikeFont>descent
+57F0	<StrikeFont>checkCharacter:
+57F2	<StrikeFont>characterForm:
+57F4	<StrikeFont>composeWord:in:beginningAt:
+57F6	<StrikeFont>printOn:
+57FC	<StrikeFont>characters:in:displayAt:clippedBy:rule:mask:
+5800	<StrikeFont>emphasis
+5802	<StrikeFont>emphasis:
+5804	<StrikeFont>raster
+5806	<StrikeFont>maxWidth
+5808	<StrikeFont>superscript
+580A	<StrikeFont>subscript
+580C	<StrikeFont>height
+580E	<StrikeFont>name
+5920	<TextStyle class>fontArray:
+5954	<TextStyle>leftMarginTabAt:
+5956	<TextStyle>rightMarginTabAt:
+5958	<TextStyle>defaultFont
+595A	<TextStyle>outputMedium
+595C	<TextStyle>newFontArray:
+595E	<TextStyle>unSubscriptedFontFor:
+5960	<TextStyle>unSuperscriptedFontFor:
+5962	<TextStyle>isFontBoldItalic:
+5964	<TextStyle>isFontItalic:
+5966	<TextStyle>isFontBold:
+5968	<TextStyle>fontNamed:
+596A	<TextStyle>flushFonts
+5970	<TextStyle>marginTabAt:side:
+5972	<TextStyle>fontAt:put:
+5974	<TextStyle>fontFor:face:
+5976	<TextStyle>lineGrid:
+5978	<TextStyle>baseline:
+597A	<TextStyle>fontArray
+597C	<TextStyle>boldItalicFontFor:
+597E	<TextStyle>subscriptedFontFor:
+5980	<TextStyle>isFontSubscripted:
+5982	<TextStyle>superscriptedFontFor:
+5984	<TextStyle>isFontSuperscripted:
+5986	<TextStyle>nextTabXFrom:leftMargin:rightMargin:
+5988	<TextStyle>descent
+598A	<TextStyle>nestingDepth
+598C	<TextStyle>alignment
+598E	<TextStyle>underlinedFontFor:
+5990	<TextStyle>isFontUnderlined:
+5992	<TextStyle>tabWidth
+5994	<TextStyle>baseline
+5996	<TextStyle>lineGrid
+5998	<TextStyle>outputMedium:
+599A	<TextStyle>alignment:
+599C	<TextStyle>gridForFont:withLead:
+599E	<TextStyle>unUnderlinedFontFor:
+59A0	<TextStyle>boldFontFor:
+59A2	<TextStyle>basalFontFor:
+59A4	<TextStyle>italicFontFor:
+59A6	<TextStyle>restIndent
+59A8	<TextStyle>clearIndents
+59AA	<TextStyle>firstIndent:
+59AC	<TextStyle>restIndent:
+59AE	<TextStyle>rightIndent:
+59B0	<TextStyle>rightIndent
+59B2	<TextStyle>firstIndent
+59B4	<TextStyle>fontAt:
+59DC	<PopUpMenu class>labels:
+59EC	<ActionMenu class>labels:lines:selectors:
+59F0	<ActionMenu class>confirm
+59F4	<ActionMenu class>labels:selectors:
+5A06	<ActionMenu>selectorAt:
+5A08	<ActionMenu>setSelectors:
+5B04	<Browser class>newOnClass:
+5B40	<Browser>selectorMenu
+5B44	<Browser>onClass:
+5B46	<Browser>protocol:
+5B4A	<Browser>categoryMenu
+5B58	<Browser>classList
+5B5C	<Browser>classMode
+5B64	<Browser>newClassList:
+5B66	<Browser>classMenu
+5B6E	<Browser>acceptClass:from:
+5B70	<Browser>categoryList
+5B72	<Browser>protocolList
+5B74	<Browser>prompt:initially:
+5B78	<Browser>meta
+5B7A	<Browser>browseHierarchy
+5B7E	<Browser>newCategoryList:
+5B80	<Browser>newProtocolList:
+5B82	<Browser>protocol
+5B84	<Browser>selectedClass
+5B86	<Browser>selectorList
+5B88	<Browser>acceptMethod:from:
+5B8A	<Browser>protocolMenu
+5B96	<Browser>fileOutCategory
+5B98	<Browser>printOutCategory
+5B9A	<Browser>spawnCategory
+5B9C	<Browser>addCategory
+5BA4	<Browser>renameCategory
+5BAA	<Browser>removeCategory
+5BB0	<Browser>updateCategories
+5BB2	<Browser>editCategories
+5BB4	<Browser>explainSpecial:
+5BCC	<Browser>acceptText:from:
+5BD0	<Browser>textMenu
+5BD8	<Browser>nonMetaClass
+5BDA	<Browser>logProtocolChange:
+5BDC	<Browser>meta:
+5BDE	<Browser>newSelectorList:
+5BE0	<Browser>promptClass
+5BE2	<Browser>on:
+5BE4	<Browser>doItValue:
+5BE6	<Browser>fileOutClass
+5BE8	<Browser>printOutClass
+5BEC	<Browser>spawnClass
+5BEE	<Browser>spawnHierarchy
+5BF0	<Browser>showHierarchy
+5BF2	<Browser>editClass
+5BF4	<Browser>editComment
+5BF6	<Browser>editProtocols
+5BF8	<Browser>browseFieldReferences
+5BFA	<Browser>browseClassVariables
+5BFE	<Browser>browseClassReferences
+5C00	<Browser>renameClass
+5C0C	<Browser>removeClass
+5C14	<Browser>text
+5C1E	<Browser>browseSenders
+5C20	<Browser>browseImplementors
+5C24	<Browser>browseMessages
+5C28	<Browser>spawnEdits:from:
+5C2A	<Browser>category
+5C2C	<Browser>fileOutMessage
+5C2E	<Browser>printOutMessage
+5C30	<Browser>spawnMethod
+5C32	<Browser>moveMethod
+5C3E	<Browser>category:
+5C40	<Browser>className
+5C42	<Browser>fileOutProtocol
+5C44	<Browser>printOutProtocol
+5C46	<Browser>spawnProtocol
+5C48	<Browser>addProtocol
+5C52	<Browser>renameProtocol
+5C5A	<Browser>removeProtocol
+5C60	<Browser>selector:
+5C62	<Browser>removeMethod
+5C66	<Browser>className:
+5C68	<Browser>selector
+5C6A	<Browser>doItContext
+5C6C	<Browser>doItReceiver
+5C6E	<Browser>textMode:
+5CBE	<BrowserView class>openMethodBrowserOn:withController:
+5CC6	<BrowserView class>openListBrowserOn:label:initialSelection:
+5CD2	<LookupKey>hashMappedBy:
+5CD4	<LookupKey>key
+5CD6	<LookupKey>hash
+5CD8	<LookupKey><
+5CDA	<LookupKey>printOn:
+5CDC	<LookupKey>=
+5CDE	<LookupKey>key:
+5CFA	<BrowserView class>openCategoryBrowserOn:
+5D0C	<BrowserView class>openMethodBrowserOn:
+5D14	<BrowserView class>openOn:withController:
+5D26	<BrowserView class>openProtocolBrowserOn:
+5D34	<BrowserView class>openClassBrowserOn:
+5D50	<BrowserView>addCategoryView:on:readOnly:
+5D52	<BrowserView>addClassView:on:readOnly:
+5D54	<BrowserView>addMetaView:on:readOnly:
+5D5C	<BrowserView>addProtocolView:on:readOnly:
+5D5E	<BrowserView>addMethodView:on:readOnly:
+5D60	<BrowserView>addSelectorView:on:readOnly:
+5D62	<BrowserView>addTextView:on:initialSelection:
+5D72	<ChangeList>restoreCurrent
+5D74	<ChangeList>deselect
+5D78	<ChangeList>checkWith:
+5D7A	<ChangeList>addDoIt:
+5D7C	<ChangeList>list
+5D80	<ChangeList>fileOutOn:
+5D82	<ChangeList>changesAt:add:
+5D84	<ChangeList>switchFilter:perform:
+5D86	<ChangeList>hasFilter:
+5D88	<ChangeList>nextNonComment:
+5D8A	<ChangeList>addChanges:
+5D8C	<ChangeList>reportChangesOn:extension:
+5D94	<ChangeList>findLast:in:
+5D96	<ChangeList>updateSelection:
+5D98	<ChangeList>finishReportOn:
+5DA2	<ChangeList>writeContendor:on:oldText:
+5DAA	<ChangeList>addFilter:
+5DAC	<ChangeList>reportConflictsByClassWithExtension:
+5DB0	<ChangeList>updateList
+5DB2	<ChangeList>tabText:on:
+5DB4	<ChangeList>listName:changes:removed:
+5DB6	<ChangeList>showingField:
+5DB8	<ChangeList>switchField:perform:
+5DBA	<ChangeList>toggleListIndex:
+5DBC	<ChangeList>listIndex
+5DBE	<ChangeList>listName
+5DC2	<ChangeList>listSize
+5DC4	<ChangeList>doThis:
+5DC6	<ChangeList>hasRemoved:
+5DC8	<ChangeList>reportConflictsOn:
+5DCA	<ChangeList>changesAt:
+5DCE	<ChangeList>equalWithoutComments:and:
+5DD0	<ChangeList>checkSystem
+5DD2	<ChangeList>filterCopy
+5DD8	<ChangeList>removeAll
+5DDA	<ChangeList>restoreAll
+5DDC	<ChangeList>forget
+5DDE	<ChangeList>initialize
+5DE4	<ChangeList>doThis
+5DE6	<ChangeList>checkWithSystem:
+5DE8	<ChangeList>contents:notifying:
+5DEA	<ChangeList>scanFile:
+5DEE	<ChangeList>recoverFile:
+5DF2	<ChangeList>addChangeSet:
+5DF4	<ChangeList>unlock
+5DF6	<ChangeList>isUnlocked
+5DF8	<ChangeList>lock
+5DFA	<ChangeList>release
+5DFE	<ChangeList>contents:
+5E56	<FillInTheBlank class>message:displayAt:centered:action:initialAnswer:
+5E5E	<FillInTheBlank class>action:initialAnswer:
+5E60	<FillInTheBlank class>request:displayAt:centered:action:initialAnswer:useCRController:
+5E64	<FillInTheBlank class>request:displayAt:centered:action:initialAnswer:
+5E68	<FillInTheBlank class>request:
+5E6C	<FillInTheBlank class>example2
+5E72	<FillInTheBlank class>example1
+5E78	<FillInTheBlank class>example3
+5E7A	<FillInTheBlank class>request:initialAnswer:
+5E88	<FillInTheBlank>actionTaken
+5E8A	<FillInTheBlank>selectAction
+5E8C	<FillInTheBlank>action:
+5E8E	<FillInTheBlank>initialize
+5E90	<FillInTheBlank>setAction:
+5EA6	<Text class>string:emphasis:
+5EA8	<Text class>string:runs:
+5EAC	<Text class>initTextConstants
+5EAE	<Text class>initTextConstants2
+5EB0	<Text class>fromString:
+5EB2	<Text class>initialize
+5EB6	<Text class>new:
+5EC6	<Text>replaceFrom:to:with:
+5EC8	<Text>copyFrom:to:
+5ECA	<Text>copyReplaceFrom:to:with:
+5ECC	<Text>runs
+5ECE	<Text>at:
+5ED0	<Text>at:put:
+5ED2	<Text>string
+5ED4	<Text>emphasizeFrom:to:with:
+5ED6	<Text>findString:startingAt:
+5ED8	<Text>setString:setRuns:
+5EDA	<Text>makeSelectorBoldIn:
+5EDC	<Text>size
+5EDE	<Text>printOn:
+5EE2	<Text>asNumber
+5EE4	<Text>asUppercase
+5EE6	<Text>copy
+5EE8	<Text>asString
+5EEA	<Text>emphasisAt:
+5EEC	<Text>=
+5EEE	<Text>allBold
+5EF0	<Text>runLengthFor:
+5EF2	<Text>asDisplayText
+5EF4	<Text>asText
+5EF6	<Text>asLowercase
+5EF8	<Text>asParagraph
+5EFA	<Text>storeOn:
+5F24	<WordArray class>maxSize
+5F38	<WordArray>toStream:
+5F3A	<WordArray>fromByteStream:
+5F3C	<WordArray>countBits
+5F3E	<WordArray>printOn:
+5F56	<InputSensor>anyButtonPressed
+5F58	<InputSensor>buttons
+5F5A	<InputSensor>mapKeyboardEvent:
+5F5C	<InputSensor>cursorPoint
+5F5E	<InputSensor>primMouseButtons
+5F60	<InputSensor>keyboardEvent
+5F62	<InputSensor>primLeftShiftDown
+5F64	<InputSensor>primKbdPeek
+5F66	<InputSensor>primKbdNext
+5F68	<InputSensor>waitClickButton
+5F6A	<InputSensor>flushKeyboard
+5F6C	<InputSensor>mousePointNext
+5F6E	<InputSensor>blueButtonPressed
+5F70	<InputSensor>currentCursor:
+5F72	<InputSensor>currentCursor
+5F74	<InputSensor>waitNoButton
+5F76	<InputSensor>noButtonPressed
+5F78	<InputSensor>redButtonPressed
+5F7A	<InputSensor>yellowButtonPressed
+5F7C	<InputSensor>keyboardPressed
+5F7E	<InputSensor>keyboard
+5F80	<InputSensor>waitButton
+5F84	<InputSensor>initMap
+5F86	<InputSensor>keyboardPeek
+5F8A	<InputSensor>mousePoint
+5F8C	<InputSensor>primCursorLocPut:
+5FA0	<Controller>release
+5FA2	<Controller>model:
+5FA4	<Controller>model
+5FA6	<Controller>startUp
+5FA8	<Controller>viewHasCursor
+5FAA	<Controller>controlToNextLevel
+5FAC	<Controller>isControlActive
+5FAE	<Controller>controlActivity
+5FC6	<View>defaultWindow
+5FC8	<View>window:
+5FCA	<View>addSubView:align:with:
+5FCC	<View>resetSubViews
+5FCE	<View>addSubView:viewport:
+5FD0	<View>inverseDisplayTransform:
+5FD2	<View>deEmphasizeView
+5FD4	<View>deEmphasizeSubViews
+5FD6	<View>addSubView:ifCyclic:
+5FD8	<View>window
+5FDA	<View>displaySubViews
+5FDC	<View>flash
+5FDE	<View>clearInside
+5FE0	<View>clearInside:
+5FE2	<View>borderWidthLeft:right:top:bottom:
+5FE4	<View>computeInsetDisplayBox
+5FE6	<View>subViews
+5FE8	<View>highlight
+5FEA	<View>borderColor
+5FEC	<View>borderColor:
+5FEE	<View>borderWidth
+5FF0	<View>insideColor
+5FF2	<View>borderWidth:
+5FF4	<View>insideColor:
+5FF6	<View>releaseSubView:
+5FF8	<View>displayView
+5FFA	<View>setTransformation:
+5FFC	<View>computeDisplayTransformation
+5FFE	<View>superView
+6000	<View>displayBorder
+6002	<View>model:
+6004	<View>model
+6006	<View>transformation
+6008	<View>viewport
+600A	<View>defaultController
+600C	<View>containsPoint:
+600E	<View>addSubView:below:
+6010	<View>addSubView:toRightOf:
+6012	<View>controller:
+6014	<View>addSubView:toLeftOf:
+6016	<View>subViewWantingControl
+6018	<View>initialize
+601A	<View>removeFromSuperView
+601C	<View>removeSubView:
+601E	<View>addSubView:above:
+6020	<View>update
+6022	<View>removeSubViews
+6024	<View>superView:
+6026	<View>getViewport
+6028	<View>topView
+602A	<View>insetDisplayBox
+602C	<View>setWindow:
+602E	<View>isCyclic:
+6030	<View>transformation:
+6032	<View>addSubView:
+6036	<View>lastSubView
+6038	<View>releaseSubViews
+603A	<View>addSubView:window:viewport:
+603C	<View>displayTransform:
+603E	<View>firstSubView
+6040	<View>unlock
+6042	<View>update:
+6044	<View>isUnlocked
+6046	<View>isLocked
+6048	<View>lock
+604A	<View>emphasizeSubViews
+604C	<View>emphasize
+604E	<View>emphasizeView
+6050	<View>inspect
+606E	<View>release
+6070	<View>boundingBox
+6072	<View>computeBoundingBox
+6074	<View>align:with:
+6076	<View>scaleBy:
+6078	<View>translateBy:
+607A	<View>display
+607C	<View>controller
+607E	<View>addSubView:in:borderWidth:
+6082	<View>scale:translation:
+6084	<View>window:viewport:
+60D8	<ListView>boundingBox
+60DA	<ListView>display
+60DE	<ListView>update:
+60E0	<ListView>defaultControllerClass
+60E2	<ListView>selection
+60E4	<ListView>deselect
+60E6	<ListView>deEmphasizeView
+60E8	<ListView>clippingBox
+60EA	<ListView>reset
+60EC	<ListView>list
+60EE	<ListView>selectionBox
+60F0	<ListView>resetAndDisplayView
+60F2	<ListView>topDelimiter
+60F4	<ListView>maximumSelection
+60F6	<ListView>selectionBoxOffset
+60F8	<ListView>topDelimiter:
+60FA	<ListView>noTopDelimiter
+60FC	<ListView>noBottomDelimiter
+60FE	<ListView>wrappingBox
+6100	<ListView>positionList
+6102	<ListView>bottomDelimiter
+6104	<ListView>bottomDelimiter:
+6106	<ListView>displayView
+6108	<ListView>displaySelectionBox
+610A	<ListView>isSelectionBoxClipped
+610C	<ListView>minimumSelection
+610E	<ListView>list:
+6110	<ListView>findSelection:
+6112	<ListView>moveSelectionBox:
+6114	<ListView>initialize
+613A	<SelectionInListView class>on:printItems:oneItem:aspect:change:list:menu:initialSelection:
+613E	<SelectionInListView class>on:aspect:change:list:menu:initialSelection:
+6152	<SelectionInListView>update:
+6154	<SelectionInListView>defaultControllerClass
+6156	<SelectionInListView>on:printItems:oneItem:aspect:change:list:menu:initialSelection:
+615C	<SelectionInListView>list:
+615E	<SelectionInListView>getList
+6160	<SelectionInListView>initialSelection
+6162	<SelectionInListView>isEmpty
+6164	<SelectionInListView>changeModelSelection:
+6166	<SelectionInListView>yellowButtonMenu
+6168	<SelectionInListView>displayView
+6188	<InspectorView class>inspector:
+618A	<InspectorView class>buildScheduledView:
+61A0	<Dictionary>grow
+61A2	<Dictionary>select:
+61A4	<Dictionary>add:
+61A6	<Dictionary>do:
+61A8	<Dictionary>storeOn:
+61B2	<Dictionary>findKeyOrNil:
+61BE	<SystemDictionary class>initialize
+6224	<SystemDictionary>copyChangesTo:
+622E	<SystemDictionary>allClassesDo:
+6230	<SystemDictionary>recover:
+6234	<SystemDictionary>condenseChanges
+6238	<SystemDictionary>snapshotPrimitive
+623C	<SystemDictionary>valueAtNewKey:put:atIndex:declareFrom:
+623E	<SystemDictionary>core
+6240	<SystemDictionary>pointersTo:do:
+6242	<SystemDictionary>browseAllSelect:
+6246	<SystemDictionary>allImplementedMessages
+624A	<SystemDictionary>browseAllCallsOn:and:
+624C	<SystemDictionary>allImplementorsOf:
+6250	<SystemDictionary>renameSystemFiles:
+6260	<SystemDictionary>signal:atOopsLeft:wordsLeft:
+6262	<SystemDictionary>oopsLeft
+6264	<SystemDictionary>noChanges
+626A	<SystemDictionary>newChanges:
+626C	<SystemDictionary>classNames
+6272	<SystemDictionary>newClassNames
+6274	<SystemDictionary>newSourceFile:without:
+627A	<SystemDictionary>browseAllImplementorsOf:
+627E	<SystemDictionary>showMenuThenBrowse:
+6282	<SystemDictionary>specialSelectorSize
+6288	<SystemDictionary>specialSelectorAt:
+628A	<SystemDictionary>version
+628E	<SystemDictionary>allCallsOn:
+6292	<SystemDictionary>browseAllCallsOn:
+6298	<SystemDictionary>resetSpaceLimits
+62A2	<SystemDictionary>printOn:
+62A8	<SystemDictionary>specialNargsAt:
+62AA	<SystemDictionary>timeStamp:
+62B2	<SystemDictionary>at:put:
+62B4	<SystemDictionary>install
+62D4	<Random class>new
+62E4	<Random>setSeed
+62E8	<Random>nextPut:
+62EA	<Random>contents
+62EC	<Random>atEnd
+62EE	<Random>next
+631E	<LinkedList>last
+6320	<LinkedList>add:
+6322	<LinkedList>addFirst:
+6324	<LinkedList>isEmpty
+6326	<LinkedList>remove:ifAbsent:
+6328	<LinkedList>removeFirst
+632A	<LinkedList>size
+632C	<LinkedList>do:
+632E	<LinkedList>removeLast
+6330	<LinkedList>first
+6332	<LinkedList>addLast:
+6354	<MappedCollection class>collection:map:
+6358	<MappedCollection class>new
+6368	<MappedCollection>select:
+636A	<MappedCollection>at:
+636C	<MappedCollection>at:put:
+636E	<MappedCollection>setCollection:map:
+6370	<MappedCollection>copy
+6372	<MappedCollection>collect:
+6374	<MappedCollection>add:
+6376	<MappedCollection>contents
+6378	<MappedCollection>species
+637A	<MappedCollection>do:
+637C	<MappedCollection>size
+637E	<MappedCollection>storeOn:
+63A4	<InfiniteForm class>with:
+63B2	<InfiniteForm>form:
+63B4	<InfiniteForm>displayOn:at:clippingBox:rule:mask:
+63B6	<InfiniteForm>offset
+63B8	<InfiniteForm>computeBoundingBox
+63D4	<Boolean class>new
+63E6	<Boolean>ifFalse:
+63E8	<Boolean>ifTrue:ifFalse:
+63EA	<Boolean>&
+63EC	<Boolean>ifFalse:ifTrue:
+63EE	<Boolean>and:
+63F0	<Boolean>or:
+63F2	<Boolean>shallowCopy
+63F4	<Boolean>eqv:
+63F6	<Boolean>not
+63F8	<Boolean>xor:
+63FA	<Boolean>deepCopy
+63FC	<Boolean>|
+63FE	<Boolean>storeOn:
+6400	<Boolean>ifTrue:
+6416	<False>ifFalse:
+6418	<False>ifTrue:ifFalse:
+641A	<False>ifFalse:ifTrue:
+641C	<False>and:
+641E	<False>or:
+6420	<False>&
+6422	<False>not
+6424	<False>|
+6426	<False>printOn:
+642A	<False>ifTrue:
+644C	<True>ifFalse:
+644E	<True>ifTrue:ifFalse:
+6450	<True>ifFalse:ifTrue:
+6452	<True>and:
+6454	<True>or:
+6456	<True>&
+6458	<True>not
+645A	<True>|
+645C	<True>printOn:
+6460	<True>ifTrue:
+6488	<UndefinedObject class>new
+6498	<UndefinedObject>deepCopy
+649A	<UndefinedObject>shallowCopy
+649C	<UndefinedObject>addDependent:
+64A0	<UndefinedObject>notNil
+64A2	<UndefinedObject>isNil
+64A4	<UndefinedObject>printOn:
+64A8	<UndefinedObject>release
+64AA	<UndefinedObject>storeOn:
+64BE	<SystemTracer class>writeClone
+64C0	<SystemTracer class>initialize
+64DE	<SystemTracer class>writeCloneWithout:
+6530	<SystemTracer>writeImage:
+6534	<SystemTracer>writeSpecial1
+653E	<SystemTracer>writeSpecial2
+6544	<SystemTracer>writeBytes:
+6546	<SystemTracer>writeClamped:
+6548	<SystemTracer>writeIdentityDictionary:
+654A	<SystemTracer>writeMethod:
+654C	<SystemTracer>trace:
+654E	<SystemTracer>init:
+6556	<SystemTracer>writePointers:
+6558	<SystemTracer>writeProcess:
+655A	<SystemTracer>writeSet:
+655C	<SystemTracer>writeWords:
+655E	<SystemTracer>clamp:
+6560	<SystemTracer>hasClamped:
+6562	<SystemTracer>initDict
+6564	<SystemTracer>newHashFor:
+6566	<SystemTracer>oopOf:
+6568	<SystemTracer>permutation:for:
+656A	<SystemTracer>permute:by:
+656C	<SystemTracer>refctOf:
+656E	<SystemTracer>sizeInWordsOf:
+6570	<SystemTracer>printDanglingRefs
+6578	<SystemTracer>allCallsOn:clampedBy:
+657C	<SystemTracer>initClampedClasses:
+6582	<SystemTracer>doitWithout:
+658A	<SystemTracer>unref:
+658E	<SystemTracer>writeBitField:
+6590	<SystemTracer>writePointerField:
+6592	<SystemTracer>asOopToIndex:
+6596	<SystemTracer>asOopFromIndex:
+659A	<SystemTracer>newSmallIntegerHash:
+659C	<SystemTracer>new:class:length:trace:write:
+65A2	<SystemTracer>preserve:
+65AA	<SystemTracer>winnow:
+65F4	<MetaclassForMultipleInheritance class>subclassOf:and:
+660C	<MetaclassForMultipleInheritance>setOtherSuperclasses:
+660E	<MetaclassForMultipleInheritance>superclasses
+6610	<MetaclassForMultipleInheritance>otherSuperclasses
+6612	<MetaclassForMultipleInheritance>instHasMultipleSuperclasses
+6634	<ProcessorScheduler class>hiddenBackgroundProcess
+6636	<ProcessorScheduler class>new
+663A	<ProcessorScheduler class>initialize
+665C	<ProcessorScheduler class>background:
+6672	<ProcessorScheduler class>sweepHandBackgroundProcess
+6694	<ProcessorScheduler>userSchedulingPriority
+6696	<ProcessorScheduler>highIOPriority
+6698	<ProcessorScheduler>suspendFirstAt:
+669C	<ProcessorScheduler>signal:atMilliseconds:
+669E	<ProcessorScheduler>highestPriority:
+66A2	<ProcessorScheduler>userBackgroundPriority
+66A4	<ProcessorScheduler>suspendFirstAt:ifNone:
+66A6	<ProcessorScheduler>activePriority
+66A8	<ProcessorScheduler>anyProcessesAbove:
+66AA	<ProcessorScheduler>systemBackgroundPriority
+66AC	<ProcessorScheduler>highestPriority
+66AE	<ProcessorScheduler>timingPriority
+66B0	<ProcessorScheduler>userInterruptPriority
+66B2	<ProcessorScheduler>terminateActive
+66B4	<ProcessorScheduler>lowIOPriority
+66B6	<ProcessorScheduler>remove:ifAbsent:
+66B8	<ProcessorScheduler>signal:atTime:
+66BC	<ProcessorScheduler>activeProcess
+66BE	<ProcessorScheduler>yield
+66EC	<Benchmark class>testStandardTests
+6760	<Benchmark class>testStandardToFile:
+6764	<Benchmark class>new
+676A	<Benchmark class>setStandardTests
+67A4	<Benchmark>testLoadLiteralIndirect
+67A8	<Benchmark>testPopStoreInstVar
+67AC	<Benchmark>testPopStoreTemp
+67B0	<Benchmark>test3plus4
+67B4	<Benchmark>test3lessThan4
+67B8	<Benchmark>test3times4
+67BC	<Benchmark>test3div4
+67C0	<Benchmark>test16bitArith
+67C6	<Benchmark>testLargeIntArith
+67CC	<Benchmark>testActivationReturn
+67D0	<Benchmark>testShortBranch
+67D4	<Benchmark>testWhileLoop
+67D8	<Benchmark>testArrayAt
+67DE	<Benchmark>testArrayAtPut
+67E4	<Benchmark>testStringAt
+67EA	<Benchmark>testStringAtPut
+67F2	<Benchmark>testSize
+67F8	<Benchmark>testPointCreation
+67FC	<Benchmark>testStreamNext
+6802	<Benchmark>testStreamNextPut
+6808	<Benchmark>testEQ
+680C	<Benchmark>testClass
+6810	<Benchmark>testBlockCopy
+6814	<Benchmark>testValue
+6818	<Benchmark>testCreation
+681C	<Benchmark>testPointX
+6820	<Benchmark>testLoadThisContext
+6824	<Benchmark>testBasicAt
+6828	<Benchmark>testBasicAtPut
+682C	<Benchmark>testPerform
+6830	<Benchmark>testStringReplace
+6834	<Benchmark>testAsFloat
+6838	<Benchmark>testFloatingPointAddition
+6840	<Benchmark>testBitBLT
+6844	<Benchmark>testTextScanning
+684C	<Benchmark>testClassOrganizer
+6850	<Benchmark>testPrintDefinition
+6854	<Benchmark>testPrintHierarchy
+685A	<Benchmark>testAllCallsOn
+685E	<Benchmark>testAllImplementors
+6862	<Benchmark>testInspect
+6866	<Benchmark>testCompiler
+6870	<Benchmark>testDecompiler
+6874	<Benchmark>testKeyboardLookAhead
+687A	<Benchmark>testKeyboardSingle
+6880	<Benchmark>testTextDisplay
+6884	<Benchmark>testTextFormatting
+6888	<Benchmark>testTextEditing
+688E	<Benchmark>testList:toFile:
+6892	<Benchmark>defaultOutputParameters
+6894	<Benchmark>clearOutputs
+689A	<Benchmark>closeOutput:
+689C	<Benchmark>setOutputParameters
+68A6	<Benchmark>outputNamed:
+68A8	<Benchmark>stringForDisplay
+68AC	<Benchmark>textForDisplay
+68AE	<Benchmark>time:repeated10K:
+68B2	<Benchmark>displayOutputNamed:
+68B4	<Benchmark>makeOutputNamed:
+68B6	<Benchmark>readOutput:intoDict:andCollection:
+68B8	<Benchmark>streamsRatherThanFiles
+68BA	<Benchmark>longishString
+68BE	<Benchmark>fileOutputParameters:
+68C0	<Benchmark>sampleBitBLT
+68C2	<Benchmark>recur:
+68C4	<Benchmark>test:labeled:repeated:
+68C6	<Benchmark>time:repeated:
+68C8	<Benchmark>compareOldTimes:toNewTimes:outputTo:
+68D2	<Benchmark>report:timedAt:repeated:
+68D8	<Benchmark>reportStringFor:timedAt:repeated:
+68E4	<Benchmark>favoriteStringHolderView
+68E6	<Benchmark>testList:
+68EA	<Benchmark>testLoadInstVar
+68EE	<Benchmark>testLoadTempNRef
+68F2	<Benchmark>testLoadTempRef
+68F6	<Benchmark>testLoadQuickConstant
+68FA	<Benchmark>testLoadLiteralNRef
+6932	<MessageTally class>spyOn:to:
+693C	<MessageTally class>spyOn:
+696C	<MessageTally>method
+696E	<MessageTally>spyOn:to:
+6970	<MessageTally>spyOn:
+6974	<MessageTally><
+6976	<MessageTally>spyEvery:on:
+698C	<MessageTally>defaultInterval
+698E	<MessageTally>continueSpying
+6994	<MessageTally>reportOn:
+6996	<MessageTally>>
+6998	<MessageTally>close
+699A	<MessageTally>fullPrintOn:cutoff:
+69A2	<MessageTally>treePrintOn:tabs:thisTab:total:over:
+69A8	<MessageTally>reportOn:cutoff:
+69B0	<MessageTally>hash
+69B2	<MessageTally>tally
+69B4	<MessageTally>into:
+69B6	<MessageTally>sonsOver:
+69BA	<MessageTally>tallyPath:
+69BC	<MessageTally>=
+69BE	<MessageTally>bump:
+69C0	<MessageTally>printOn:total:
+69C8	<MessageTally>primitives:
+69CA	<MessageTally>bump
+69CC	<MessageTally>leaves:
+69CE	<MessageTally>leavesPrintOn:over:
+69D0	<MessageTally>class:method:
+69D2	<MessageTally>tally:
+6A6E	<Checker class>instanceVariablesNotReferenced
+6A72	<Checker class>instanceCountsAndSpaceDo:
+6A74	<Checker class>obsoleteClassReferences
+6A76	<Checker class>obsoleteAssociations
+6A7A	<Checker class>rehashBadSets
+6A7E	<Checker class>obsoleteInstanceCounts
+6A80	<Checker class>categoriesSelect:
+6A84	<Checker class>obsoleteClasses
+6A86	<Checker class>printCategoryNamesOn:
+6A88	<Checker class>printUnaryCategoryNamesOn:
+6A8A	<Checker class>multipleCategoryMessageNames
+6A8C	<Checker class>allUnSentMessages
+6A8E	<Checker class>printReceivedButNotSentOn:
+6A90	<Checker class>unResponsives
+6A96	<Checker class>checkOrganizations
+6AA0	<Checker class>printMultipleCategoryMessageNamesOn:
+6AA4	<Checker class>printMessageUsage
+6AA8	<Checker class>findSharedPoolVariables
+6AAA	<Checker class>browseAllUnimplementedCalls
+6AAE	<Checker class>browseAllNonAsciiMessages
+6AB2	<Checker class>findAllNonAsciiSources
+6AB6	<Checker class>whichClassesIncludeCategory:
+6AB8	<Checker class>printInstanceCounts
+6ABC	<Checker class>allUnimplementedCalls
+6AC2	<Checker class>printSingleClassCategoryNamesOn:
+6AC4	<Checker class>printUnresponsivesOn:
+6AC6	<Checker class>whichClassesHaveCategory:
+6AC8	<Checker class>onlyReturnSelves
+6ACC	<Checker class>printInstanceVariablesNotReferencedOn:
+6ACE	<Checker class>singleClassCategoryNames
+6AD2	<Checker class>unaryCategoryNames
+6AD6	<Checker class>printSentButNotReceivedOn:
+6AD8	<Checker class>printAllMessagesOn:
+6ADA	<Checker class>printOnlyReturnSelvesOn:
+6ADC	<Checker class>allCategoryNames
+6ADE	<Checker class>removeEmptyCategories
+6AFA	<SystemDictionary>lowSpaceNotificationLoop
+6B04	<SystemDictionary>hasSpecialSelector:ifTrueSetByte:
+6B06	<SystemDictionary>quit
+6B08	<SystemDictionary>logChange:
+6B0C	<SystemDictionary>getImagePrefix
+6B1C	<SystemDictionary>saveAs:thenQuit:
+6B22	<SystemDictionary>frills
+6B28	<SystemDictionary>allClassesImplementing:
+6B2A	<SystemDictionary>changes
+6B2C	<SystemDictionary>allBehaviorsDo:
+6B2E	<SystemDictionary>releaseExternalViews
+6B30	<SystemDictionary>recompileCallsOn:
+6B32	<SystemDictionary>collectPointersTo:
+6B34	<SystemDictionary>quitPrimitive
+6B36	<SystemDictionary>allCallsOn:and:
+6B3A	<SystemDictionary>shutdown
+6B3C	<SystemDictionary>allSelect:
+6B40	<SystemDictionary>exitToDebugger
+6B42	<SystemDictionary>coreLeftLimit
+6B44	<SystemDictionary>recompileMethodsForWhich:
+6B48	<SystemDictionary>frills:
+6B4A	<SystemDictionary>renameClass:as:
+6B4C	<SystemDictionary>browseChangedMessages
+6B50	<SystemDictionary>recompileAllFrom:
+6B52	<SystemDictionary>resetLowSpaceSignal
+6B54	<SystemDictionary>oopsLeftLimit
+6B56	<SystemDictionary>copyright
+6B5A	<SystemDictionary>versionName
+6B5E	<SystemDictionary>coreLeftLimit:
+6B60	<SystemDictionary>oopsLeftLimit:
+6B62	<SystemDictionary>flushClassNameCache
+6B64	<SystemDictionary>snapshotAs:thenQuit:
+6B6C	<SystemDictionary>forgetDoIts
+6B6E	<SystemDictionary>specialSelectors
+6B70	<SystemDictionary>coreLeft
+6B72	<SystemDictionary>removeClassNamed:
+6B74	<SystemDictionary>snapshot
+6BAC	<StandardSystemView class>model:label:minimumSize:
+6BBE	<NotifierView class>openContext:label:contents:
+6BC4	<NotifierView class>openDebugger:contents:label:displayAt:
+6BC6	<NotifierView class>openInterrupt:onProcess:
+6BD6	<NotifierView>defaultControllerClass
+6BD8	<NotifierView>defaultWindow
+6BDA	<NotifierView>window:
+6BDC	<NotifierView>contents
+6BDE	<NotifierView>centerContents
+6BE0	<NotifierView>displayView
+6BE2	<NotifierView>contents:
+6BE4	<NotifierView>initialize
+6BF4	<ControlManager>scheduleActive:
+6BF6	<ControlManager>pullBottomToTop
+6BF8	<ControlManager>unschedule:
+6BFA	<ControlManager>activeControllerNoTerminate:andProcess:
+6C00	<ControlManager>inActiveControllerProcess
+6C02	<ControlManager>schedulePassive:
+6C04	<ControlManager>scheduleOnBottom:
+6C06	<ControlManager>release
+6C08	<ControlManager>scheduled:from:
+6C0A	<ControlManager>promote:
+6C0C	<ControlManager>restore
+6C0E	<ControlManager>activeController:
+6C10	<ControlManager>scheduleActiveNoTerminate:
+6C12	<ControlManager>activeController:andProcess:
+6C18	<ControlManager>activeControllerProcess
+6C1A	<ControlManager>activeController
+6C1C	<ControlManager>initialize
+73A2	<DisplayScreen>beDisplay
+73A4	<DisplayScreen>flash:
+73B6	<DisplayObject>displayOn:transformation:clippingBox:rule:mask:
+73B8	<DisplayObject>displayOn:at:clippingBox:
+73BA	<DisplayObject>offset:
+73BC	<DisplayObject>boundingBox
+73BE	<DisplayObject>computeBoundingBox
+73C0	<DisplayObject>align:with:
+73C2	<DisplayObject>scaleBy:
+73C4	<DisplayObject>translateBy:
+73C6	<DisplayObject>display
+73C8	<DisplayObject>relativeRectangle
+73CA	<DisplayObject>follow:while:
+73CC	<DisplayObject>rounded
+73CE	<DisplayObject>extent
+73D0	<DisplayObject>displayOn:transformation:clippingBox:
+73D2	<DisplayObject>displayOn:transformation:clippingBox:fixedPoint:
+73D4	<DisplayObject>displayOn:at:
+73D6	<DisplayObject>displayOn:transformation:clippingBox:align:with:
+73D8	<DisplayObject>backgroundAt:
+73DA	<DisplayObject>offset
+73DC	<DisplayObject>displayOn:
+73DE	<DisplayObject>moveTo:restoring:
+73E0	<DisplayObject>displayOn:transformation:clippingBox:align:with:rule:mask:
+73E2	<DisplayObject>width
+73E4	<DisplayObject>height
+73E6	<DisplayObject>displayOn:at:clippingBox:rule:mask:
+73E8	<DisplayObject>displayOn:at:rule:
+7418	<Form class>white
+741A	<Form class>reverse
+741C	<Form class>black
+741E	<Form class>exampleMagnify
+7420	<Form class>initializeMasks
+742E	<Form class>exampleShrink
+7430	<Form class>exampleSketch
+7432	<Form class>exampleEdits
+7434	<Form class>exampleSpaceFill
+7436	<Form class>extent:fromCompactArray:offset:
+7438	<Form class>readFormFile:
+743E	<Form class>extent:fromArray:offset:
+7440	<Form class>dotOfSize:
+7442	<Form class>fromUser:
+7444	<Form class>fromUser
+7446	<Form class>extent:
+7448	<Form class>over
+744A	<Form class>erase
+744C	<Form class>paint
+744E	<Form class>fromDisplay:
+7450	<Form class>lightGray
+7452	<Form class>under
+7454	<Form class>veryLightGray
+7456	<Form class>readFrom:
+7458	<Form class>gray
+745A	<Form class>and
+745C	<Form class>initialize
+745E	<Form class>stringScanLineOfWidth:
+7460	<Form class>darkGray
+7482	<Cursor class>execute
+7488	<Cursor class>up
+7494	<Cursor class>extent:fromArray:offset:
+749A	<Cursor class>normal
+74A6	<Cursor class>corner
+74B2	<Cursor class>currentCursor:
+74BA	<Cursor class>currentCursor
+74BC	<Cursor class>origin
+74C8	<Cursor class>marker
+74D4	<Cursor class>down
+74E0	<Cursor class>wait
+74EC	<Cursor class>cursorLink:
+74F0	<Cursor class>read
+74FC	<Cursor class>crossHair
+7508	<Cursor class>write
+7514	<Cursor class>blank
+7520	<Cursor class>new
+7522	<Cursor class>initialize
+75DE	<Cursor class>square
+75EC	<Cursor>showWhile:
+75EE	<Cursor>showGridded:
+75F0	<Cursor>show
+75F2	<Cursor>changed:
+75F4	<Cursor>beCursor
+75F6	<Cursor>printOn:
+7604	<ReadWriteStream>fileOutChanges
+7606	<ReadWriteStream>fileOutChangesFor:
+7608	<ReadWriteStream>contents
+760A	<ReadWriteStream>next
+761E	<ExternalStream class>new
+762C	<FileStream class>fileNamed:
+762E	<FileStream class>on:
+7630	<FileStream class>oldFileNamed:
+7632	<FileStream class>newFileNamed:
+7654	<FileStream>position
+7656	<FileStream>position:
+7658	<FileStream>read:
+765A	<FileStream>reset
+765E	<FileStream>beSnapshotFile
+7660	<FileStream>nextPage
+7662	<FileStream>directory
+7664	<FileStream>on:
+7666	<FileStream>reopen
+766A	<FileStream>positionSize:
+766C	<FileStream>writing
+766E	<FileStream>printOutChanges
+7670	<FileStream>fixEnd
+7672	<FileStream>positionPage:character:
+7674	<FileStream>skip:
+7678	<FileStream>writeShorten
+767A	<FileStream>binary
+767C	<FileStream>setMode:
+767E	<FileStream>next:into:
+7680	<FileStream>position:size:
+7684	<FileStream>nextPut:
+768A	<FileStream>atEnd
+768C	<FileStream>wordPosition
+768E	<FileStream>next:
+7690	<FileStream>padTo:put:
+7692	<FileStream>nextPutAll:
+7698	<FileStream>wordPosition:
+769A	<FileStream>next
+769C	<FileStream>closed
+769E	<FileStream>padTo:
+76A0	<FileStream>text
+76A2	<FileStream>flush
+76A4	<FileStream>contentsOfEntireFile
+76A6	<FileStream>shorten
+76A8	<FileStream>readWriteShorten
+76AA	<FileStream>file
+76AC	<FileStream>readWrite
+76AE	<FileStream>size
+76B0	<FileStream>printOn:
+76B4	<FileStream>close
+76B6	<FileStream>fileIn
+76BA	<FileStream>fileOutChanges
+76BE	<FileStream>name
+76C0	<FileStream>release
+76C2	<FileStream>page
+76C4	<FileStream>edit
+76C6	<FileStream>readOnly
+76C8	<FileStream>setToEnd
+771A	<RemoteString>fileNumber:position:
+771C	<RemoteString>string
+7720	<RemoteString>sourceFileNumber
+773C	<Collection>remove:
+773E	<Collection>inject:into:
+7740	<Collection>asOrderedCollection
+7742	<Collection>errorNoMatch
+7746	<Collection>asSortedCollection:
+7748	<Collection>asBag
+774A	<Collection>asSet
+774C	<Collection>select:
+774E	<Collection>detect:
+7750	<Collection>isEmpty
+7752	<Collection>add:
+7754	<Collection>do:
+7756	<Collection>storeOn:
+777A	<SequenceableCollection>reverse
+777C	<SequenceableCollection>last
+777E	<SequenceableCollection>findFirst:
+7780	<SequenceableCollection>shallowCopy
+7782	<SequenceableCollection>atAllPut:
+7784	<SequenceableCollection>replaceFrom:to:with:
+7788	<SequenceableCollection>copyFrom:to:
+778A	<SequenceableCollection>copyReplaceFrom:to:with:
+778C	<SequenceableCollection>indexOf:ifAbsent:
+778E	<SequenceableCollection>first
+7790	<SequenceableCollection>collect:
+7792	<SequenceableCollection>copyWithout:
+7794	<SequenceableCollection>remove:ifAbsent:
+7796	<SequenceableCollection>copyWith:
+7798	<SequenceableCollection>size
+779A	<SequenceableCollection>swap:with:
+779C	<SequenceableCollection>copyReplaceAll:with:
+779E	<SequenceableCollection>reverseDo:
+77A0	<SequenceableCollection>grow
+77A2	<SequenceableCollection>select:
+77A4	<SequenceableCollection>findLast:
+77A6	<SequenceableCollection>indexOf:
+77A8	<SequenceableCollection>,
+77AA	<SequenceableCollection>=
+77AC	<SequenceableCollection>asArray
+77AE	<SequenceableCollection>atAll:put:
+77B0	<SequenceableCollection>replaceFrom:to:with:startingAt:
+77B2	<SequenceableCollection>do:
+77B4	<SequenceableCollection>indexOfSubCollection:startingAt:
+77B6	<SequenceableCollection>indexOfSubCollection:startingAt:ifAbsent:
+77B8	<SequenceableCollection>mappedBy:
+77BA	<SequenceableCollection>errorOutOfBounds
+77BE	<SequenceableCollection>with:do:
+77D2	<OrderedCollection class>new
+77D4	<OrderedCollection class>new:
+77FC	<OrderedCollection>reverse
+77FE	<OrderedCollection>last
+7800	<OrderedCollection>copyFrom:to:
+7802	<OrderedCollection>addFirst:
+7804	<OrderedCollection>copyReplaceFrom:to:with:
+7806	<OrderedCollection>at:
+7808	<OrderedCollection>at:put:
+780A	<OrderedCollection>removeAllSuchThat:
+780C	<OrderedCollection>first
+780E	<OrderedCollection>collect:
+7810	<OrderedCollection>addAll:
+7812	<OrderedCollection>errorNotFound
+7816	<OrderedCollection>find:
+7818	<OrderedCollection>copyWithout:
+781A	<OrderedCollection>remove:ifAbsent:
+781C	<OrderedCollection>copyWith:
+781E	<OrderedCollection>size
+7820	<OrderedCollection>copyEmpty
+7822	<OrderedCollection>reverseDo:
+7824	<OrderedCollection>grow
+7826	<OrderedCollection>add:before:
+7828	<OrderedCollection>select:
+782A	<OrderedCollection>removeFirst
+782C	<OrderedCollection>setIndices
+782E	<OrderedCollection>removeLast
+7830	<OrderedCollection>addLast:
+7832	<OrderedCollection>insert:before:
+7834	<OrderedCollection>errorLastObject
+7838	<OrderedCollection>makeRoomAtFirst
+783A	<OrderedCollection>removeIndex:
+783C	<OrderedCollection>before:
+783E	<OrderedCollection>errorNoSuchElement
+7842	<OrderedCollection>do:
+7844	<OrderedCollection>after:
+7846	<OrderedCollection>makeRoomAtLast
+7848	<OrderedCollection>addAllFirst:
+784A	<OrderedCollection>add:after:
+784C	<OrderedCollection>addAllLast:
+784E	<OrderedCollection>errorFirstObject
+7852	<OrderedCollection>add:
+7868	<Stream>do:
+786A	<Stream>nextPutAll:
+786C	<Stream>nextMatchFor:
+786E	<Stream>next:put:
+7870	<Stream>next
+7884	<PositionableStream class>on:from:to:
+7886	<PositionableStream class>on:
+7896	<WriteStream class>with:from:to:
+7898	<WriteStream class>on:from:to:
+789A	<WriteStream class>with:
+78AA	<WriteStream>position:
+78AC	<WriteStream>on:
+78AE	<WriteStream>space
+78B0	<WriteStream>print:
+78B2	<WriteStream>crtab:
+78B4	<WriteStream>cr
+78B6	<WriteStream>with:
+78B8	<WriteStream>store:
+78BA	<WriteStream>crtab
+78BC	<WriteStream>tab
+78BE	<WriteStream>nextChunkPut:
+78C0	<WriteStream>nextPut:
+78C2	<WriteStream>contents
+78C4	<WriteStream>pastEndPut:
+78C6	<WriteStream>on:from:to:
+78C8	<WriteStream>size
+78CA	<WriteStream>reset
+78CC	<WriteStream>emphasis
+78CE	<WriteStream>emphasis:
+78D0	<WriteStream>next
+78E4	<Object>yourself
+78E6	<Object>shallowCopy
+78E8	<Object>storeString
+78EA	<Object>errorSubscriptBounds:
+78EE	<Object>basicSize
+78F0	<Object>primitiveFailed
+78F4	<Object>perform:with:with:with:
+78F6	<Object>broadcast:
+78F8	<Object>at:
+78FA	<Object>at:put:
+78FC	<Object>halt:
+78FE	<Object>error:
+7900	<Object>confirm:
+7902	<Object>notify:
+7906	<Object>updateRequest
+7908	<Object>hashMappedBy:
+790A	<Object>isLiteral
+790C	<Object>readFromString:
+790E	<Object>basicInspect
+7910	<Object>doesNotUnderstand:
+7916	<Object>errorNonIntegerIndex
+791A	<Object>changed
+791C	<Object>addDependent:
+82F8	<Object>isKindOf:
+82FA	<Object>mustBeBoolean
+82FE	<Object>perform:withArguments:
+8300	<Object>changed:
+8302	<Object>isNil
+8304	<Object>update:
+8306	<Object>perform:with:
+8308	<Object>instVarAt:
+830A	<Object>instVarAt:put:
+830C	<Object>~~
+830E	<Object>species
+8310	<Object>subclassResponsibility
+8314	<Object>basicAt:
+8316	<Object>perform:with:with:
+8318	<Object>respondsTo:
+831A	<Object>become:
+831C	<Object>size
+831E	<Object>printOn:
+8324	<Object>==
+8326	<Object>~=
+8328	<Object>errorImproperStore
+832C	<Object>inspect
+832E	<Object>changeRequest
+8330	<Object>changeRequestFrom:
+8332	<Object>shouldNotImplement
+8336	<Object>broadcast:with:
+8338	<Object>halt
+833C	<Object>hash
+833E	<Object>perform:
+8340	<Object>setDependents
+8342	<Object>dependents
+8344	<Object>breakDependents
+8346	<Object>copy
+8348	<Object>removeDependent:
+834A	<Object>release
+834C	<Object>=
+834E	<Object>deepCopy
+8350	<Object>isMemberOf:
+8352	<Object>isInteger
+8354	<Object>asOop
+8356	<Object>notNil
+8358	<Object>forkEmergencyEvaluatorAt:
+8360	<Object>conflictingInheritanceError
+8364	<Object>nilFields
+8366	<Object>primitiveError:
+836C	<Object>basicAt:put:
+836E	<Object>storeOn:
+8380	<Object>class
+8398	<Magnitude>hashMappedBy:
+839A	<Magnitude>min:
+839C	<Magnitude>max:
+839E	<Magnitude>hash
+83A0	<Magnitude><
+83A2	<Magnitude><=
+83A4	<Magnitude>>=
+83A6	<Magnitude>>
+83A8	<Magnitude>=
+83AA	<Magnitude>between:and:
+83BE	<LookupKey class>key:
+83CC	<Association class>key:value:
+83DC	<Association>value:
+83DE	<Association>key:value:
+83E0	<Association>printOn:
+83E4	<Association>value
+83F6	<ClassOrganizer class>initialize
+83FE	<ClassOrganizer class>defaultProtocol
+841A	<ClassOrganizer>setDefaultList
+841E	<ClassOrganizer>classComment
+8422	<ClassOrganizer>scanFrom:
+8424	<ClassOrganizer>setDefaultList:
+8428	<ClassOrganizer>classifyAll:under:
+842A	<ClassOrganizer>hasNoComment
+842C	<ClassOrganizer>includesElement:
+842E	<ClassOrganizer>numberOfCategoryOfElement:
+8430	<ClassOrganizer>listAtCategoryNumber:
+8432	<ClassOrganizer>categories:
+8436	<ClassOrganizer>changeFromString:
+8438	<ClassOrganizer>putCommentOnFile:numbered:moveSource:
+843A	<ClassOrganizer>categoryOfElement:
+843C	<ClassOrganizer>listAtCategoryNamed:
+843E	<ClassOrganizer>addCategory:before:
+8440	<ClassOrganizer>renameCategory:to:
+8442	<ClassOrganizer>categories
+8444	<ClassOrganizer>removeElement:
+8446	<ClassOrganizer>addCategory:
+8448	<ClassOrganizer>printOn:
+844A	<ClassOrganizer>classify:under:
+844C	<ClassOrganizer>classComment:
+844E	<ClassOrganizer>moveChangedCommentToFile:numbered:
+8450	<ClassOrganizer>removeCategory:
+8454	<ClassOrganizer>removeEmptyCategories
+847A	<Set class>new
+847C	<Set class>new:
+8496	<IdentityDictionary class>new:
+84B6	<MethodDictionary>removeKey:ifAbsent:
+84B8	<MethodDictionary>methodArray
+84CA	<Class class>named:superclasses:instanceVariableNames:classVariableNames:category:
+84D2	<Class class>getSuperclasses:
+84D6	<Class class>template:
+84FA	<Class>obsolete
+8500	<Class>compileAllFrom:
+8502	<Class>hasMultipleSuperclasses
+8504	<Class>isObsolete
+8506	<Class>initialize
+8508	<Class>poolHas:ifTrue:
+850A	<Class>allClassVarNames
+850C	<Class>allSharedPools
+850E	<Class>fileOutOn:moveSource:toFile:
+8514	<Class>classVarNames
+8516	<Class>removeFromSystem
+8518	<Class>removeFromChanges
+851A	<Class>subclass:instanceVariableNames:classVariableNames:poolDictionaries:category:
+851E	<Class>sharedPools
+8520	<Class>hasMethods
+8522	<Class>validateFrom:in:instanceVariableNames:methods:
+8524	<Class>addInstVarName:
+8526	<Class>removeInstVarName:
+852E	<Class>subclass:otherSupers:instanceVariableNames:classVariableNames:category:
+8534	<Class>rename:
+8538	<Class>copy
+853A	<Class>name
+853C	<Class>copyForValidation
+853E	<Class>variableByteSubclass:instanceVariableNames:classVariableNames:poolDictionaries:category:
+8546	<Class>variableSubclass:instanceVariableNames:classVariableNames:poolDictionaries:category:
+854A	<Class>variableWordSubclass:instanceVariableNames:classVariableNames:poolDictionaries:category:
+8552	<Class>superclass:methodDict:format:name:organization:instVarNames:classPool:sharedPools:
+8554	<Class>removeSharedPool:
+855A	<Class>declare:
+8562	<Class>sharing:
+8564	<Class>removeClassVarName:
+856A	<Class>addSharedPool:
+856E	<Class>fileOut
+8574	<Class>printOut
+8576	<Class>classPool
+8578	<Class>addClassVarName:
+85A8	<Object class>initializeDependentsFields
+85AA	<Object class>howToModifyPrimitives
+85AE	<Object class>whatIsAPrimitive
+85B2	<Object class>readFrom:
+85B6	<Object class>initialize
+85BA	<Object class>initializeErrorRecursion
+85C8	<Behavior class>init
+85E0	<Metaclass class>subclassOf:
+85F4	<Metaclass>instHasMultipleSuperclasses
+85F6	<Metaclass>soleInstance
+85F8	<Metaclass>nonTrivial
+85FA	<Metaclass>definition
+85FE	<Metaclass>name:inEnvironment:subclassOf:instanceVariableNames:variable:words:pointers:classVariableNames:poolDictionaries:category:comment:changed:
+8604	<Metaclass>fileOutOn:moveSource:toFile:
+8608	<Metaclass>superclass:
+860A	<Metaclass>name:inEnvironment:subclassOf:and:instanceVariableNames:variable:words:pointers:classVariableNames:poolDictionaries:category:comment:changed:
+8610	<Metaclass>addInstVarName:
+8614	<Metaclass>removeInstVarName:
+861C	<Metaclass>copy
+861E	<Metaclass>scopeHas:ifTrue:
+8620	<Metaclass>name
+8626	<Metaclass>isMeta
+8628	<Metaclass>copyForValidation
+862A	<Metaclass>newNamed:
+862C	<Metaclass>instanceVariableNames:
+862E	<Metaclass>newNamed:otherSupers:
+8630	<Metaclass>subclasses
+8632	<Metaclass>obsolete
+8634	<Metaclass>subclassOf:
+8636	<Metaclass>classPool
+8638	<Metaclass>addClassVarName:
+863A	<Metaclass>isObsolete
+863C	<Metaclass>new
+8658	<String class>readFrom:
+865A	<String class>example
+865E	<String class>fromString:
+866E	<Symbol class>table:
+8674	<Symbol class>rehash
+8676	<Symbol class>intern:
+867C	<Symbol class>internCharacter:
+8766	<Symbol class>hasInterned:ifTrue:
+8768	<Symbol class>correctMessage:
+876C	<Symbol class>table
+876E	<Symbol class>initialize
+877E	<Symbol>errorNoModification
+8782	<Symbol>isInfix
+8784	<Symbol>keywords
+8786	<Symbol>shallowCopy
+8788	<Symbol>classPart
+878C	<Symbol>selectorPart
+878E	<Symbol>hash
+8790	<Symbol>isCompound
+8792	<Symbol>at:put:
+8794	<Symbol>copy
+8796	<Symbol>asString
+8798	<Symbol>=
+879A	<Symbol>numArgs
+879C	<Symbol>asSymbol
+879E	<Symbol>hashMappedBy:
+87A0	<Symbol>replaceFrom:to:with:startingAt:
+87A2	<Symbol>isLiteral
+87A4	<Symbol>species
+87A6	<Symbol>isKeyword
+87A8	<Symbol>string:
+87AA	<Symbol>stringhash
+87AC	<Symbol>storeOn:
+87B0	<Symbol>printOn:
+87DA	<SmallInteger class>minVal
+87DC	<SmallInteger class>maxBytes
+87DE	<SmallInteger class>maxBits
+87E0	<SmallInteger class>new
+87E4	<SmallInteger class>initialize
+87EE	<SmallInteger class>maxVal
+87F0	<SmallInteger class>guideToDivision
+880A	<SmallInteger>bitXor:
+880C	<SmallInteger>//
+880E	<SmallInteger>+
+8810	<SmallInteger>fromString:radix:
+8812	<SmallInteger>shallowCopy
+8814	<SmallInteger>asFloat
+8816	<SmallInteger>digitAt:
+8818	<SmallInteger>odd
+881A	<SmallInteger>bitAnd:
+881C	<SmallInteger>bitOr:
+881E	<SmallInteger>bitShift:
+8820	<SmallInteger>generality
+8822	<SmallInteger>coerce:
+8824	<SmallInteger>even
+8826	<SmallInteger>printOn:base:
+8828	<SmallInteger>hashMappedBy:
+882A	<SmallInteger>instVarAt:
+882E	<SmallInteger>-
+8830	<SmallInteger><
+8832	<SmallInteger><=
+8834	<SmallInteger>quo:
+8838	<SmallInteger>>=
+883A	<SmallInteger>>
+883C	<SmallInteger>~=
+883E	<SmallInteger>digitAt:put:
+8842	<SmallInteger>asObject
+8844	<SmallInteger>highBit
+8848	<SmallInteger>digitLength
+884A	<SmallInteger>hash
+884C	<SmallInteger>=
+884E	<SmallInteger>deepCopy
+8850	<SmallInteger>subtractOrFail:
+8852	<SmallInteger>asOop
+8858	<SmallInteger>*
+885A	<SmallInteger>\\
+885C	<SmallInteger>/
+8874	<String>spellAgainst:
+8876	<String>displayAt:
+8878	<String>sameAs:
+887A	<String>at:
+887C	<String>at:put:
+8880	<String>displayOn:at:
+8882	<String>asSymbol
+8884	<String>hashMappedBy:
+8886	<String>isLiteral
+8888	<String>match:
+888A	<String><
+888C	<String><=
+888E	<String>>=
+8890	<String>oldRunEncoded
+8892	<String>>
+8894	<String>primReplaceFrom:to:with:startingAt:
+8896	<String>replaceFrom:to:with:startingAt:
+8898	<String>asText
+889A	<String>compare:
+889C	<String>replaceFrom:to:withByteArray:startingAt:
+889E	<String>asLowercase
+88A0	<String>stringhash
+88A2	<String>oldRunDecodeOn:
+88A4	<String>string
+88A6	<String>asFileName
+88A8	<String>findString:startingAt:
+88AA	<String>basicAt:
+88AC	<String>size
+88AE	<String>printOn:
+88B0	<String>asNumber
+88B2	<String>hash
+88B6	<String>copyUpTo:
+88B8	<String>asUppercase
+88BA	<String>withCRs
+88BE	<String>asString
+88C0	<String>contractTo:
+88C4	<String>asDisplayText
+88C6	<String>deepCopy
+88C8	<String>asParagraph
+88CA	<String>basicAt:put:
+88CE	<String>storeOn:
+88F4	<Array>hashMappedBy:
+88F6	<Array>isLiteral
+88F8	<Array>printOn:
+88FC	<Array>hash
+8900	<Array>DoIt
+8902	<Array>asArray
+8904	<Array>storeOn:
+8918	<Float class>readFrom:
+891C	<Float class>pi
+8924	<Float class>initialize
+89EE	<Float>*
+89F0	<Float>/
+89F4	<Float>+
+89F6	<Float>shallowCopy
+89FA	<Float>asFloat
+89FC	<Float>floorLog:
+89FE	<Float>generality
+8A00	<Float>sin
+8A04	<Float>coerce:
+8A06	<Float>rounded
+8A0C	<Float>-
+8A0E	<Float>cos
+8A12	<Float>degreesToRadians
+8A14	<Float>isLiteral
+8A16	<Float>asFraction
+8A1E	<Float><
+8A20	<Float><=
+8A22	<Float>>=
+8A24	<Float>printOn:
+8A26	<Float>>
+8A28	<Float>~=
+8A2A	<Float>negated
+8A2E	<Float>truncated
+8A32	<Float>hash
+8A34	<Float>integerPart
+8A36	<Float>fractionPart
+8A38	<Float>mantissa:
+8A3A	<Float>log
+8A3E	<Float>exponent
+8A44	<Float>printOn:digits:
+8A4C	<Float>absPrintOn:digits:
+8A56	<Float>timesTwoPower:
+8A5A	<Float>radiansToDegrees
+8A5C	<Float>arcSin
+8A62	<Float>sqrt
+8A6A	<Float>arcTan
+8A74	<Float>=
+8A76	<Float>exp
+8A82	<Float>arcCos
+8A84	<Float>tan
+8A8A	<Float>deepCopy
+8A8C	<Float>ln
+8AA8	<MethodContext class>sender:receiver:method:arguments:
+8AB8	<MethodContext>receiver
+8ABA	<MethodContext>method
+8ABC	<MethodContext>restart
+8ABE	<MethodContext>tempAt:
+8AC0	<MethodContext>tempAt:put:
+8AC2	<MethodContext>removeSelf
+8AC4	<MethodContext>restartWith:
+8AC6	<MethodContext>home
+8AC8	<MethodContext>setSender:receiver:method:arguments:
+8AF2	<BlockContext>whileFalse
+8AF4	<BlockContext>method
+8AF6	<BlockContext>whileFalse:
+8AF8	<BlockContext>whileTrue:
+8AFA	<BlockContext>fork
+8AFC	<BlockContext>tempAt:
+8AFE	<BlockContext>value:
+8B00	<BlockContext>tempAt:put:
+8B02	<BlockContext>value
+8B06	<BlockContext>value:value:value:
+8B08	<BlockContext>blockReturnTop
+8B0A	<BlockContext>printOn:
+8B10	<BlockContext>receiver
+8B12	<BlockContext>valueWithArguments:
+8B16	<BlockContext>value:value:
+8B18	<BlockContext>forkAt:
+8B1A	<BlockContext>whileTrue
+8B1C	<BlockContext>hasMethodReturn
+8B1E	<BlockContext>pushArgs:from:
+8B22	<BlockContext>fixTemps
+8B24	<BlockContext>home
+8B26	<BlockContext>home:startpc:nargs:
+8B28	<BlockContext>newProcessWith:
+8B2A	<BlockContext>valueError
+8B48	<Point class>x:y:
+8B62	<Point>//
+8B64	<Point>+
+8B66	<Point>shallowCopy
+8B68	<Point>dotProduct:
+8B6A	<Point>x
+8B6C	<Point>scaleBy:
+8B6E	<Point>translateBy:
+8B70	<Point>transpose
+8B72	<Point>generality
+8B74	<Point>coerce:
+8B76	<Point>rounded
+8B78	<Point>-
+8B7A	<Point>hashMappedBy:
+8B7C	<Point>asPoint
+8B7E	<Point><
+8B80	<Point><=
+8B82	<Point>>=
+8B84	<Point>printOn:
+8B88	<Point>>
+8B8A	<Point>extent:
+8B8C	<Point>grid:
+8B8E	<Point>setX:setY:
+8B90	<Point>hash
+8B92	<Point>r
+8B94	<Point>normal
+8B96	<Point>y:
+8B98	<Point>theta
+8BA2	<Point>unitVector
+8BA4	<Point>pointNearestLine:to:
+8BA6	<Point>truncatedGrid:
+8BA8	<Point>dist:
+8BAA	<Point>=
+8BAC	<Point>y
+8BAE	<Point>truncateTo:
+8BB0	<Point>deepCopy
+8BB2	<Point>abs
+8BB4	<Point>x:
+8BB6	<Point>min:
+8BB8	<Point>max:
+8BBA	<Point>corner:
+8BBC	<Point>*
+8BBE	<Point>storeOn:
+8BC4	<Point>/
+8BE2	<LargePositiveInteger class>initialize
+8BF4	<LargePositiveInteger>bitXor:
+8BF6	<LargePositiveInteger>//
+8BF8	<LargePositiveInteger>+
+8BFA	<LargePositiveInteger>digitAt:
+8BFC	<LargePositiveInteger>negative
+8BFE	<LargePositiveInteger>positive
+8C00	<LargePositiveInteger>bitAnd:
+8C02	<LargePositiveInteger>bitOr:
+8C04	<LargePositiveInteger>bitShift:
+8C06	<LargePositiveInteger>-
+8C08	<LargePositiveInteger><
+8C0A	<LargePositiveInteger><=
+8C0C	<LargePositiveInteger>quo:
+8C0E	<LargePositiveInteger>>=
+8C10	<LargePositiveInteger>>
+8C12	<LargePositiveInteger>~=
+8C14	<LargePositiveInteger>negated
+8C16	<LargePositiveInteger>digitAt:put:
+8C18	<LargePositiveInteger>asObject
+8C20	<LargePositiveInteger>highBit
+8C22	<LargePositiveInteger>digitLength
+8C24	<LargePositiveInteger>truncated
+8C26	<LargePositiveInteger>abs
+8C28	<LargePositiveInteger>=
+8C2A	<LargePositiveInteger>*
+8C2C	<LargePositiveInteger>\\
+8C2E	<LargePositiveInteger>/
+8C5E	<Message class>selector:arguments:
+8C62	<Message class>selector:
+8C64	<Message class>selector:argument:
+8C72	<Message>setSelector:arguments:
+8C74	<Message>arguments
+8C76	<Message>selector
+8C78	<Message>printOn:
+8C7E	<Message>storeOn:
+8C9E	<CompiledMethod class>toReturnSelf
+8CA0	<CompiledMethod class>toReturnField:
+8CA2	<CompiledMethod class>newBytes:flags:nTemps:nStack:nLits:
+8CAA	<CompiledMethod class>initialize
+8CB8	<CompiledMethod class>newMethod:header:
+8CDC	<CompiledMethod>storeOn:
+8CEA	<CompiledMethod>numTemps
+8CEC	<CompiledMethod>fieldsTouched
+8CEE	<CompiledMethod>fileIndex
+8CF2	<CompiledMethod>isQuick
+8CF4	<CompiledMethod>writesField:
+8CF6	<CompiledMethod>readsField:
+8CF8	<CompiledMethod>messages
+8CFA	<CompiledMethod>cacheTempNames:
+8D04	<CompiledMethod>literalAt:
+8D06	<CompiledMethod>initialPC
+8D08	<CompiledMethod>setTempNamesIfCached:
+8D0A	<CompiledMethod>literalAt:put:
+8D0C	<CompiledMethod>needsStack:encoder:
+8D10	<CompiledMethod>printOn:
+8D14	<CompiledMethod>who
+8D16	<CompiledMethod>numLiterals
+8D18	<CompiledMethod>putSource:class:category:inFile:
+8D1C	<CompiledMethod>objectAt:put:
+8D1E	<CompiledMethod>scanLongStore:
+8D20	<CompiledMethod>scanLongLoad:
+8D22	<CompiledMethod>symbolic
+8D2C	<CompiledMethod>numStack
+8D2E	<CompiledMethod>writesRef:
+8D30	<CompiledMethod>setSourcePosition:inFile:
+8D36	<CompiledMethod>needsLargeFrame
+8D38	<CompiledMethod>putSource:inFile:
+8D3E	<CompiledMethod>primitive
+8D40	<CompiledMethod>header
+8D42	<CompiledMethod>readsRef:
+8D44	<CompiledMethod>literals
+8D46	<CompiledMethod>isReturnSelf
+8D48	<CompiledMethod>numArgs
+8D4A	<CompiledMethod>returnField
+8D4E	<CompiledMethod>isReturnField
+8D50	<CompiledMethod>endPC
+8D52	<CompiledMethod>frameSize
+8D54	<CompiledMethod>objectAt:
+8D56	<CompiledMethod>flags
+8D58	<CompiledMethod>numTempsField
+8D5A	<CompiledMethod>getSource
+8D5C	<CompiledMethod>scanFor:
+8D5E	<CompiledMethod>refersToLiteral:
+8D78	<Semaphore class>forMutualExclusion
+8D7A	<Semaphore class>new
+8D88	<Semaphore>terminateProcess
+8D8A	<Semaphore>initSignals
+8D8C	<Semaphore>critical:
+8D8E	<Semaphore>wait
+8D90	<Semaphore>signal
+8DAE	<Character class>cr
+8DB0	<Character class>tab
+8DB2	<Character class>space
+8DB4	<Character class>newPage
+8DB6	<Character class>esc
+8DB8	<Character class>digitValue:
+8DBE	<Character class>value:
+8DC0	<Character class>new
+8DC4	<Character class>characterTable
+8DC6	<Character class>initialize
+8DC8	<Character class>backspace
+8DD8	<Character>asciiValue
+8DDA	<Character>asSymbol
+8DDC	<Character>asInteger
+8DDE	<Character>isSeparator
+8DE0	<Character>isLiteral
+8DE2	<Character><
+8DE4	<Character>>
+8DE6	<Character>digitValue
+8DE8	<Character>isVowel
+8DEC	<Character>isLowercase
+8DEE	<Character>tokenish
+8DF0	<Character>asLowercase
+8DF2	<Character>printOn:
+8DF4	<Character>isDigit
+8DF6	<Character>isAlphaNumeric
+8DF8	<Character>isLetter
+8DFA	<Character>hash
+8DFC	<Character>asUppercase
+8DFE	<Character>copy
+8E00	<Character>=
+8E02	<Character>deepCopy
+8E04	<Character>isUppercase
+8E06	<Character>storeOn:
+8E08	<Character>asCharacter
+93F0	<Integer>implementorOopAsObject
+9446	<Object>implementorOop
+95CC	<BinaryChoiceView class>initialize
+9AFC	<ImageStatistics>printMethodsWithHex:
+9C20	<ImageStatistics>printClassesWithHex:
+ABD0	<UndefinedObject>DoIt
+B6F8	<Integer>printStringRadix:

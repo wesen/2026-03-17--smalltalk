@@ -1,0 +1,617 @@
+Copyright (c) 1983 Xerox Corp.  All rights reserved.
+
+[cycle=1]  aSystemDictionary isNil
+	^ (method) of false
+[cycle=6]  false & aTrue
+	^ (method) of false
+[cycle=10]  aMetaclass postSnapshot
+	[cycle=13]  nil ~~ nil
+		[cycle=17]  aTrue not
+			^ (method) of false
+		^ (method) of false
+	[cycle=22]  aSemaphore signal
+	Primitive #85
+	^ (method) of aMetaclass
+[cycle=28]  aMetaclass displayHeight: 480
+	[cycle=31]  aMetaclass boundingBox
+		[cycle=33]  aDisplayScreen boundingBox
+			[cycle=35]  aDisplayScreen computeBoundingBox
+				[cycle=42]  aPoint extent: aPoint
+					[cycle=46]  aMetaclass origin:extent: aPoint aPoint
+						[cycle=48]  aMetaclass new
+						Primitive #70
+						[cycle=51]  aRectangle origin:extent: aPoint aPoint
+							[cycle=56]  aPoint + aPoint
+								[cycle=58]  aPoint asPoint
+								[cycle=62]  aPoint x
+								[cycle=66]  aPoint y
+								^ (method) of aPoint
+							^ (method) of aRectangle
+						^ (method) of aRectangle
+					^ (method) of aRectangle
+				^ (method) of aRectangle
+			^ (method) of aRectangle
+		^ (method) of aRectangle
+	[cycle=77]  aRectangle width
+		[cycle=79]  aPoint x
+		[cycle=81]  aPoint x
+		^ (method) of 640
+	[cycle=86]  aMetaclass displayExtent: aPoint
+		[cycle=88]  aPoint x
+		[cycle=90]  640 truncateTo: 32
+			[cycle=93]  640 quo: 32
+			Primitive #13
+			^ (method) of 640
+		[cycle=99]  aPoint y
+		[cycle=101]  480 truncateTo: 2
+			[cycle=104]  480 quo: 2
+			Primitive #13
+			^ (method) of 480
+		[cycle=111]  aMetaclass new
+		Primitive #70
+		[cycle=124]  aMetaclass new: 640
+		Primitive #71
+		[cycle=125]  aDisplayScreen extent:offset:bits: aPoint aPoint aDisplayBitmap
+			[cycle=127]  aPoint x
+			[cycle=130]  aPoint y
+			^ (method) of aDisplayScreen
+		[cycle=137]  aMetaclass currentDisplay: aDisplayScreen
+			[cycle=144]  aDisplayScreen bits
+			[cycle=151]  aDisplayScreen become: aDisplayScreen
+			Primitive #72
+			[cycle=154]  aDisplayScreen beDisplay
+			Primitive #102
+			^ (method) of aMetaclass
+		[cycle=162]  aMetaclass new
+		Primitive #70
+		[cycle=174]  40 * 480
+		Primitive #9
+				[cycle=183]  480 isInteger
+					^ (method) of aTrue
+				[cycle=189]  40 negative
+					^ (method) of false
+				[cycle=195]  480 negative
+					^ (method) of false
+				[cycle=200]  false ~~ false
+					[cycle=204]  aTrue not
+						^ (method) of false
+					^ (method) of false
+				[cycle=207]  40 digitMultiply:neg: 480 false
+					[cycle=210]  480 digitAt: 1
+						^ (method) of 224
+					[cycle=229]  40 digitLength
+						^ (method) of 1
+					[cycle=242]  480 digitLength
+						[cycle=250]  aMetaclass maxBytes
+						^ (method) of 2
+					[cycle=263]  aMetaclass new:neg: 3 false
+						[cycle=268]  aMetaclass new: 3
+						Primitive #71
+						^ (method) of aLargePositiveInteger
+					[cycle=273]  40 digitLength
+						^ (method) of 1
+					[cycle=289]  1 to:do: 1 aBlockContext
+							[cycle=302]  40 digitAt: 1
+								^ (method) of 40
+							[cycle=333]  480 digitLength
+								[cycle=341]  aMetaclass maxBytes
+								^ (method) of 2
+							[cycle=353]  1 to:do: 2 aBlockContext
+									[cycle=366]  480 digitAt: 1
+										^ (method) of 224
+									[cycle=384]  480 digitAt: 1
+										^ (method) of 224
+									[cycle=409]  aLargePositiveInteger digitAt: 1
+									Primitive #60
+									[cycle=425]  aLargePositiveInteger digitAt:put: 1 0
+									Primitive #61
+									^ (block) of 2
+									[cycle=448]  480 digitAt: 2
+										^ (method) of 1
+									[cycle=472]  480 digitAt: 2
+										^ (method) of 1
+									[cycle=503]  aLargePositiveInteger digitAt: 2
+									Primitive #60
+									[cycle=519]  aLargePositiveInteger digitAt:put: 2 75
+									Primitive #61
+									^ (block) of 3
+								^ (method) of 1
+							[cycle=541]  aLargePositiveInteger digitAt:put: 3 0
+							Primitive #61
+							^ (block) of 0
+						^ (method) of 1
+					[cycle=558]  aLargePositiveInteger digitAt: 3
+					Primitive #60
+					[cycle=564]  aLargePositiveInteger growby: -1
+						[cycle=567]  aLargePositiveInteger digitLength
+						Primitive #62
+						[cycle=570]  aLargePositiveInteger growto: 2
+							[cycle=573]  aLargePositiveInteger species
+								^ (method) of aMetaclass
+							[cycle=578]  aMetaclass new: 2
+							Primitive #71
+							[cycle=579]  aLargePositiveInteger copyto: aLargePositiveInteger
+								[cycle=582]  aLargePositiveInteger digitLength
+								Primitive #62
+								[cycle=584]  aLargePositiveInteger digitLength
+								Primitive #62
+								[cycle=585]  3 min: 2
+									^ (method) of 2
+								[cycle=596]  1 to:do: 2 aBlockContext
+										[cycle=611]  aLargePositiveInteger digitAt: 1
+										Primitive #60
+										[cycle=612]  aLargePositiveInteger digitAt:put: 1 0
+										Primitive #61
+										^ (block) of 0
+										[cycle=632]  aLargePositiveInteger digitAt: 2
+										Primitive #60
+										[cycle=633]  aLargePositiveInteger digitAt:put: 2 75
+										Primitive #61
+										^ (block) of 75
+									^ (method) of 1
+								^ (method) of aLargePositiveInteger
+							^ (method) of aLargePositiveInteger
+						^ (method) of aLargePositiveInteger
+					[cycle=651]  aLargePositiveInteger truncated
+						[cycle=653]  aLargePositiveInteger digitLength
+						Primitive #62
+						[cycle=661]  aLargePositiveInteger digitAt: 2
+						Primitive #60
+						[cycle=668]  aMetaclass maxBytes
+						^ (method) of aLargePositiveInteger
+					^ (method) of aLargePositiveInteger
+				[cycle=685]  aLargePositiveInteger truncated
+					[cycle=687]  aLargePositiveInteger digitLength
+					Primitive #62
+					[cycle=695]  aLargePositiveInteger digitAt: 2
+					Primitive #60
+					[cycle=702]  aMetaclass maxBytes
+					^ (method) of aLargePositiveInteger
+				^ (method) of aLargePositiveInteger
+			^ (method) of aLargePositiveInteger
+		[cycle=720]  aMetaclass new: aLargePositiveInteger
+		Primitive #71
+		[cycle=721]  aDisplayScreen extent:offset:bits: aPoint aPoint aDisplayBitmap
+			[cycle=723]  aPoint x
+			[cycle=726]  aPoint y
+			^ (method) of aDisplayScreen
+		[cycle=733]  aMetaclass currentDisplay: aDisplayScreen
+			[cycle=740]  aDisplayScreen bits
+			[cycle=747]  aDisplayScreen become: aDisplayScreen
+			Primitive #72
+			[cycle=750]  aDisplayScreen beDisplay
+			Primitive #102
+			^ (method) of aMetaclass
+		[cycle=757]  aControlManager restore
+			[cycle=760]  aControlManager unschedule: aScreenController
+				[cycle=767]  aOrderedCollection remove:ifAbsent: aScreenController aBlockContext
+					[cycle=777]  aOrderedCollection basicAt: 15
+					Primitive #60
+					[cycle=778]  aScreenController = aStandardSystemController
+						^ (method) of false
+					[cycle=797]  aOrderedCollection basicAt: 16
+					Primitive #60
+					[cycle=798]  aScreenController = aStandardSystemController
+						^ (method) of false
+					[cycle=817]  aOrderedCollection basicAt: 17
+					Primitive #60
+					[cycle=818]  aScreenController = aStandardSystemController
+						^ (method) of false
+					[cycle=837]  aOrderedCollection basicAt: 18
+					Primitive #60
+					[cycle=838]  aScreenController = aScreenController
+						^ (method) of aTrue
+					[cycle=846]  aOrderedCollection removeIndex: 18
+						[cycle=856]  aOrderedCollection basicAt:put: 18 nil
+						Primitive #61
+						^ (method) of aOrderedCollection
+					^ (method) of aScreenController
+				^ (method) of aControlManager
+			[cycle=871]  aControlManager scheduleOnBottom: aScreenController
+				[cycle=874]  aOrderedCollection addLast: aScreenController
+					[cycle=877]  aOrderedCollection basicSize
+					Primitive #62
+					[cycle=887]  aOrderedCollection basicAt:put: 18 aScreenController
+					Primitive #61
+					^ (method) of aScreenController
+				^ (method) of aControlManager
+			[cycle=895]  aScreenController view
+			[cycle=897]  aDisplayScreen boundingBox
+				[cycle=899]  aDisplayScreen computeBoundingBox
+					[cycle=906]  aPoint extent: aPoint
+						[cycle=910]  aMetaclass origin:extent: aPoint aPoint
+							[cycle=912]  aMetaclass new
+							Primitive #70
+							[cycle=915]  aRectangle origin:extent: aPoint aPoint
+								[cycle=920]  aPoint + aPoint
+									[cycle=922]  aPoint asPoint
+									[cycle=926]  aPoint x
+									[cycle=930]  aPoint y
+									^ (method) of aPoint
+								^ (method) of aRectangle
+							^ (method) of aRectangle
+						^ (method) of aRectangle
+					^ (method) of aRectangle
+				^ (method) of aRectangle
+			[cycle=940]  aFormView window: aRectangle
+				[cycle=943]  aRectangle copy
+					[cycle=945]  aRectangle deepCopy
+						[cycle=954]  aMetaclass isVariable
+							^ (method) of false
+						[cycle=963]  aMetaclass basicNew
+						Primitive #70
+						[cycle=967]  aMetaclass instSize
+							^ (method) of 2
+						[cycle=981]  aRectangle instVarAt: 2
+						Primitive #73
+						[cycle=982]  aPoint deepCopy
+							[cycle=984]  640 deepCopy
+							[cycle=986]  480 deepCopy
+							^ (method) of aPoint
+						[cycle=989]  aRectangle instVarAt:put: 2 aPoint
+						Primitive #74
+						[cycle=1004]  aRectangle instVarAt: 1
+						Primitive #73
+						[cycle=1005]  aPoint deepCopy
+							[cycle=1007]  0 deepCopy
+							[cycle=1009]  0 deepCopy
+							^ (method) of aPoint
+						[cycle=1012]  aRectangle instVarAt:put: 1 aPoint
+						Primitive #74
+						^ (method) of aRectangle
+					^ (method) of aRectangle
+				[cycle=1026]  aFormView setWindow: aRectangle
+					[cycle=1032]  aFormView unlock
+						[cycle=1034]  aFormView isUnlocked
+							[cycle=1041]  false & false
+								^ (method) of false
+							^ (method) of false
+						[cycle=1054]  aOrderedCollection do: aBlockContext
+							^ (method) of aOrderedCollection
+						^ (method) of aFormView
+					^ (method) of aFormView
+				^ (method) of aFormView
+			[cycle=1074]  aOrderedCollection reverseDo: aBlockContext
+				[cycle=1084]  aOrderedCollection basicAt: 18
+				Primitive #60
+					[cycle=1088]  aScreenController view
+					[cycle=1090]  aFormView display
+						[cycle=1092]  aFormView displayBorder
+							[cycle=1095]  aRectangle = 0
+								[cycle=1097]  aRectangle species
+									^ (method) of aMetaclass
+								[cycle=1102]  0 species
+									^ (method) of aMetaclass
+								[cycle=1106]  aMetaclass = aMetaclass
+									^ (method) of false
+								^ (method) of false
+							[cycle=1119]  nil isNil
+								^ (method) of aTrue
+							[cycle=1124]  aFormView displayBox
+								[cycle=1126]  aFormView insetDisplayBox
+									[cycle=1132]  aFormView computeInsetDisplayBox
+										[cycle=1134]  aFormView isTopView
+											^ (method) of aTrue
+										[cycle=1142]  aFormView getWindow
+											^ (method) of aRectangle
+										[cycle=1149]  aFormView displayTransform: aRectangle
+											[cycle=1151]  aFormView displayTransformation
+												[cycle=1157]  aFormView computeDisplayTransformation
+													[cycle=1159]  aFormView isTopView
+														^ (method) of aTrue
+													^ (method) of aWindowingTransformation
+												^ (method) of aWindowingTransformation
+											[cycle=1171]  aWindowingTransformation applyTo: aRectangle
+												[cycle=1182]  aRectangle translateBy: aPoint
+													[cycle=1186]  aPoint + aPoint
+														[cycle=1188]  aPoint asPoint
+														[cycle=1192]  aPoint x
+														[cycle=1196]  aPoint y
+														^ (method) of aPoint
+													[cycle=1202]  aPoint + aPoint
+														[cycle=1204]  aPoint asPoint
+														[cycle=1208]  aPoint x
+														[cycle=1212]  aPoint y
+														^ (method) of aPoint
+													[cycle=1216]  aMetaclass origin:corner: aPoint aPoint
+														[cycle=1218]  aMetaclass new
+														Primitive #70
+														[cycle=1221]  aRectangle origin:corner: aPoint aPoint
+															^ (method) of aRectangle
+														^ (method) of aRectangle
+													^ (method) of aRectangle
+												^ (method) of aRectangle
+											[cycle=1232]  aRectangle rounded
+												[cycle=1235]  aPoint rounded
+													[cycle=1237]  0 rounded
+													[cycle=1239]  0 rounded
+													^ (method) of aPoint
+												[cycle=1243]  aPoint rounded
+													[cycle=1245]  640 rounded
+													[cycle=1247]  480 rounded
+													^ (method) of aPoint
+												[cycle=1250]  aMetaclass origin:corner: aPoint aPoint
+													[cycle=1252]  aMetaclass new
+													Primitive #70
+													[cycle=1255]  aRectangle origin:corner: aPoint aPoint
+														^ (method) of aRectangle
+													^ (method) of aRectangle
+												^ (method) of aRectangle
+											^ (method) of aRectangle
+										[cycle=1265]  aRectangle insetBy: aRectangle
+											[cycle=1268]  aRectangle isKindOf: aMetaclass
+												^ (method) of aTrue
+											[cycle=1279]  aRectangle origin
+											[cycle=1280]  aPoint + aPoint
+												[cycle=1282]  aPoint asPoint
+												[cycle=1286]  aPoint x
+												[cycle=1290]  aPoint y
+												^ (method) of aPoint
+											[cycle=1296]  aRectangle corner
+											[cycle=1297]  aPoint - aPoint
+												[cycle=1299]  aPoint asPoint
+												[cycle=1303]  aPoint x
+												[cycle=1307]  aPoint y
+												^ (method) of aPoint
+											[cycle=1311]  aMetaclass origin:corner: aPoint aPoint
+												[cycle=1313]  aMetaclass new
+												Primitive #70
+												[cycle=1316]  aRectangle origin:corner: aPoint aPoint
+													^ (method) of aRectangle
+												^ (method) of aRectangle
+											^ (method) of aRectangle
+										^ (method) of aRectangle
+									^ (method) of aRectangle
+								[cycle=1334]  aRectangle expandBy: aRectangle
+									[cycle=1337]  aRectangle isKindOf: aMetaclass
+										^ (method) of aTrue
+									[cycle=1348]  aRectangle origin
+									[cycle=1349]  aPoint - aPoint
+										[cycle=1351]  aPoint asPoint
+										[cycle=1355]  aPoint x
+										[cycle=1359]  aPoint y
+										^ (method) of aPoint
+									[cycle=1365]  aRectangle corner
+									[cycle=1366]  aPoint + aPoint
+										[cycle=1368]  aPoint asPoint
+										[cycle=1372]  aPoint x
+										[cycle=1376]  aPoint y
+										^ (method) of aPoint
+									[cycle=1380]  aMetaclass origin:corner: aPoint aPoint
+										[cycle=1382]  aMetaclass new
+										Primitive #70
+										[cycle=1385]  aRectangle origin:corner: aPoint aPoint
+											^ (method) of aRectangle
+										^ (method) of aRectangle
+									^ (method) of aRectangle
+								^ (method) of aRectangle
+							[cycle=1396]  aDisplayScreen border:widthRectangle:mask: aRectangle aRectangle aForm
+								[cycle=1400]  aRectangle insetBy: aRectangle
+									[cycle=1403]  aRectangle isKindOf: aMetaclass
+										^ (method) of aTrue
+									[cycle=1414]  aRectangle origin
+									[cycle=1415]  aPoint + aPoint
+										[cycle=1417]  aPoint asPoint
+										[cycle=1421]  aPoint x
+										[cycle=1425]  aPoint y
+										^ (method) of aPoint
+									[cycle=1431]  aRectangle corner
+									[cycle=1432]  aPoint - aPoint
+										[cycle=1434]  aPoint asPoint
+										[cycle=1438]  aPoint x
+										[cycle=1442]  aPoint y
+										^ (method) of aPoint
+									[cycle=1446]  aMetaclass origin:corner: aPoint aPoint
+										[cycle=1448]  aMetaclass new
+										Primitive #70
+										[cycle=1451]  aRectangle origin:corner: aPoint aPoint
+											^ (method) of aRectangle
+										^ (method) of aRectangle
+									^ (method) of aRectangle
+								[cycle=1459]  aRectangle areasOutside: aRectangle
+									[cycle=1462]  aRectangle corner
+									[cycle=1463]  aPoint <= aPoint
+										[cycle=1466]  aPoint x
+										[cycle=1471]  aPoint y
+										^ (method) of aTrue
+									[cycle=1477]  aRectangle origin
+									[cycle=1479]  aPoint <= aPoint
+										[cycle=1482]  aPoint x
+										[cycle=1487]  aPoint y
+										^ (method) of aTrue
+									[cycle=1494]  aMetaclass new
+										[cycle=1497]  aMetaclass new: 10
+											Primitive #71
+											[cycle=1501]  aOrderedCollection setIndices
+												[cycle=1503]  aOrderedCollection basicSize
+												Primitive #62
+												[cycle=1507]  5 max: 1
+													^ (method) of 5
+												[cycle=1518]  4 max: 0
+													^ (method) of 4
+												^ (method) of aOrderedCollection
+											^ (method) of aOrderedCollection
+										^ (method) of aOrderedCollection
+									[cycle=1530]  aRectangle origin
+									[cycle=1531]  aPoint y
+									[cycle=1533]  aPoint y
+									[cycle=1537]  aPoint y
+									[cycle=1541]  aRectangle corner
+									[cycle=1542]  aPoint y
+									[cycle=1544]  aPoint y
+									[cycle=1548]  aPoint y
+									[cycle=1552]  aRectangle origin
+									[cycle=1553]  aPoint x
+									[cycle=1555]  aPoint x
+									[cycle=1559]  aRectangle corner
+									[cycle=1560]  aPoint x
+									[cycle=1562]  aPoint x
+									^ (method) of aOrderedCollection
+								[cycle=1571]  aOrderedCollection do: aBlockContext
+									^ (method) of aOrderedCollection
+								^ (method) of aDisplayScreen
+							^ (method) of aFormView
+						[cycle=1587]  aFormView displayView
+							[cycle=1596]  aInfiniteForm offset
+								^ (method) of aPoint
+							[cycle=1606]  aInfiniteForm offset: aPoint
+								^ (method) of aInfiniteForm
+							[cycle=1612]  aFormView displayTransformation
+								^ (method) of aWindowingTransformation
+							[cycle=1620]  aFormView insetDisplayBox
+								^ (method) of aRectangle
+							[cycle=1628]  aFormView rule
+								[cycle=1634]  aFormView defaultRule
+									[cycle=1636]  aMetaclass over
+										^ (method) of 3
+									^ (method) of 3
+								^ (method) of 3
+							[cycle=1642]  aFormView mask
+								[cycle=1648]  aFormView defaultMask
+									[cycle=1650]  aMetaclass black
+									^ (method) of aForm
+								^ (method) of aForm
+							[cycle=1653]  aInfiniteForm displayOn:transformation:clippingBox:rule:mask: aDisplayScreen aWindowingTransformation aRectangle 3 aForm
+								[cycle=1659]  aInfiniteForm relativeRectangle
+									[cycle=1662]  aInfiniteForm offset
+										^ (method) of aPoint
+									[cycle=1668]  aInfiniteForm extent
+										[cycle=1670]  aInfiniteForm boundingBox
+											[cycle=1672]  aInfiniteForm computeBoundingBox
+												[cycle=1677]  aMetaclass maxVal
+												[cycle=1679]  aMetaclass maxVal
+												[cycle=1680]  16383 @ 16383
+												Primitive #18
+													[cycle=1684]  aMetaclass x:y: 16383 16383
+														[cycle=1686]  aMetaclass new
+														Primitive #70
+														[cycle=1689]  aPoint setX:setY: 16383 16383
+															^ (method) of aPoint
+														^ (method) of aPoint
+													^ (method) of aPoint
+												[cycle=1697]  aPoint corner: aPoint
+													[cycle=1701]  aMetaclass origin:corner: aPoint aPoint
+														[cycle=1703]  aMetaclass new
+														Primitive #70
+														[cycle=1706]  aRectangle origin:corner: aPoint aPoint
+															^ (method) of aRectangle
+														^ (method) of aRectangle
+													^ (method) of aRectangle
+												^ (method) of aRectangle
+											^ (method) of aRectangle
+										[cycle=1716]  aRectangle extent
+											[cycle=1719]  aPoint - aPoint
+												[cycle=1721]  aPoint asPoint
+												[cycle=1725]  aPoint x
+												[cycle=1729]  aPoint y
+												[cycle=1731]  16383 @ 16383
+												Primitive #18
+													[cycle=1735]  aMetaclass x:y: 16383 16383
+														[cycle=1737]  aMetaclass new
+														Primitive #70
+														[cycle=1740]  aPoint setX:setY: 16383 16383
+															^ (method) of aPoint
+														^ (method) of aPoint
+													^ (method) of aPoint
+												^ (method) of aPoint
+											^ (method) of aPoint
+										^ (method) of aPoint
+									[cycle=1751]  aMetaclass origin:extent: aPoint aPoint
+										[cycle=1753]  aMetaclass new
+										Primitive #70
+										[cycle=1756]  aRectangle origin:extent: aPoint aPoint
+											[cycle=1761]  aPoint + aPoint
+												[cycle=1763]  aPoint asPoint
+												[cycle=1767]  aPoint x
+												[cycle=1771]  aPoint y
+												[cycle=1773]  16383 @ 16383
+												Primitive #18
+													[cycle=1777]  aMetaclass x:y: 16383 16383
+														[cycle=1779]  aMetaclass new
+														Primitive #70
+														[cycle=1782]  aPoint setX:setY: 16383 16383
+															^ (method) of aPoint
+														^ (method) of aPoint
+													^ (method) of aPoint
+												^ (method) of aPoint
+											^ (method) of aRectangle
+										^ (method) of aRectangle
+									^ (method) of aRectangle
+								[cycle=1795]  aRectangle origin
+								[cycle=1797]  aInfiniteForm relativeRectangle
+									[cycle=1800]  aInfiniteForm offset
+										^ (method) of aPoint
+									[cycle=1806]  aInfiniteForm extent
+										[cycle=1808]  aInfiniteForm boundingBox
+											[cycle=1810]  aInfiniteForm computeBoundingBox
+												[cycle=1815]  aMetaclass maxVal
+												[cycle=1817]  aMetaclass maxVal
+												[cycle=1818]  16383 @ 16383
+												Primitive #18
+													[cycle=1822]  aMetaclass x:y: 16383 16383
+														[cycle=1824]  aMetaclass new
+														Primitive #70
+														[cycle=1827]  aPoint setX:setY: 16383 16383
+															^ (method) of aPoint
+														^ (method) of aPoint
+													^ (method) of aPoint
+												[cycle=1835]  aPoint corner: aPoint
+													[cycle=1839]  aMetaclass origin:corner: aPoint aPoint
+														[cycle=1841]  aMetaclass new
+														Primitive #70
+														[cycle=1844]  aRectangle origin:corner: aPoint aPoint
+															^ (method) of aRectangle
+														^ (method) of aRectangle
+													^ (method) of aRectangle
+												^ (method) of aRectangle
+											^ (method) of aRectangle
+										[cycle=1854]  aRectangle extent
+											[cycle=1857]  aPoint - aPoint
+												[cycle=1859]  aPoint asPoint
+												[cycle=1863]  aPoint x
+												[cycle=1867]  aPoint y
+												[cycle=1869]  16383 @ 16383
+												Primitive #18
+													[cycle=1873]  aMetaclass x:y: 16383 16383
+														[cycle=1875]  aMetaclass new
+														Primitive #70
+														[cycle=1878]  aPoint setX:setY: 16383 16383
+															^ (method) of aPoint
+														^ (method) of aPoint
+													^ (method) of aPoint
+												^ (method) of aPoint
+											^ (method) of aPoint
+										^ (method) of aPoint
+									[cycle=1889]  aMetaclass origin:extent: aPoint aPoint
+										[cycle=1891]  aMetaclass new
+										Primitive #70
+										[cycle=1894]  aRectangle origin:extent: aPoint aPoint
+											[cycle=1899]  aPoint + aPoint
+												[cycle=1901]  aPoint asPoint
+												[cycle=1905]  aPoint x
+												[cycle=1909]  aPoint y
+												[cycle=1911]  16383 @ 16383
+												Primitive #18
+													[cycle=1915]  aMetaclass x:y: 16383 16383
+														[cycle=1917]  aMetaclass new
+														Primitive #70
+														[cycle=1920]  aPoint setX:setY: 16383 16383
+															^ (method) of aPoint
+														^ (method) of aPoint
+													^ (method) of aPoint
+												^ (method) of aPoint
+											^ (method) of aRectangle
+										^ (method) of aRectangle
+									^ (method) of aRectangle
+								[cycle=1933]  aRectangle origin
+								[cycle=1936]  aInfiniteForm displayOn:transformation:clippingBox:align:with:rule:mask: aDisplayScreen aWindowingTransformation aRectangle aPoint aPoint 3 aForm
+									[cycle=1939]  aWindowingTransformation applyTo: aPoint
+										[cycle=1950]  aPoint translateBy: aPoint
+											[cycle=1952]  aPoint x
+											[cycle=1956]  aPoint y
+											^ (method) of aPoint
+										^ (method) of aPoint
+									[cycle=1969]  aPoint - aPoint
+										[cycle=1971]  aPoint asPoint
+										[cycle=1975]  aPoint x
+										[cycle=1979]  aPoint y

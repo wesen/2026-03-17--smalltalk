@@ -1,24 +1,12 @@
 {
   "hooks": {
-    "TaskCompleted": [
+    "PostToolUse": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"Don't forget to update your diary (see /diary skill) if you haven't already, otherwise continue. Don't forget to commit at appropriate intervals.\"",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"Don't forget to update your diary (see /diary skill) if you haven't already, otherwise continue. Don't forget to commit at appropriate intervals.\"",
+            "command": "./.claude/hooks/diary-reminder.sh",
             "timeout": 5
           }
         ]
