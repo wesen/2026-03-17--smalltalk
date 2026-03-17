@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "TaskCompleted": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"Don't forget to update your diary (see /diary skill) if you haven't already, otherwise continue. Don't forget to commit at appropriate intervals.\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"Don't forget to update your diary (see /diary skill) if you haven't already, otherwise continue. Don't forget to commit at appropriate intervals.\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"Read the docmgr and diary skills (/docmgr, /diary), and going forward don't forget to keep a diary and commit as you go. Don't forget to commit at appropriate intervals.\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
