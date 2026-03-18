@@ -94,6 +94,8 @@ type Interpreter struct {
 
 	// Minimal VM-side display/input bookkeeping used by I/O primitives.
 	displayScreen uint16
+	cursorForm    uint16
+	cursorLinked  bool
 
 	// Cycle counter for tracing
 	cycleCount uint64
@@ -1249,7 +1251,26 @@ func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 		}
 	case 75: // asOop, hash
 		rcvr := interp.popStack()
-		interp.pushInteger(int(rcvr >> 1))
+		if om.IsSmallInteger(rcvr) {
+			interp.unPop(1)
+			interp.primitiveFail()
+			return
+		}
+		interp.push(rcvr | 1)
+	case 76: // asObject
+		rcvr := interp.popStack()
+		if !om.IsSmallInteger(rcvr) {
+			interp.unPop(1)
+			interp.primitiveFail()
+			return
+		}
+		newOop := rcvr & 0xFFFE
+		if !interp.memory.ValidOop(newOop) {
+			interp.unPop(1)
+			interp.primitiveFail()
+			return
+		}
+		interp.push(newOop)
 	case 77: // someInstance
 		interp.primitiveFail()
 	case 78: // nextInstance
@@ -1335,18 +1356,72 @@ func (interp *Interpreter) primitiveValue() {
 
 func (interp *Interpreter) primitivePerform() {
 	performSelector := interp.messageSelector
-	_ = performSelector
-	interp.primitiveFail() // Complex — defer
+	interp.messageSelector = interp.stackValue(interp.argumentCount - 1)
+	newReceiver := interp.stackValue(interp.argumentCount)
+	interp.lookupMethodInClass(interp.fetchClassOf(newReceiver))
+	if interp.argumentCountOf(interp.newMethod) != interp.argumentCount-1 {
+		interp.messageSelector = performSelector
+		interp.primitiveFail()
+		return
+	}
+
+	selectorIndex := interp.stackPointer - interp.argumentCount + 1
+	interp.transfer(interp.argumentCount-1, selectorIndex+1, interp.activeContext, selectorIndex, interp.activeContext)
+	interp.pop(1)
+	interp.argumentCount--
+	interp.executeNewMethod()
 }
 
 func (interp *Interpreter) primitivePerformWithArgs() {
-	interp.primitiveFail() // Complex — defer
+	argumentArray := interp.popStack()
+	if om.IsSmallInteger(argumentArray) || !interp.memory.ValidOop(argumentArray) {
+		interp.unPop(1)
+		interp.primitiveFail()
+		return
+	}
+	arrayClass := interp.fetchClassOf(argumentArray)
+	if arrayClass != om.ClassArrayPointer {
+		interp.unPop(1)
+		interp.primitiveFail()
+		return
+	}
+	arraySize := interp.fetchWordLengthOf(argumentArray)
+	if interp.stackPointer+arraySize >= interp.fetchWordLengthOf(interp.activeContext) {
+		interp.unPop(1)
+		interp.primitiveFail()
+		return
+	}
+
+	performSelector := interp.messageSelector
+	interp.messageSelector = interp.popStack()
+	thisReceiver := interp.stackTop()
+	interp.argumentCount = arraySize
+	for index := 0; index < interp.argumentCount; index++ {
+		interp.push(interp.fetchPointer(index, argumentArray))
+	}
+
+	interp.lookupMethodInClass(interp.fetchClassOf(thisReceiver))
+	if interp.argumentCountOf(interp.newMethod) != interp.argumentCount {
+		interp.pop(interp.argumentCount)
+		interp.push(interp.messageSelector)
+		interp.push(argumentArray)
+		interp.argumentCount = 2
+		interp.messageSelector = performSelector
+		interp.primitiveFail()
+		return
+	}
+
+	interp.executeNewMethod()
 }
 
 // ---- I/O primitives (stubs) ----
 
 func (interp *Interpreter) dispatchInputOutputPrimitives() {
 	switch interp.primitiveIndex {
+	case 92: // cursorLink:
+		interp.primitiveCursorLink()
+	case 101: // beCursor
+		interp.primitiveBeCursor()
 	case 102: // beDisplay
 		interp.primitiveBeDisplay()
 	case 98: // secondClockInto:
@@ -1364,6 +1439,28 @@ func (interp *Interpreter) primitiveBeDisplay() {
 	screen := interp.popStack()
 	interp.displayScreen = screen
 	interp.push(screen)
+}
+
+func (interp *Interpreter) primitiveBeCursor() {
+	cursor := interp.popStack()
+	interp.cursorForm = cursor
+	interp.push(cursor)
+}
+
+func (interp *Interpreter) primitiveCursorLink() {
+	linkState := interp.popStack()
+	rcvr := interp.popStack()
+	switch linkState {
+	case om.TruePointer:
+		interp.cursorLinked = true
+	case om.FalsePointer:
+		interp.cursorLinked = false
+	default:
+		interp.unPop(2)
+		interp.primitiveFail()
+		return
+	}
+	interp.push(rcvr)
 }
 
 // ---- Process scheduling (Blue Book p.641-647) ----

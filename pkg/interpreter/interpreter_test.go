@@ -104,6 +104,41 @@ func decodeSendForCurrentBytecode(interp *Interpreter) (selector uint16, argCoun
 	}
 }
 
+func loadTraceSendLines(t *testing.T, relativePath string) map[uint64]string {
+	t.Helper()
+
+	path := filepath.Join("..", "..", relativePath)
+	file, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("open %s: %v", relativePath, err)
+	}
+	defer file.Close()
+
+	lines := map[uint64]string{}
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+		if !strings.HasPrefix(trimmed, "[cycle=") {
+			continue
+		}
+		end := strings.Index(trimmed, "]")
+		if end == -1 {
+			t.Fatalf("malformed trace line in %s: %q", relativePath, line)
+		}
+		cycleText := strings.TrimPrefix(trimmed[:end], "[cycle=")
+		cycle, err := strconv.ParseUint(cycleText, 10, 64)
+		if err != nil {
+			t.Fatalf("parse cycle %q in %s: %v", cycleText, relativePath, err)
+		}
+		lines[cycle] = trimmed
+	}
+	if err := scanner.Err(); err != nil {
+		t.Fatalf("scan %s: %v", relativePath, err)
+	}
+	return lines
+}
+
 func loadTestInterpreter(t *testing.T) *Interpreter {
 	t.Helper()
 
@@ -120,6 +155,73 @@ func loadTestInterpreter(t *testing.T) *Interpreter {
 	interp.activeContext = suspendedContext
 	interp.fetchContextRegisters()
 	return interp
+}
+
+func runInterpreterCycles(t *testing.T, interp *Interpreter, cycles uint64) {
+	t.Helper()
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("unexpected panic after %d cycles: %v\nactiveContext=0x%04X method=0x%04X receiver=0x%04X bytecode=%d ip=%d sp=%d",
+				interp.cycleCount, r, interp.activeContext, interp.method, interp.receiver,
+				interp.currentBytecode, interp.instructionPointer, interp.stackPointer)
+		}
+	}()
+
+	for interp.cycleCount = 0; interp.cycleCount < cycles; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+	}
+}
+
+func assertTraceSendSelectorsMatchUpTo(t *testing.T, relativePath string, maxAllowedCycle uint64) {
+	t.Helper()
+
+	allTraceLines := loadTraceSendLines(t, relativePath)
+	traceLines := map[uint64]string{}
+	var maxCycle uint64
+	for cycle, line := range allTraceLines {
+		if maxAllowedCycle != 0 && cycle > maxAllowedCycle {
+			continue
+		}
+		traceLines[cycle] = line
+		if cycle > maxCycle {
+			maxCycle = cycle
+		}
+	}
+
+	interp := loadTestInterpreter(t)
+	seen := map[uint64]bool{}
+
+	for interp.cycleCount = 0; interp.cycleCount < maxCycle; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+
+		traceCycle := interp.cycleCount + 1
+		if selector, _, ok := decodeSendForCurrentBytecode(interp); ok {
+			if line, exists := traceLines[traceCycle]; exists {
+				selectorName := symbolString(interp, selector)
+				if selectorName == "" {
+					t.Fatalf("trace %s cycle %d: selector 0x%04X has no string form; trace line=%q",
+						relativePath, traceCycle, selector, line)
+				}
+				if !strings.Contains(line, selectorName) {
+					t.Fatalf("trace %s cycle %d: expected line %q to contain selector %q",
+						relativePath, traceCycle, line, selectorName)
+				}
+				seen[traceCycle] = true
+			}
+		}
+
+		interp.dispatchOnThisBytecode()
+	}
+
+	for cycle, line := range traceLines {
+		if !seen[cycle] {
+			t.Fatalf("trace %s cycle %d was never matched by a send bytecode: %q", relativePath, cycle, line)
+		}
+	}
 }
 
 func TestStartupRunsPastFormerContextOverflow(t *testing.T) {
@@ -150,6 +252,14 @@ func TestStartupRunsPastFormerContextOverflow(t *testing.T) {
 	if interp.cycleCount != 2000 {
 		t.Fatalf("expected to complete 2000 cycles, got %d", interp.cycleCount)
 	}
+}
+
+func TestTrace2SendSelectorsMatch(t *testing.T) {
+	assertTraceSendSelectorsMatchUpTo(t, "data/trace2", 0)
+}
+
+func TestTrace3SendSelectorsMatch(t *testing.T) {
+	t.Skip("diagnostic check retained while display/control-path trace alignment is still under active investigation")
 }
 
 func TestDiagnoseRecursiveNotUnderstood(t *testing.T) {
@@ -443,19 +553,21 @@ func TestMethodCorruptionWithoutCache(t *testing.T) {
 }
 
 func TestLogStateAtTwoMillionCycles(t *testing.T) {
-	t.Skip("diagnostic test retained for manual investigation")
 	methodNames := loadOopNames(t, "data/method.oops")
 	interp := loadTestInterpreter(t)
-
-	for interp.cycleCount = 0; interp.cycleCount < 2000000; interp.cycleCount++ {
-		interp.checkProcessSwitch()
-		interp.currentBytecode = interp.fetchBytecode()
-		interp.dispatchOnThisBytecode()
-	}
+	runInterpreterCycles(t, interp, 2000000)
 
 	t.Logf("cycle=%d activeContext=0x%04X method=0x%04X(%s) receiver=0x%04X ip=%d sp=%d bytecode=%d",
 		interp.cycleCount, interp.activeContext, interp.method, methodNames[interp.method],
 		interp.receiver, interp.instructionPointer, interp.stackPointer, interp.currentBytecode)
+
+	scheduler := interp.fetchPointer(ValueIndex, om.SchedulerAssociationPointer)
+	activeProcess := interp.fetchPointer(ActiveProcessIndex, scheduler)
+	suspendedContext := interp.fetchPointer(SuspendedContextIndex, activeProcess)
+	priority := interp.fetchPointer(PriorityIndex, activeProcess)
+	myList := interp.fetchPointer(MyListIndex, activeProcess)
+	t.Logf("scheduler=0x%04X activeProcess=0x%04X suspendedContext=0x%04X priority=%d myList=0x%04X",
+		scheduler, activeProcess, suspendedContext, om.SmallIntegerValue(priority), myList)
 
 	ctx := interp.activeContext
 	for depth := 0; depth < 20 && ctx != om.NilPointer; depth++ {
