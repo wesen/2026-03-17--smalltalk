@@ -178,12 +178,18 @@ func (interp *Interpreter) isBlockContext(contextPointer uint16) bool {
 	if om.IsSmallInteger(contextPointer) || !interp.memory.ValidOop(contextPointer) {
 		return false
 	}
+	if interp.fetchWordLengthOf(contextPointer) <= MethodIndex {
+		return false
+	}
 	methodOrArguments := interp.fetchPointer(MethodIndex, contextPointer)
 	return om.IsSmallInteger(methodOrArguments)
 }
 
 func (interp *Interpreter) isMethodContext(contextPointer uint16) bool {
 	if om.IsSmallInteger(contextPointer) || !interp.memory.ValidOop(contextPointer) {
+		return false
+	}
+	if interp.fetchWordLengthOf(contextPointer) <= MethodIndex {
 		return false
 	}
 	methodPointer := interp.fetchPointer(MethodIndex, contextPointer)

@@ -92,14 +92,25 @@ type ObjectMemory struct {
 
 	// Number of object table entries.
 	otEntryCount int
+
+	// reusableBodies records bodies for OOPs explicitly freed during this run.
+	// Free entries that already existed in the image are not assumed reusable.
+	reusableBodies map[uint16]reusableBody
+}
+
+type reusableBody struct {
+	segment  uint16
+	location uint16
+	size     int
 }
 
 // New creates an ObjectMemory from raw object table and object space data.
 func New(objectTable []uint16, objectSpace []uint16) *ObjectMemory {
 	return &ObjectMemory{
-		objectTable:  objectTable,
-		objectSpace:  objectSpace,
-		otEntryCount: len(objectTable) / 2,
+		objectTable:    objectTable,
+		objectSpace:    objectSpace,
+		otEntryCount:   len(objectTable) / 2,
+		reusableBodies: map[uint16]reusableBody{},
 	}
 }
 
@@ -147,10 +158,20 @@ func (om *ObjectMemory) setOtEntryWord1(oop uint16, value uint16) {
 // FreeObject marks an object table entry reusable for future allocations.
 // The object body remains in object space; only the OOP slot is recycled.
 func (om *ObjectMemory) FreeObject(oop uint16) {
-	if IsSmallInteger(oop) || !om.ValidOop(oop) {
+	if IsSmallInteger(oop) || !om.ValidOop(oop) || om.IsFree(oop) {
 		return
 	}
-	om.setOtEntryWord0(oop, otFreeBit)
+	w0 := om.otEntryWord0(oop)
+	w1 := om.otEntryWord1(oop)
+	loc := int(w0&otSegmentMask)*65536 + int(w1)
+	if loc >= 0 && loc < len(om.objectSpace) {
+		om.reusableBodies[oop] = reusableBody{
+			segment:  w0 & otSegmentMask,
+			location: w1,
+			size:     int(om.objectSpace[loc]),
+		}
+	}
+	om.setOtEntryWord0(oop, w0|otFreeBit)
 }
 
 // SwapPointersOf implements the Blue Book pointer swap used by become:.
@@ -304,10 +325,57 @@ func (om *ObjectMemory) ObjectTableEntryCount() int {
 	return om.otEntryCount
 }
 
+func (om *ObjectMemory) initializeBody(loc int, classPointer uint16, bodySize int, pointerFields bool) {
+	om.objectSpace[loc] = uint16(bodySize)
+	om.objectSpace[loc+1] = classPointer
+	if pointerFields {
+		for i := 2; i < bodySize; i++ {
+			om.objectSpace[loc+i] = NilPointer
+		}
+		return
+	}
+	for i := 2; i < bodySize; i++ {
+		om.objectSpace[loc+i] = 0
+	}
+}
+
 func (om *ObjectMemory) instantiate(classPointer uint16, bodySize int, pointerFields bool, oddLength bool) uint16 {
+	var flags uint16
+	if pointerFields {
+		flags = otPointerBit
+	}
+	if oddLength {
+		flags |= otOddLengthBit
+	}
+
+	for i := 0; i < om.otEntryCount; i++ {
+		oop := uint16(i * 2)
+		if !om.IsFree(oop) {
+			continue
+		}
+		reusable, ok := om.reusableBodies[oop]
+		if !ok || reusable.size != bodySize {
+			continue
+		}
+		loc := int(reusable.segment)*65536 + int(reusable.location)
+		if loc < 0 || loc+bodySize > len(om.objectSpace) {
+			delete(om.reusableBodies, oop)
+			continue
+		}
+		om.initializeBody(loc, classPointer, bodySize, pointerFields)
+		om.objectTable[otIndex(oop)] = flags | reusable.segment
+		om.objectTable[otIndex(oop)+1] = reusable.location
+		delete(om.reusableBodies, oop)
+		return oop
+	}
+
 	fullLocation := len(om.objectSpace)
 	// Compute segment and location within segment
 	segment := fullLocation / 65536
+	if segment > int(otSegmentMask) {
+		panic(fmt.Sprintf("object space exhausted: need segment %d for class 0x%04X bodySize=%d (limit=%d words)",
+			segment, classPointer, bodySize, (int(otSegmentMask)+1)*65536))
+	}
 	locationInSegment := fullLocation % 65536
 	// Extend object space
 	body := make([]uint16, bodySize)
@@ -321,19 +389,16 @@ func (om *ObjectMemory) instantiate(classPointer uint16, bodySize int, pointerFi
 	}
 	om.objectSpace = append(om.objectSpace, body...)
 
-	var flags uint16
-	if pointerFields {
-		flags = otPointerBit
-	}
-	if oddLength {
-		flags |= otOddLengthBit
-	}
 	flags |= uint16(segment<<otSegmentShift) & otSegmentMask
 
 	// Find a free OT entry
 	for i := 0; i < om.otEntryCount; i++ {
 		oop := uint16(i * 2)
 		if om.IsFree(oop) {
+			if _, tracked := om.reusableBodies[oop]; tracked {
+				continue
+			}
+			delete(om.reusableBodies, oop)
 			om.objectTable[otIndex(oop)] = flags
 			om.objectTable[otIndex(oop)+1] = uint16(locationInSegment)
 			return oop
