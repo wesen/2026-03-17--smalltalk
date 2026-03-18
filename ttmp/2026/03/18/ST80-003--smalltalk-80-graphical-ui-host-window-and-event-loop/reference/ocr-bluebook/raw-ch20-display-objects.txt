@@ -1,0 +1,856 @@
+20
+Display Objects
+
+Class DisplayObject
+Class DisplayMedium
+
+Forms
+Other Forms
+Cursors
+
+The Display Screen
+Display Text
+Paths
+
+Image Manipulation with Forms
+Magnification
+Rotation
+Area Filling
+The Game of Life
+
+Object
+Magnitude
+Character
+Date
+Time
+Number
+Float
+Fraction
+Integer
+LargeNegativelnteger
+LargePositivelnteger
+Smalllnteger
+LookupKey
+Association
+Link
+
+Stream
+PositionableStream
+ReadStream
+WriteStream
+ReadWriteStream
+ExternalStream
+FileStream
+Random
+File
+FileDirectory
+FilePage
+UndefinedObject
+Boolean
+False
+True
+
+Process ,
+Collection
+
+SequenceableCollection
+LinkedList
+
+Semaphore
+Arra yedCo IIect ion
+Array
+Bitmap
+DisplayBitmap
+RunArray
+String
+Symbol
+Text
+ByteArray
+Interval
+OrderedCollection
+SortedCollection
+
+Bag
+M appedCollection
+Set
+Dictionary
+IdentityDictionary
+
+ProcessorSchedu ler
+Delay
+SharedQueue
+Behavior
+ClassDescription
+Class
+MetaClass
+Point
+Rectangle
+BitBit
+CharacterScanner
+Pen
+
+383
+Class DisplayObject
+Graphics in the Smalltalk-80 system begin with the specification of
+BitBIt. Supported b y Points, Rectangles, Forms, Pens, and Text, a wide
+variety of imagery can be created. The images in Figure 20.1 illustrate
+some of the graphical entities made possible by extending the use of
+these five kinds of objects.
+The more artistic images in Figures 20.2 and 20.3 were created using
+the additional display objects available in the Smalltalk-80 system. The
+methods used in creating these images are described later. This chapter
+describes the available kinds of display objects and the various ways to
+manipulate them.
+
+Class
+DisplayObject
+
+A Form is a kind of display object. There are others in the system. The
+way in which these objects are implemented is as a hierarchy of classes
+whose superclass is named DisplayObject. Form is a subclass in this hierarchy.
+A display object represents an image that has a width, a height, an
+assumed origin at 0@0, and an offset from this origin relative to which
+the image is to be displayed. All display objects are similar in their
+ability to copy their image into another image, to be scaled, and to be
+translated. They differ in how their image is created.
+There are three primary subclasses of DisplayObject. They are
+DisplayMedium, DisplayText, and Path.
+• DisplayMedium represents images that can be '~colored" (that is,
+filled with a gray tone) and bordered (that is, their rectangular
+outline is colored).
+• DisplayText represents textual images.
+• Path represents images composed as collections of images.
+A Form is a subclass of DisplayMedium; it adds the bitmap representation of the image. All DisplayObjects provide source information for images; Forms provide both the source and the destination information.
+Class DisplayObject supports accessing messages for manipulating the
+various aspects of the image.
+
+DisplayObject instance protocol
+accessing
+width
+height
+
+Answer the width of the receiver's bounding
+box, a rectangle that represents the boundaries of the receiver's image.
+Answer the height of the receiver's bounding
+box.
+
+extent
+
+Answer a Point representing the width and
+height of the receiver's bounding box.
+
+llCONSl
+
+ISYMBOLI
+ABCDEFGH IJKLMNOPQRST
+a b c d e f g h ij k I m n o p q r s tuv w x y z
+1 234567890
+
+IPO,NTSi
+m nn--- - - - O @
+
+Figure 20.1
+
+ITEXTI
+The modern age has brought t o
+Ikebana the concepts of individual
+expression and a b s t r a c t design
+divorced from established rules,
+
+IDOCUMENTI
+".--r rr^--,1.
+; n ,"~-L-I,.~- .I - r /
+I;
+~'1% v m ,.4... "-.~..--~ x ' ~ " " ~ " - - ~ "
+I~"r
+; ;'. I ~ , . . , , ~ . - ~ • l a a i h l l m " ' I "c .%IL'~ Ira" ic • "i'k'li.,eL"mmlllLllP'" mh
+
+; , ' 1 1 ~ ' ' I.hrv'i" ~h ;'r,.~"~" x'~'l " i ' M l ~ l . l ' h
+"~ I ~ F ' " "
+:r.%'r'" ~ w " ' ~ " (i"i" " ¢ h - v l m ~ ~w d "11~ v i i i "~-r IiC i r e "
+
+#"
+
+¢.~'i'°)'1"
+
+IL.h m ";'l.,.alll"
+
+I
+
+- - " ~ -ml,l"~,.l(" t i o h ~%-r/Y'UlhlL'; " - r %"tl "1-1 hl'¢"" I~';erl; I~1/'11"¢'1~!d¢"~m
+ii'lll,~.lli"-#- ~"~r;. ~- Iic -iI.-.1¢'-"~- irI-L"lll',,4'.,~la,.,,lll'V #°.11- %"11 "'.ll~"illi I"11
+"~'"w" ~
+4 4
+
+i,MAGEi
+
+~
+
+' l n l l l " ~lri'l"~" I,JM~ irw---Ii..
+
+~.lt-v
+
+:. :-'c ~ - ~
+
+--.
+
+-l~.-d-
+
+" - r Lh- - ' L r ~ "
+
+y~"---
+
+".. - - ' .
+
+.....
+
+.M ~,~y. ~'~,'1": " . - I
+
+~;'~.~"1111"
+
+,~,l"v C.-~'I"~,"
+
+IC I ~ . I - - I l v
+
+#:-h
+
+~"..,"~'W:L" ' r
+
+IBRUSHE8i
+
+(~
+
+L
+
+"lv'ih~%" :
+. ...
+~r - i.:.:~
+:ii~i:.ii'~!: .:.~::!i~!-:::..~
+r
+..::'.':~:: ::i~::.:!..:11~:i::.:i:!:!F~!::"-" :~i:
+.~:!:.:~:.:i:i::'"!:i:~,~,~:.L:i:. :~i~i
+
+. , ~ . ~ . ~ . , ,:::.:.:,.,
+:ii.~.~.
+
+--~
+
+n--I~,
+
+IC
+
+:~ ::~..::::.:::~i:.:~ ~
+
+•
+
+.4 ~,,,~1~
+
+"~".~ -.u'~,x" I~ t'~" ~,'~'/" =:..:Jr".(:'
+
+,-m-
+
+~
+~
+
+"~i~i~!i!"
+
+~¢:':~
+i
+
+I
+
+1
+
+~
+
+,
+
+!'~" "~'~ L V - d ~ ; ' c Ic ;,.:.~'~ - - - " " . ~ ¢,,i"i'~'~-c ~ 1 ~
+"iS- T ~ . . . I
+
+":
+
+:
+
+~
+
+..~...~..,0.~,.'..~--
+
+:h-,-,
+
+4:,1-411:,
+
+:,.,- r"
+
+IlDIOM}
+?
+
+!
+
+I
+
+I
+
+385
+
+i~i!i
+,.~
+..
+
+:::::'.': ~ : ' : ' : F : ' : " . - - - . ' . "
+
+:. ~ilii
+
+i~:il
+
+i•
+: ~
+
+. . . .
+
+i':
+
+i!ii!!ii!!
+
+:!::iii~ii~i~;ili;i
+.:.::-:: ~ :.:.::...-:-........
+
+!jiii!!!i
+lilii
+,: iiii!i~ii~i
+~illii!iiiiil
+iiiiiil iiiii!!i
+. . . . . . . . . ~-ii i
+
+..
+
+: ~..
+
+•" . .
+
+:'.i : ~
+!':
+
+:~:~'~: ~ ~ - : . ~ ' : ' : ' - . . . -
+
+.....
+
+f..:...
+
+"""
+
+.~i!:
+
+!':~iI
+
+:~::~
+
+F i g u r e 20.2
+
+386
+
+:!::iii~ii~i~:ilil
+
+: • ..,,.,
+
+-
+
+:,
+
+""':--L
+
+:/:~i
+
+.,"
+
+..
+
+•
+
+Figure 20.3
+
+387
+
+388
+Display Objects
+offset
+
+Answer a Point representing the amount by
+which the receiver should be offset when it is
+displayed or its position is tested.
+Set the receiver's offset.
+Set the receiver's offset to the nearest integral
+amount.
+
+offset: aPoint
+rounded
+DisplayObject
+
+also provides
+
+three
+
+kinds
+
+of m e s s a g e s
+
+that
+
+support
+
+transforming a n image, displaying t h e image, a n d c o m p u t i n g t h e display box, t h a t is, a r e c t a n g u l a r a r e a t h a t r e p r e s e n t s t h e b o u n d a r i e s of
+t h e a r e a for d i s p l a y i n g t h e image.
+DisplayObject instance protocol
+
+transforming
+scaleBy: aPoint
+Scale the receiver's offset by aPoint.
+translateBy: aPoint
+Translate the receiver's offset by aPoint.
+align: alignmentPoint with: relativePoint
+Translate the receiver's offset such that
+alignmentPoint aligns with relativePoint.
+display box access
+boundingBox
+Answer the rectangular area that represents
+the boundaries of the receiver's space of information.
+displaying
+displayOn: aDisplayMedium
+at: aDisplayPoint
+clippingBox: clipRectangle
+rule: rulelnteger
+mask: aForm
+
+Display the receiver at location aDisplayPoint
+with rule, rulelnteger, and halftone mask,
+aForm. Information to be displayed must be
+confined to the area that intersects with
+clipRectangle.
+
+T h e r e a r e a c t u a l l y several d i s p l a y i n g m e s s a g e s not s h o w n above. Altern a t i v e d i s p l a y i n g m e s s a g e s progressively o m i t a k e y w o r d ( s t a r t i n g f r o m
+the last one) a n d p r o v i d e d e f a u l t masks, rules, clipping rectangles, a n d
+positions, w h e n needed. Basically t h e display screen itself is t h e d e f a u l t
+clipping rectangle, 0 @ 0 is t h e d e f a u l t display position, a n d t h e object
+t h a t r e p r e s e n t s t h e s y s t e m display screen, Display, (a global variable) is
+t h e d e f a u l t display m e d i u m .
+The m e s s a g e displayAt: aDisplayPoint provides a g e n e r a l l y useful message w h e n t h e only p a r a m e t e r not d e f a u l t e d is t h e location at w h i c h
+t h e i m a g e is to be placed. T h e m e s s a g e display a s s u m e s t h a t t h e display
+location is 0 ® 0.
+
+DisplayObject instance protocol
+displayAt: aDisplayPoint
+
+display
+
+Display the receiver at location aDisplayPoint
+with rule "over" or "storing"; halftone mask, a
+black Form; clipping rectangle the whose display screen; onto the display screen (Display).
+Display the receiver at location 0@0.
+
+389
+Class DisplayObject
+
+These last two displaying messages are provided for textual objects such
+as String and Text as well, so t h a t the p r o g r a m m e r can place characters
+on the screen by evaluating an expression such as
+
+'This is text to be displayed' displayAt: 100@ 100
+Suppose locomotive is the Form t h a t looks like
+
+.LOCOMOTIVE
+
+then it can be displayed on the screen with top left corner at location
+50@ 150 by evaluating the expression
+
+locomotive dispiayAt: 50 @,150
+
+DISPLAY SCREEN
+
+5o,15o
+f
+
+390
+Display Objects
+
+Class
+
+DisplayMedium
+
+DisplayMedium is a subclass of DisplayObject t h a t r e p r e s e n t s an object
+onto w h i c h i m a g e s can b e copied. In addition to those m e s s a g e s
+i n h e r i t e d from its superclass, DisplayMedium provides protocol for coloring t h e i n t e r i o r of i m a g e s a n d placing borders a r o u n d t h e display boxes
+of images. T h e "colors" a re Forms t h a t a r e a l r e a d y available in t h e system. These a r e black (the b i t m a p is all ones), white (all zeros), a n d various g r a y tones, e i t h e r gray, veryLightGray, lightGray, or darkGray
+( m i x t u r e s of ones a n d zeros). I m a g e s of the s e colors a r e given below. All
+or portions of the DisplayMedium's a r e a can be c h a n g e d to one of these
+colors using t h e following messages.
+
+DisplayMedium instance protocol
+
+coloring
+black
+black: aRectangle
+white
+white: aRectangle
+gray
+gray: aRectangle
+veryLightGray
+veryLightGray: aRectangle
+lightGray
+lightGray: aRectangle
+darkGray
+darkGray: aRectangle
+
+Change all of the receiver's area to black.
+Change the area of the receiver defined by the
+argument, aRectangle, to black.
+Change all of the receiver's area to white.
+Change the area of the receiver defined by the
+argument, aRectangle, to white.
+Change all of the receiver's area to gray.
+Change the area of the receiver defined by the
+argument, aRectangle, to gray.
+Change all of the receiver's area to very light
+gray.
+Change the area of the receiver defined by the
+argument, aRectangle, to very light gray.
+Change all of the receiver's area to light gray.
+Change the area of the receiver defined by the
+argument, aRectangle, to light gray.
+Change all of the receiver's area to dark gray.
+Change the area of the receiver defined by the
+argument, aRectangle, to dark gray.
+
+In th e above messages, t h e origin of t h e a r g u m e n t , aRectangle, is in t he
+coordinate s y s t e m of t h e receiver.
+Suppose picture is a kind of DisplayMedium t h a t is 100 pixels in w i d t h
+a n d 100 pixels in height, a n d t h a t box is a n i n s t a n c e of Rectangle w i t h
+origin at 30 @ 30 a n d w i d t h a n d h e i g h t of 40. T h e n t h e protocol for filling t h e s u b a r e a of picture r e p r e s e n t e d by box is i l l u s t r a t e d by t h e following sequence.
+
+391
+Class DisplayMedium
+
+expression
+
+result
+
+picture black: box
+
+picture white: box
+
+picture gray: box
+
+m
+picture lightGray: box
+
+!ii!iiii!ii!il
+picture veryLightGray: box
+..%°.-.....-.-.-.-.
+..-.°.-.....%-.-.-.
+.°°°°°%°°°°-°°°°°°°
+°°°°.°%°°°°°°°°°°°.
+.°°°°°%°°°°°°°°-°°°
+°.°°.°%°°°°°.°.°°°°
+°°%%°°°°°°°°%°°%
+°o%Oo%-o°oO.%%%
+-.%o.%OoO.OoOo%%
+
+392
+D i s p l a y Objects
+
+picture darkGray: box
+
+ilii~i ~iii
+
+P a r t of a n i m a g e c a n be filled w i t h a p a t t e r n by s e n d i n g a
+DisplayMedium a m e s s a g e to fill a p a r t i c u l a r s u b - a r e a w i t h a h a l f t o n e
+p a t t e r n . T h e o t h e r c o l o r i n g m e s s a g e s use t h e s e filling m e s s a g e s in t h e i r
+implementation.
+
+DisplayMedium instance protocol
+fill: aRectangle mask: aHalftoneForm
+Change the area of the receiver defined by the
+argument, aRectangle, to white, by filling it
+with the 16 x 16-bit pattern, aHalftoneForm.
+The combination rule for copying the mask to
+the receiver is 3 (Form over).
+fill: aRectangle rule: anlnteger mask: aHalftoneForm
+Change the area of the receiver defined by the
+argument, aRectangle, to white, by filling it
+with the 16 x 16 bit pattern, aHalftoneForm.
+The combination rule for copying the mask to
+the receiver is anlnteger.
+
+As a n e x a m p l e , t h e r e s u l t of e v a l u a t i n g t h e e x p r e s s i o n s
+
+box ~- 16 @ 16 extent: 64 ® 64.
+picture fill" box mask: locomotive
+w h e r e locomotive is a 16x16-bit Form, is
+
+T h e r e s u l t of e v a l u a t i n g t h e s e q u e n c e of two e x p r e s s i o n s
+
+picture lightGray: box.
+picture fill: box rule: Form under mask: locomotive
+
+393
+Class DisplayMedium
+
+is
+
+Note t h a t in the above, the rule Form under refers to an Integer combination rule. Messages to Form to access combination rules and halftone
+masks were defined in Chapter 18.
+Reversing an image m e a n s changing all the bits in the area t h a t are
+white to black and those t h a t are black to white. Either all or p a r t of
+an image can be reversed.
+DisplayMedium instance Protocol
+
+reverse: aRectangle mask: aHalftoneForm
+Change the area in the receiver defined by the
+argument, aRectangle, so that, in only those
+bits in which the mask, aHalftoneForm, is
+black, white bits in the receiver become black
+and black become white.
+reverse: a R e c t a n g l e
+
+Change the area in the receiver defined by the
+argument, aRectangle, so that white is black
+and black is white. The default mask is Form
+black.
+
+reverse
+
+Change all of the receiver's area so that white
+is black and black is white.
+
+The result of
+
+picture reverse: box
+on the last image is
+
+Bordering means Coloring the outline of a rectangle. Bordering is done
+using a source Form and mask. Three messages provide methods for
+bordering an image.
+
+394
+Display Objects
+
+DisplayMedium instance protocol
+bordering
+border: aRectangle widthRectangle: insets mask: aHalftoneForm
+Color an outline around the area within the
+receiver defined by the argument, aRectangle.
+The color is determined by the mask,
+aHalftoneForm. The width of the outline is determined by the Rectangle, insets, such that,
+origin x is the width of the left side, origin y
+is the width of the top side, corner x is the
+width of the right side, and corner y is the
+width of the bottom side.
+
+border: aRectangle width: borderWidth mask: aHalftoneForm
+Color an outline around the area within the
+receiver defined by the argument, aRectangle.
+The color is determined by the mask,
+aHaiftoneForm. The width of all the sides is
+
+borderWidth.
+border: aRectangle width: borderWidth
+Color an outline around the area within the
+receiver defined by the argument, aRectangle.
+The color is Form black. The width of all the
+sides is borderWidth.
+
+Examples
+
+are
+
+expression
+picture
+border: box
+width: 8
+
+picture
+border: box
+width: 8
+mask: Form gray
+
+result
+
+395
+
+Class DisplayMedium
+picture
+border: box
+widthRectangle:
+(4 ® 16 corner: 4 @ 16)
+mask: Form darkGray
+
+picture
+border: box
+width: 16
+mask: locomotive
+
+The next sequence of images shows how bordering can be done by manipulating the size of the rectangle used to designate which area within
+picture should be changed.
+
+expression
+frame ~ 48 @48 extent: 16 @ 16.
+picture white.
+picture reverse: frame
+
+frame ~ frame expandBy: 16.
+picture
+fill: frame
+rule" Form reverse
+mask: Form black.
+
+result
+
+396
+
+Display Objects
+frame .- frame expandBy: 16.
+picture
+border: frame
+width: 16
+mask: locomotive
+
+picture
+
+border: frame
+width: 1
+
+Forms
+
+Class Form is the only subclass of DisplayMedium in the standard
+Smalltalk-80 system. It was introduced in Chapter 18 in which we defined messages t h a t provide access to constants representing masks and
+combination rules (modes). As an illustration of the use of Forms in creating complex images, the following sequence of expressions creates the
+image shown at the beginning of this chapter as Figure 20.2.
+Suppose we have two Forms available, each 120 bits wide and 180
+bits high. We name them face25 and face75. These images were created using a scanner to digitize photographs of a gentleman when he was
+in his 20's and on the occasion of his 75th birthday.
+
+~ ~ ",~,~:,:~...
+, " ~ t~-y.-.~
+~ z : ~
+..-:
+
+..-.
+
+. . . . . . .
+
+.%-'..
+
+.
+
+~//~--~:..':,..>!~.:- li~llll
+~ .
+",-":;'>.,'~rilllllill!
+! ~I~12~tltt~II~4~.
+"-.'.-".,,'.-.-;.'..-;~tiilllllllili
+.," . . . . . , . "
+
+.~
+~.
+
+"~..
+
+",.o..,
+
+: .- • . ~ , . ~
+-." - " . . , .
+
+397
+Forms
+
+The scanned images were scaled to the desired size and then combined with halftone masks in the following way. Two Arrays, each size
+8, contain references to the halftone masks (masks) and the Forms
+(forms) used in creating each part of the final image.
+masks ~ Array new: 8.
+masks at: 1 put: Form black.
+masks at: 2 put: Form darkGray.
+masks at: 3 put: Form gray.
+masks at: 4 put: Form lightGray.
+masks at: 5 put: Form veryLightGray.
+masks at: 6 put: Form lightGray.
+masks at: 7 put: Form gray.
+masks at: 8 put: Form black.
+forms ~- Array new: 8.
+forms at: 1 put: face25.
+forms at: 2 put: face25.
+forms at: 3 put: face25.
+forms at: 4 put: face25.
+forms at: 5 put: face75.
+forms at: 6 put: face75.
+forms at: 7 put: face75.
+forms at: 8 put: face75
+The variable i is the initial index into the first halftone and first Form
+used in forming the first sub-image of each row. Each time a complete
+row is displayed, i is incremented by 1. Each row consists of 5 elements.
+The variable index is used to index 5 halftones and five Forms; index is
+set to i at the outset of each row. Thus the first row is made up by combining elements 1, 2, 3, 4, and 5 of masks and forms; the second row is
+made up by combining elements 2, 3, 4, 5, and 6 of masks and forms;
+and so on. The y coordinate of each row changes by 180 pixels each
+time; the x coordinate of each column changes by 120 pixels.
+0 to: 540 by: 180 do:
+[ : Y l index ~ i.
+0 to: 480 by: 120 do:
+[ : x t (forms at: index)
+displayOn: Display
+at: x@y
+clippingBox: Display boundingBox
+rule: Form over
+mask: (masks at: index).
+index ~-index + 1].
+
+it-i+1]
+
+398
+
+Display Objects
+
+Other Forms
+
+Cursors
+
+Two other kinds of forms exist in the system, InfiniteForm and
+OpaqueForm. These two classes a r e subclasses of DisplayObject, r a t h e r
+t h a n of DisplayMedium. They therefore do not share Form's inherited
+ability to be colored and bordered. InfiniteForm r e p r e s e n t s a Form
+obtained by replicating a p a t t e r n Form indefinitely in all directions.
+Typically the overlapping views displayed in the Smalltalk-80 programming interface (as shown in C h a p t e r 17) are placed over a light gray
+background; this background is defined by an InfiniteForm whose replicated p a t t e r n is Form gray. OpaqueForms r e p r e s e n t a shape as well as a
+figure Form. The shape indicates w h a t p a r t of the background should be
+occluded in displaying the image, so t h a t p a t t e r n s other t h a n black in
+the figure will still a p p e a r opaque. Instances of OpaqueForm support
+creating animations. N e i t h e r InfiniteForrn nor OpaqueForm adds new
+protocol.
+
+Form has two subclasses of interest, class Cursor and class
+DisplayScreen. The Smalltalk-80 system m a k e s extensive use of Forms
+to indicate both the c u r r e n t location of the h a r d w a r e pointing device
+and the c u r r e n t status of the system. A Form used in this way is referred to as a cursor since its p r i m a r y purpose is to move over the
+screen in order to locate screen coordinates.
+Instances of class Cursor are Forms t h a t are 16 pixels wide and 16
+pixels high. Class Cursor adds t h r e e new messages to the displaying protocol t h a t it inherits from DisplayObject.
+Cursor instance protocol
+
+displaying
+show
+showGridded: gridPoint
+showWhile: aBIock
+
+Make the receiver be the current cursor
+shape.
+Make the receiver be the current cursor
+shape, forcing the location of cursor to the
+point nearest the location, flridPoint.
+While evaluating the argument, aBIock, make
+the receiver be the cursor shape.
+
+Several different cursors are supplied with the s t a n d a r d Smalltalk-80
+system. They a r e shown in Figure 20.4 both small and enlarged in order to illustrate their bitmaps. The n a m e of each cursor, given below its
+image, is the same as the message to class Cursor which accesses t h a t
+p a r t i c u l a r Cursor. For example, the following expression shows a cursor
+t h a t looks like eyeglasses on the screen while the system computes the
+factorial of 50. It then reverts to showing the original cursor shape.
+
+

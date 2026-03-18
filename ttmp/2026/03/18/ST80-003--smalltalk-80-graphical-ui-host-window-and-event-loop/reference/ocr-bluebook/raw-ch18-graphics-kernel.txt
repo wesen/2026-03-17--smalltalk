@@ -1,0 +1,2541 @@
+,o
+
+oo e-,,
+
+o
+
+,,,-"
+,,-" o,--
+
+"-%.
+"-%.
+
+,,,,,"
+
+...... ...-"
+too, .m°~i°"
+
+....."
+
+18
+
+..!.~."y..,,': "..
+...-."
+
+The Graphics Kernel
+
+...-"
+".-.
+.......--'"
+
+............
+.
+
+.
+
+.
+
+.
+
+~i.~P
+.-
+
+Graphical Representation
+
+..o.."
+
+Graphical Storage
+
+...."
+
+, ,,, ,,-"
+~
+
+-~
+
+.
+
+,,..-
+
+_e , ,,,-''~
+
+..-...-°
+
+..."
+
+..."
+
+Graphical Manipulation
+Source and Destination Forms
+Clipping Rectangle
+Halftone Form
+Combination Rule
+Classes Form and Bitmap
+Spatial Reference
+Class Point
+Class Rectangle
+Class BitBIt
+
+...-"
+,...-"
+
+Line Drawing
+Text Display
+Simulation of BitBlt
+Efficiency Considerations
+
+• .',%
+
+Object
+Magnitude
+Character
+Date
+Time
+Number
+Float
+Fraction
+Integer
+LargeNegativelnteger
+LargePositivelnteger
+Smalllnteger
+LookupKey
+Association
+Link
+Process
+Collection
+SequenceableCollection
+LinkedList
+Semaphore
+
+Stream
+PositionableStream
+ReadStream
+WriteStream
+ReadWriteStream
+ExternalStream
+FileStream
+Random
+File
+FileDirectory
+FilePage
+UndefinedObject
+Boolean
+False
+True
+ProcessorScheduler
+Delay
+SharedQueue
+Behavior
+ClassDescription
+Class
+MetaClass
+
+ArraArrayyedCol lection
+
+RunArray
+String
+Symbol
+Text
+ByteArray
+Interval
+OrderedCollection
+SortedCollection
+
+Bag
+MappedCollection
+Set
+Dictionary
+IdentityDictionary
+
+Pen
+
+DisplayObject
+DisplayMedium
+Form
+Cursor
+DisplayScreen
+InfiniteForm
+OpaqueForm
+Path
+Arc
+Circle
+Curve
+Line
+LinearFit
+Spline
+
+331
+
+Graphical Storage
+
+Graphical
+Representation
+
+Figure 18.1 shows a view of the display screen for a Smalltalk-80 system. It illustrates the wide range of graphical idiom available to the
+system. Rectangular areas of arbitrary size are filled with white, black,
+and halftone patterns. Text, in various typefaces, is placed on the
+screen from stored images of the individual characters. Halftone shades
+are "brushed" by the user to create freehand paintings. Moreover, although not shown on the printed page, images on the display can be
+moved or sequenced in time to provide animation.
+The example interaction with the system given in the previous chapt e r illustrated some of the ways in which objects can be observed and
+manipulated graphically. Meaningful presentation of objects in the system demands maximum control over the display medium. One approach that provides the necessary flexibility is to allow the brightness
+of every discernible point in the displayed image to be independently
+controlled. An implementation of this approach is a contiguous block of
+storage in which the setting of each bit is mapped into the illumination
+of a corresponding picture element, or pixel, when displaying the image.
+The block of storage is referred to as a bitmap. This type of display is
+called a bitmapped display. The simplest form of bitmap allows only
+two brightness levels, white and black, corresponding to the stored bit
+values 0 or 1 respectively. The Smalltalk-80 graphics system is built
+around this model of a display medium.
+
+Graphical
+Storage
+
+Images are represented by instances of class Form. A Form has height
+and width, and a bitmap, which indicates the white and black regions
+of the particular image being represented. Consider, for example, the
+man-shape in Figure 18.2. The height of the Form is 40, its width is 14,
+and its appearance is described by the pattern of ones and zeros (shown
+as light and dark squares) in its bitmap. The height and width of the
+Form serve to impose the appropriate ~two-dimensional ordering on the
+otherwise unstructured data in the bitmap. We shall return to the representation of Forms in more detail later in this chapter.
+New Forms are created by combining several Forms. The freehand
+drawing in the center of Figure 18.1 is an example of a large Form that
+was created by combining and repeating several Forms that serve as
+"paint brushes" in a Smalltalk-80 application system. The text in Figure 18.1 is a structured combination of Forms representing characters.
+A Form can be presented to the display hardware as a buffer in
+memory of the actual data or of the image to be shown on a display
+
+332
+
+The Graphics Kernel
+
+iiliiiiiiiiiiiiiiiiii
+iiiiiiii
+iiiiiiiiiiiiiiiiliiiililiiiiiiiiiiiiiiiiiiiii
+
+!
+
+C o ll e c t io n :; - T e ::,::t
+,:i: o II e c r i o n :3 -,&, r r,_~.:;,'e d I C u r s o r,3 o II e c t i,:, n s - :R t r e ,_~.n-i s
+I E:, i ~ p l a ':,' M e d iu rn
+,3 ,:, I1 e c 1: i,:, n s - :_=;u F' F' ':' r t
+I E:, i s F' l a v ,:_-:,b i e ,:: t
+Gr,_~.phic s - Prirr~it iv e 5
+I DispI.9.vScreerl
+,:3 r._~.p hi,:: s - F'._~.t h s
+,:S r a p h ic s - 8 y m b ,:, Is
+,:S r a p h ic s .... ,"ie v.,'s
+
+_~,:: c e :3 s i n g
+d i s p la ~:,'i rl g
+
+,3 i s p la y b ,:, ::,:: ,9. c ,:: e s s
+,:: orl',,,'e r t i n g
+
+iii ii!ili i
+
+F,:, r rn
+In f in it e F,:, r rn
+
+E:, i s p l a y :, b.i e c t s u b ,:: la s s' # E:, i s [.:.,la. ::.' T
+i r I,- ................... " t b I e N,9. m e s' : t e ::,::t
+I;:
+
+t
+
+F "o r m E d i t o r r',,J,_~.m e s : : :'
+
+i
+
+~;[;F~@ ~:~~:?~-:.:.,
+
+...<~iii~...:.._
+
+iiiiiiiliiii
+
+•......
+
+_
+
+........
+
+...............
+
+",,
+
+,,.....£'---:i
+,",' --~,
+...... ~-L.<:., ,,".9,,,:...
+a~,~] I ,, ........
+..........£:---'~[ I
+....,.,
+- ....
+
+iiii',
+!'~,i
++18!8!8!
+
+~
+/""~,
+
+....... :---"
+........ •. . . . . . . . ~ ilia
+"
+
+..-~5:-,,~,3...:!iiiiilili~]]::~:.-..,.
+#~-~ililiiiiiiiiiiiiiii!~,
+
+i
+
+.
+
+- ' . , ~ . ~ _ L = ,,"
+
+~!-~'
+
+iiiiiiiiiii!ili
+
+":,~
+
+~ii::::ili~!~::i::ii~::ii~::~it
+
+",',':4Uiii::i;: A ii::i ::~::i!iii!:; F:U i F:!ii~::i-:~:.:.~
+
+~ : ........ - , .........,,
+
+': ..... . . . .
+
+:~--i
+
+i i ~i~:: ~~
+
+.r
+
+'.......... - ......... ' .
+
+li r, '.............. ..........I
+I!iiiii]!iiii'~::::.''~-<~ .............. r
+i:::::::::::::
+i i ii i ii ::: ill:.: :.....~', ..-""
+,~:~"~"::~:
+
+~iii!!:: ::~!ii~::!::i:: !~i i ;: ! !::::iiiF:iii~:-~..~
+
+i
+
+- ......
+
+--'" .... <~'::~'~'~"~'~'::~"::'"~:'""~':'
+":~.":.~.::.:i --,.~.:.:.:.:.:.:.:.:.:.:.:.:.:
+i ii ~! i iii i ii ~ii~ :.:.:i i i: i':.
+:::~
+
+........ ~;~:~:~....
+
+_1_
+
+= .......
+
+.
+
+.
+
+..........
+,"
+",
+
+, '
+
+,,-...
+
+.. 2
+
+"',,,
+',
+
+~
+
+,'
+
+iiili
+
+,
+
+..............
+
+~!::i
+::iiiiiiiii i i i i i}~.:,,"<,
+iiiiiiiiiiiiiiiiii
+i iii iiliiii8
+F:::i::i!::::i!iii;:i::i~i~i~i~i~i~i~i~.
+".~::::~:~:~:~:~:!
+
+......
+
+......
+
+!iii........
+il
+
+..................
+~,.............
+/ limP':,,
+.... '.,
+,~
+
+!iiiiiii::i
+
+iiii ~,
+
+iiliiiiiiiii!iiiiiiiii!i!iiililiii:i
+.................
+
+i~i~',~i~
+
+i'i"i
+i/ii
+....
+
+lnl
+iii!i!i!i!i!i!ii!i
+,
+
+t l!Dl
+
+1' '1 E r IF I
+
+I-1 iiiii
+i~i~i:.i::~
+
+ii ii iiiiiiiiiiiiiii!iiiii iiiiiiiiii{i i i iiiiiil i!ii iiiiiiiii!iiiiiiiiiii!i!iiiiii!iii iliiiiiiiiiii iiii i i iill i ilii
+Figure 18.1
+
+.
+
+333
+
+Graphical Manipulation
+0
+
+5
+
+10
+
+IJ~lllilllllll
+5
+10
+15
+20
+
+Figure 18.2
+
+n
+
+screen. Since the interface to the hardware is through a Form, there is
+no difference between combining images internally and displaying them
+on the screen. Animation can be displayed smoothly by using one Form
+as the display Form while the next image to be displayed is prepared in
+a second Form. As each image is completed, the two Forms exchange
+roles, causing the new image to be displayed and making the Form with
+the old image available for building yet another image in the sequence.
+The Forms used as buffers for data to be shown on the display screen
+are instances of class DisplayScreen, a subclass of Form. Contiguous
+storage of bits is provided by instances of class Bitmap. DisplayScreen's
+bitmap is an instance of DisplayBitmap, a subclass of Bitmap.
+DisplayScreen and DisplayBitmap provide protocol specific to the actual
+hardware and to the fact that the Form represents the whole display
+screen rather than potential parts of it.
+
+Graphical
+Manipulation
+
+A basic operation on Forms, referred to as BitBlt, supports a wide range
+of graphical presentation. All text and graphic objects in the system are
+created and modified using this single graphical operation. The name
+
+334
+
+The Graphics Kernel
+~BitBlt" derives from the generalization of data transfer to arbitrary bit
+locations, or pixels. One of the first computers on which a Smalltalk
+system was implemented had an instruction called BLT for block transfer of 16-bit words, and so ~bit block transfer" became known as BitBlt.
+Operations are represented by messages to objects. So BitBlt could
+have been implemented with a message to class Form. However, because BitBlts are fairly complicated operations to specify, they are represented by objects. These objects are instances of the class named BitBIt.
+The basic operation is performed by sending an appropriately initialized
+instance of BitBIt the message copyBits. The BitBlt operation is intentionally a very general operation, although most applications of it are
+graphically simple, such as ~move this rectangle of pixels from here to
+there."
+Figure 18.3 illustrates the process of copying a character of text into
+a region on the display. This operation will serve to illustrate most of
+the characteristics of BitBlt that are introduced in the remainder of
+this section.
+
+Source and
+
+Destination Forms
+
+Clipping Rectangle
+
+The BitBlt copy operation involves two Forms, a source and a destination. The source in the example in Figure 18.3 is a font containing a set
+of character glyphs depicted in some uniform style and scale, and
+packed together horizontally. The destination in the example is assumed to be a Form that is used as the display buffer. Pixels are copied
+out of the source and stored into the destination. The width and height
+of the transfer correspond to the character size. The source x and y coordinates give the character's location in the font, and the destination
+coordinates specify the position on the display where its copy will appear.
+
+BitBlt includes in its specification a rectangular area which limits the
+region of the destination that can be affected by its operation, independent of the other destination parameters. We call this area the clipping
+rectangle. Often it is desirable to display a partial window onto larger
+scenes, and the clipping rectangle ensures that all picture elements fall
+inside the bounds of the window. By its inclusion in the BitBlt primitive, the clipping function can be done efficiently and in one place,
+rather than being replicated in all application programs.
+Figure 18.4 illustrates the result of imposing a clipping rectangle on
+the example of Figure 18.3. Pixels that would have been placed outside
+the clipping rectangle (the left edge of the ~'N" and half of the word
+~the") have not been transferred. Had there been other characters that
+fell above or below this rectangle, they would have been similarly
+clipped.
+
+335
+
+Graphical Manipulation
+0
+
+lO
+
+20
+
+30
+
+40
+
+50
+
+60
+
+240
+
+250
+
+260
+
+270
+
+30
+
+40
+
+50
+
+60
+
+70
+
+80
+
+70
+
+80
+
+destForm
+d e s t X = 67
+destY =
+
+10
+
+10
+20
+
+30
+
+40
+width = 7
+height = 13
+
+I0
+
+sourceForm
+
+s o u r c e X = 248
+
+i0
+
+sourceY = 0
+F i g u r e 18.3
+
+0
+
+destForm
+
+10
+clipX = 6
+clipY = 4
+clipWidth = 58
+
+20
+
+clipHeight = 23
+
+30
+
+40
+
+Figure 18.4
+
+i0
+
+20
+
+336
+The Graphics K e r n e l
+
+Halftone Form
+
+Often it is desirable to fill areas with a regular p a t t e r n t h a t provides
+the effect of g r a y tone or texture. To this end, BitBlt provides for reference to a third Form containing the desired pattern. This Form is referred to as a halftone or mask. It is restricted to have height and width
+of 16. W h e n halftoning is specified, this p a t t e r n is effectively repeated
+every 16 units horizontally and vertically over the entire destination.
+T h e r e are four ~modes" of supplying pixels from the source and halftone controlled by supplying nil for the source form or the halftone
+form:
+0. no source, no halftone (supplies solid black)
+1. halftone only (supplies halftone pattern)
+2. source only (supplies source pixels)
+3. source AND halftone (supplies source bits masked by halftone pattern)
+Figure 18.5 illustrates the effect of these four modes with the same
+source and destination and a r e g u l a r g r a y halftone.
+
+mode 0
+all ones
+
+mode 1
+halftone only
+
+mode 2
+source only
+
+mode 3
+source AND halftone
+
+Figure 18.5
+
+Combination Rule
+
+The examples above have all d e t e r m i n e d the new contents of the destination based onty on the source and halftone, storing directly into the
+destination. The previous contents of the destination can also be t a k e n
+into account in d e t e r m i n i n g the result of the copying.
+T h e r e are 16 possible rules for combining each source element S with
+the corresponding destination e l e m e n t D to produce the new destination e l e m e n t D'. Each rule m u s t specify a white or black result for each
+of the four cases of source being white or black, and destination being
+white or black.
+
+337
+
+Graphical M a n i p u l a t i o n
+Figure 18.6 shows a box with four cells corresponding to the four
+cases e n c o u n t e r e d when combining source S and destination D. For instance, the cell n u m b e r e d 2 corresponds to the case where the source
+was black and the destination was white. By a p p r o p r i a t e l y filling the
+four cells with white or black, the box can be m a d e to depict a n y combination rule. The n u m b e r s in the four cells m a p the rule as depicted
+graphically to the integer value which selects t h a t rule. For example, to
+specify t h a t the result should be black w h e r e v e r the source or destination (or both) was black, we would blacken the cells n u m b e r e d 4, 2, and
+1. The associated integer for specifying t h a t rule is the s u m of the
+blackened cell numbers, or 4 + 2 + 1 = 7.
+D
+
+Source Before
+
+Destination Before
+
+"f2111
+D' Destination After
+
+Figure 18.6
+
+Figure 18.7 illustrates four common combination rules graphically.
+In addition, each is described by a combination diagram, its integer rule
+n u m b e r , and the actual logical function being applied. The full set of 16
+combination rules appears later in the c h a p t e r as p a r t of the detailed
+s i m u l a t i o n of BitBlt.
+
+rule 3
+D' = S
+Figure 18.7
+
+rule 7
+D' = S O R D
+
+rule 1
+D' = S A N D D
+
+rule 6
+D' = S X O R D
+
+338
+
+The Graphics Kernel
+
+Classes Form
+and Bitmap
+
+Figure 18.8 shows f u r t h e r information about the Form shown in Figure
+18.2. The width and height are stored as Integers. The actual pixels are
+stored in a separate object which is an instance of class Bitmap. Bitmaps
+h a v e almost no protocol, since their sole purpose is to provide storage
+for Forms. They also have no intrinsic width and height, a p a r t from
+t h a t laid on by their owning Form, although the figure retains this
+s t r u c t u r e for clarity. It can be seen t h a t space has been provided in the
+Bitmap for a width of 16; this is a manifestation of the h a r d w a r e organization of storage and processing into 16-bit words. Bitmaps are allocated with an integral n u m b e r of words for each row of pixels. This row
+size is referred to as the raster size. The integral word constraint on
+r a s t e r size facilitates m o v e m e n t from one row to the next within the operation of BitBlt, and during the scanning of the display screen by the
+hardware. While this division of m e m o r y i n t o words is significant at the
+primitive level, it is encapsulated in such a way t h a t none of the
+higher-level graphical components in the system need consider the issue of word size.
+Two classes, Rectangle and Point, are used extensively in working
+with stored images. A Point contains x and y coordinate values and is
+used to refer to a pixel location in a Form; a Rectangle contains two
+P o i n t s - - t h e top left corner and the bottom right c o r n e r m a n d is used to
+define a rectangular a r e a of a Form.
+Class Form includes protocol for m a n a g i n g a r e c t a n g u l a r p a t t e r n of
+black and white dots. The bitmap of a Form can be (re)set by copying
+bits from a r e c t a n g u l a r area of the display screen (fromDisplay:), and the
+extent and offset of the Form can be set (extent:, extent:offset:). Two
+messages provide access to the individual bits (vatueAt: and valueAt:put:).
+Constants for modes and masks are known to class Form and can be
+obtained by the following class messages of Form.
+
+Form instance protocol
+
+initialize-release
+fromDisplay: aRectangle
+
+Copy the bits from the display screen within
+the boundaries defined by the argument,
+aRectangle, into the receiver's bitmap.
+
+accessing
+extent: aPoint
+
+Set the width and height of the receiver to be
+the coordinates of the argument, aPoint.
+
+extent: extentPoint offset: offsetPoint
+
+Set the width and height of the receiver to be
+the coordinates of the argument, extentPoint,
+and the offset to be offsetPoint.
+
+339
+Classes Form and Bitmap
+
+0
+5
+10
+ll,lllllJllalllll
+
+15
+
+Form
+
+width
+
+14
+
+height 40
+bitmap o-
+
+10
+15
+20-m
+
+m
+
+F i g u r e 18.8
+
+pattern
+valueAt: aPoint
+valueAt: aPoint put: bitCode
+
+Answer the bit, 0 or 1, at location aPoint within the receiver's bitmap.
+Set the bit at location aPoint within the receiver's bitmap to be bitCode, either 0 or 1.
+
+Form class protocol
+instance creation
+fromDisplay: aRectangle
+
+mode constants
+erase
+over
+reverse
+under
+
+Answer a new Form whose bits are copied
+from the display screen within the boundaries
+define~,,] by the argument, aRectangle, into the
+receiver's bitmap.
+
+Answer the Integer denoting mode erase.
+Answer the Integer denoting mode over.
+Answer the Integer denoting mode reverse.
+Answer the Integer denoting mode under.
+
+340
+The Graphics Kernel
+mask constants
+black
+darkGray
+gray
+lightGray
+veryLightGray
+J
+
+white
+
+Spatial
+Reference
+
+Class Point
+
+Answer the Form denoting a black mask.
+Answer the Form denoting a dark gray mask.
+Answer the Form denoting a gray mask.
+Answer the Form denoting a light gray mask.
+Answer the Form denoting a very light gray
+mask.
+Answer the Form denoting a white mask.
+
+Since the images represented by Forms are i n h e r e n t l y two-dimensional,
+image m a n i p u l a t i o n is simplified by providing objects representing twodimensional locations and areas. Instances of class Point represent locations a n d instances of class Rectangle represent areas.
+
+A Point represents an x - y pair of n u m b e r s usually designating a pixel
+in a Form. Points refer to pixel locations relative to the top left corner
+of a Form (or other point of reference). By convention, x increases to the
+right and y down, consistent with the layout of text on a page and the
+direction of display scanning. This is in contrast to the "right-handed"
+coordinate system in which y increases in the upward direction.
+A Point is typically created using the b i n a r y message @ to a Number.
+For example, the result of evaluating the expression
+
+200 @ 150
+
+is a Point with x and y coordinates 200 and 150. In addition, the class
+protocol of Point supports the instance creation message x: xlnteger y:
+ylnteger.
+
+Point x: 200 y: 150
+
+represents the same location as 200@ 150. The instance protocol for
+Point supports accessing messages and messages for comparing two
+Points.
+
+341
+Spatial Reference
+Point instance protocol
+accessing
+x
+x: aNumber
+Y
+y: aNumber
+comparing
+< aPoint
+< = aPoint
+> aPoint
+> = aPoint
+max: aPoint
+
+min: aPoint
+
+With respect to the coordinates
+sions are
+
+Answer the x coordinate.
+Set the x coordinate to be the argument,
+aNumber.
+Answer the y coordinate.
+Set the y coordinate to be the argument,
+aNumber.
+
+Answer whether the receiver is above and to
+the left of the argument, aPoint.
+Answer whether the receiver is neither below
+nor to the right of the argument, aPoint.
+Answer whether the receiver is below and to
+the right of the argument, aPoint.
+Answer whether the receiver is neither above
+nor to the left of the argument, aPoint.
+Answer the lower right corner of the rectangle uniquely defined by the receiver and the
+argument, aPoint.
+Answer the upper left corner of the rectangle
+uniquely defined by the receiver and the argument, aPoint.
+labeled in Figure
+
+expression
+
+result
+
+(45@230) < (175@270)
+(45 @230) < (175 @200)
+(45@230) > ( 1 7 5 @ 2 0 0 )
+(175@270) > (45@230)
+(45 @230) max: (175 @200)
+(45 @230) min: (175 @200)
+
+true
+false
+false
+true
+175@230
+45 @200
+
+18.9, e x a m p l e
+
+expres-
+
+A r i t h m e t i c c a n be c a r r i e d o u t b e t w e e n t w o Points or b e t w e e n a Point
+a n d a N u m b e r (a s c a l i n g f a c t o r ) . E a c h of t h e a r i t h m e t i c m e s s a g e s t a k e s
+e i t h e r a P o i n t o r a N u m b e r (a s c a l a r ) a s a n a r g u m e n t , a n d r e t u r n s a n e w
+P o i n t a s t h e r e s u l t . T r u n c a t i o n a n d r o u n d off m e s s a g e s , s i m i l a r t o t h o s e
+for N u m b e r s , a r e a l s o p r o v i d e d i n t h e i n s t a n c e p r o t o c o l of Point.
+Point instance protocol
+arithmetic
+, scale
+
+Answer a new Point that is the product of the
+receiver and the argument, scale.
+
+342
+The
+
+Graphics
+
+Kernel
+00
+
+•
+•
+
+45, 200
+
+•
+
+175, 200
+
+•
+
+45, 230
+
+•
+
+175, 230
+
+•
+
+175, 270
+
+*
+
+300, 175
+
+45, 550
+
+640, 808
+
+F i g u r e 18.9
+
++ delta
+
+A n s w e r a n e w Point t h a t is t h e s u m of t h e receiver a n d the a r g u m e n t , delta.
+
+-
+
+delta
+
+A n s w e r a n e w Point t h a t is the d i f f e r e n c e of
+t h e receiver a n d t h e a r g u m e n t , delta.
+
+/ scale
+
+A n s w e r a n e w Point t h a t is t h e q u o t i e n t of t h e
+receiver a n d t h e a r g u m e n t , scale.
+
+//scale
+
+A n s w e r a n e w Point t h a t is the q u o t i e n t (defined by division w i t h t r u n c a t i o n t o w a r d negative infinity) of t h e receiver a n d
+the
+a r g u m e n t , scale.
+
+abs
+
+A n s w e r a new Point whose x a n d y a r e t h e absolute values of the receiver's x a n d y.
+
+truncation and round off
+rounded
+truncateTo: grid
+
+A n s w e r a n e w Point t h a t is t h e receiver's x
+and y rounded.
+A n s w e r a n e w Point t h a t i s the receiver's x
+and y t r u n c a t e d to t h e a r g u m e n t , grid.
+
+343
+Spatial Reference
+Thus
+
+expression
+
+result
+
+(45 @230) + (175 @300)
+(45 @230) --I-- 175
+(45@230) - (175@300)
+(160@240) / 50
+(160@240) / / 50
+(160@240) / / (50@50)
+((45@230) - (175@300)) abs
+(120.5 @ 220.7) rounded
+(160 @ 240) truncateTo: 50
+
+220@530
+220@405
+--130@--70
+(16/5)@(24/5)
+3@4
+3@4
+130@70
+121 @221
+150 @200
+
+V a r i o u s o t h e r o p e r a t i o n s c a n be p e r f o r m e d on Points i n c l u d i n g c o m p u t ing t h e d i s t a n c e b e t w e e n t w o Points, c o m p u t i n g t h e d o t p r o d u c t of t w o
+Points, t r a n s p o s i n g a p o i n t , a n d d e t e r m i n i n g Points w i t h i n s o m e g r i d d e d
+range.
+
+Point instance protocol
+point functions
+dist: aPoint
+dotProduct: aPoint
+grid: aPoint
+normal
+transpose
+truncatedGrid: aPoint
+
+Answer the distance between the argument,
+aPoint, and the receiver.
+Answer a Number that is the dot product of
+the receiver and the argument, aPoint.
+Answer a Point to the nearest rounded grid
+modules specified by the argument, aPoint.
+Answer a Point representing the unit vector
+rotated 90 deg clockwise.
+Answer a Point whose x is the receiver's y and
+whose y is the receiver's x.
+Answer a Point to the nearest truncated grid
+modules specified by the argument, aPoint.
+
+Examples are
+
+expression
+
+result
+
+(45@230) dist: 175@270
+(160@240) dotProduct: 50@50
+(160 @240) grid: 50 @50
+(160 @240) normal
+(160 @240) truncatedGrid: 50 @50
+(175 @300) transpose
+
+136.015
+20000
+150 @250
+--0.83105 @ 0.5547
+150 @200
+300 @175
+
+Points a n d R e c t a n g l e s a r e u s e d t o g e t h e r as s u p p o r t for g r a p h i c a l m a n i p u l a t i o n . A Rectangle c o n t a i n s t w o P o i n t s - - o r i g i n , w h i c h specifies t h e
+
+344
+The Graphics Kernel
+
+top left corner, and corner, which indicates the bottom right corner of
+the region described. Class Rectangle provides protocol for access to all
+the coordinates involved, and other operations such as intersection with
+other rectangles. Messages to a Point provide an infix way to create a
+Rectangle with the Point as the origin.
+Point instance protocol
+converting
+corner: aPoint
+extent: aPoint
+
+Answer a Rectangle whose origin is the receiver and whose corner is the argument,
+aPoint.
+Answer a Rectangle whose origin is the receiver and whose extent is the argument,
+aPoint.
+
+T h u s (45@ 200) corner: (175 @270) represents the r e c t a n g u l a r area
+shown earlier in the image of display coordinates.
+
+Class R e c t a n g l e
+
+Instances of Rectangle represent r e c t a n g u l a r areas of pixels. Arithmetic
+operations take points as a r g u m e n t s and carry out scaling and translating operations to create new Rectangles. Rectangle functions create
+new Rectangles by d e t e r m i n i n g intersections of Rectangles with Rectangles.
+In addition to the messages to Point by which Rectangles can be created, class protocol for Rectangle supports three messages for creating
+instances. These messages specify either the boundaries of the rectangular area, the origin and corner coordinates, or the origin and width
+and height of the area.
+Rectangle class protocol
+instance creation
+left: leftNumber right: rightNumber top: topNumber bottom: bottomNumber
+Answer a Rectangle whose left, right, top, and
+bottom coordinates are determined by the arguments.
+origin: originPoint corner: cornerPoint
+Answer a Rectangle whose top left and bottom
+right corners are determined by the arguments, originPoint and cornerPoint.
+origin: originPoint extent: extentPoint
+Answer a Rectangle whose top left corner is
+originPoint and width by height is extentPoint.
+
+The accessing protocol for Rectangle is quite extensive. It supports detailed ways of referencing eight significant locations on the b o u n d a r y of
+t h e R e c t a n g l e . These points are shown in Figure 18.10.
+Messages for accessing these positions have selectors with n a m e s like
+those shown i n the diagram.
+
+345
+Spatial Reference
+top center
+
+F i g u r e 18.10
+
+top left ?
+
+top r ig h t
+
+left
+center
+
+right
+center
+
+center
+
+b o t t o m l_
+left
+
+=
+
+bottom
+
+bottom center
+
+right
+
+Rectangle instance protocol
+
+accessing
+topLeft
+topCenter
+topRight
+rightCenter
+bottomRight
+bottomCenter
+bottomLeft
+leftCenter
+
+Answer the Point at the top left corner of the
+receiver.
+Answer the Point at the center of the receiver's top horizontal line.
+Answer the Point at the top right corner of
+the receiver.
+Answer the Point at the center of the receiver's right vertical line.
+Answer the Point at the bottom right corner of
+the receiver.
+Answer the Point at the center of the receiver's bottom horizontal line.
+Answer the Point at the bottom left corner of
+the receiver.
+Answer the Point at the center of the receiver's left vertical line.
+
+center
+area
+
+Answer the Point at the center of the receiver.
+
+width
+height
+extent
+
+Answer the receiver's width.
+
+top
+right
+bottom
+left
+
+Answer the receiver's area, the product of
+width and height.
+Answer the receiver's height.
+Answer the Point receiver's width ® receiver's ~
+height.
+Answer the position of the receiver's top horizontal line.
+Answer the position of the receiver's right
+vertical line.
+Answer the position of the receiver's bottom
+horizontal line.
+Answer the position of the receiver's left vertical line.
+
+346
+The Graphics Kernel
+origin
+corner
+
+Answer the Point at the top left corner of the
+receiver.
+Answer the Point at the bottom right corner of
+the receiver.
+
+S u p p o s e t h e R e c t a n g l e r e f e r r e d to as f r a m e is c r e a t e d by t h e e x p r e s s i o n
+
+frame ~ Rectangle origin: 100 @ 100 extent: 150 @ 150
+then
+
+expression
+
+result
+
+frame topLeft
+frame top
+frame rightCenter
+frame bottom
+frame center
+frame extent
+frame area
+
+100 @100
+100
+250@ 175
+250
+175 @175
+150 @ 150
+22500
+
+E a c h of t h e Rectangle's l o c a t i o n s c a n be m o d i f i e d by a n a c c e s s i n g mess a g e w h o s e k e y w o r d is one of t h e p o s i t i o n s n a m e d in F i g u r e 18.10. In
+a d d i t i o n , t h e w i d t h a n d h e i g h t can be set w i t h t h e m e s s a g e s width: a n d
+height:, r e s p e c t i v e l y . Two m e s s a g e s a r e listed below t h a t a r e c o m m o n l y
+u s e d in t h e i m p l e m e n t a t i o n of t h e s y s t e m p r o g r a m m i n g i n t e r f a c e in ord e r to r e s e t t h e v a r i a b l e s of a R e c t a n g l e .
+
+Rectangle instance protocol
+accessing
+origin: originPoint corner: cornerPoint
+Set the points at the top left corner and the
+bottom right corner of the receiver.
+origin: originPoint extent: extentPoint
+Set the point at the top left corner of the receiver to be originPoint and set the width and
+height of the receiver to be extentPoint.
+R e c t a n g l e f u n c t i o n s c r e a t e n e w Rectangles a n d c o m p u t e r e l a t i o n s h i p s
+b e t w e e n two R e c t a n g l e s .
+
+Rectangle instance protocol
+rectangle functions
+amountToTranslateWithin: aRectangle
+Answer a Point, delta, such that the receiver,
+when moved by delta, will force the receiver
+to lie within the argument, aRectangle.
+
+347
+Spatial Reference
+areasOutside: aRectangle
+
+Answer a collection of Rectangles comprising
+the parts of the receiver which do not lie
+within the argument, aRectangle.
+expandBy: delta
+Answer a Rectangle that is outset from the receiver by delta, where delta is a Rectangle,
+Point, or scalar.
+insetBy: delta
+Answer a Rectangle that is inset from the receiver by delta, where delta is a Rectangle,
+Point, or scalar.
+insetOriginBy: originDeltaPoint cornerBy: cornerDeltaPoint
+Answer a Rectangle that is inset from the receiver by originDeltaPoint at the origin and
+cornerDeltaPoint at the corner.
+intersect: a R e c t a n g l e
+Answer a Rectangle that is the area in which
+the receiver overlaps with the argument,
+aRectangle.
+merge: a R e c t a n g l e
+Answer the smallest Rectangle that contains
+both the receiver and the argument,
+aRectangle.
+
+F i g u r e 18.11 s h o w s t h r e e R e c t a n g l e s , A, B, a n d C, c r e a t e d a s f o l l o w s .
+A ~- 50 @ 50 corner: 200 @ 200.
+B ~- 120 ® 120 corner" 260 @ 240.
+C ~ 100 @ 300 corner: 300 @ 400
+
+50, 50
+
+120, 120
+
+200 200
+260, 240
+100, 300
+
+F i g u r e 18.11
+
+300, 400
+
+348
+
+The G r a p h i c s K e r n e l
+T h e n expressions using these t h r e e R e c t a n g l e s are listed below. Notice
+t h a t R e c t a n g l e s p r i n t in t h e form originPoint corner: cornerPoint.
+
+expression
+
+result
+
+A amountToTranslateWithin" C
+A areasOutside: B
+
+50 @250
+OrderedCollection
+((50@50 corner: 200
+@120) (50 @120
+corner: 120 @,200) )
+90 @290
+corner: 310 @410
+110@320
+corner: 290 @380
+120@ 120
+corner: 200 @200
+100@ 120
+corner: 300 ® 400
+
+C expandBy: 10
+C insetBy: 10 @20
+A intersect: B
+B merge: C
+
+The t e s t i n g protocol for R e c t a n g l e s includes messages to d e t e r m i n e
+w h e t h e r a Point or o t h e r Rectangle is c o n t a i n e d w i t h i n t h e b o u n d a r i e s
+of a Rectangle, or w h e t h e r two R e c t a n g l e s intersect.
+Rectangle instance protocol
+testing
+contains: aRectangle
+containsPoint: aPoint
+intersects: aRectangle
+
+Answer whether the receiver contains all
+Points contained by the argument, aRectangle.
+Answer whether the argument, aPoint, is
+within the receiver.
+Answer whether the receiver contains any
+Point contained by the argument, aRectangle.
+
+C o n t i n u i n g t h e above e x a m p l e
+
+expression
+
+result
+
+A contains: B
+C containsPoint: 200 @320
+A intersects: B
+
+false
+true
+true
+
+Like the m e s s a g e s for a Point, t h e coordinates of a Rectangle can be
+r o u n d e d to t h e n e a r e s t integer. A Rectangle can be m o v e d by some
+a m o u n t , t r a n s l a t e d to a p a r t i c u l a r location, a n d t h e coordinates can be
+scaled or t r a n s l a t e d by some a m o u n t . R e c t a n g l e s also respond to scaling
+
+349
+C l a s s BitBIt
+a n d t r a n s l a t i n g m e s s a g e s ; t h e y a r e p a r t of t h e p r o t o c o l f o r a n y o b j e c t
+that can display itself on a display medium.
+
+Rectangle instance protocol
+truncation and round off
+rounded
+transforming
+moveBy: aPoint
+
+moveTo: aPoint
+scaleBy: scale
+translateBy: factor
+
+Answer a Rectangle whose origin and corner coordinates are rounded to the nearest integer.
+
+Change the corner positions of the receiver so
+that its area translates by the amount defined
+by the argument, aPoint.
+Change the corners of the receiver so that its
+top left position is the argument, aPoint.
+Answer a Rectangle scaled by the argument,
+scale, where scale is either a Point or a scalar.
+Answer a Rectangle translated by the argument, factor, where factor is either a Point or a
+scalar.
+
+For example
+
+expression
+
+result
+
+A moveBy: 50 @50
+
+100@ 100
+corner: 250 @250
+200@3OO
+corner: 350 @450
+400@600
+corner: 700@900
+100 @200
+corner: 250 @350
+
+A moveTo: 200@300
+A scateBy: 2
+A translateBy: - 100
+
+Class
+
+BitBIt
+
+T h e m o s t b a s i c i n t e r f a c e t o B i t B l t is t h r o u g h a c l a s s of t h e s a m e n a m e .
+E a c h i n s t a n c e of BitBIt c o n t a i n s t h e v a r i a b l e s n e c e s s a r y t o s p e c i f y a
+B i t B l t o p e r a t i o n . A s p e c i f i c a p p l i c a t i o n of B i t B l t is g o v e r n e d b y a l i s t of
+parameters, which includes:
+
+destForm
+
+(destination form) a Form into which pixels will be stored
+
+sourceForm
+
+a Form from which pixels will be copied
+
+halftoneForm
+
+a Form containing a spatial halftone pattern
+
+350
+The Graphics
+
+Kernel
+
+combinationRule
+
+an Integer specifying the rule for combining corresponding
+pixels of the sourceForm and destForm
+
+destX, destY, width,
+height
+
+(destination area x, y, width, and height)Integers which
+specify the rectangular subregion to be filled in the destination
+
+clipX, clipY,
+clipWidth,
+clipHeight
+sourceX, sourceY
+
+(clipping rectangular area x, y, width, and height) Integers
+which specify a rectangular area which restricts the affected region of the destination
+Integers which specify the location (top left corner) of the
+subregion to be copied from the source
+
+The BitBIt class protocol consists of one message for creating instances;
+this message contains a keyword and a r g u m e n t for each BitBlt variable.
+The BitBIt instance protocol includes messages for initializing the variables and a message, copyBits, which causes the primitive operation to
+take place. It also contains a message, drawFrom: startPoint to: stopPoint,
+for drawing a line defined by two Points.
+BitBIt class protocol
+instance creation
+destForm: destination
+sourceForm: source
+halftoneForm: halftone
+combinationRule: rule
+destOrigin: destOrigin
+sourceOrigin: sourceOrigin
+extent: extent
+Answer a BitBIt with values set according to
+clipRect: clipRect
+each of the arguments, where rule is an Integer; destination, source, and halftone are Forms;
+destOrigin, sourceOrigin, and extent are Points;
+and clipRect is a Rectangle.
+
+BitBIt instance protocol
+accessing
+sourceForm: aForm
+
+Set the receiver's source form to be the argument, aForm.
+
+destForm: aForm
+
+Set the receiver's destination form to be the
+argument, aForm.
+
+mask: aForm
+
+Set the receiver's halftone mask form to be
+the argument, aForm.
+
+combinationRule: anlnteger
+
+Set the receiver's combination rule to be the
+argument, anlnteger, which must be an integer between 0 and 15.
+
+clipHeight: anlnteger
+
+Set the receiver's clipping area height to be
+the argument, anlnteger.
+
+clipWidth: anlnteger
+
+Set the receiver's clipping area width to be
+the argument, anlnteger.
+
+351
+Line Drawing
+
+clipRect
+clipRect: aRectangle
+
+Answer the receiver's clipping rectangle.
+
+clipX: anlnteger
+
+Set the receiver's clipping rectangle top left x
+coordinate to be the argument, anlnteger.
+
+clipY: anlnteger
+
+Set the receiver's clipping rectangle top left y
+coordinate to be the argument, anlnteger.
+
+sourceRect: aRectangle
+
+Set t h e receiver's source form rectangular
+area to be the argument, aRectangle.
+
+sourceOrigin: aPoint
+
+Set the receiver's source form top left coordinates to be the argument, aPoint.
+
+sourceX: anlnteger
+
+Set the receiver's source form top left x coordinate to be the argument, anlnteger.
+
+sourceY: anlnteger
+
+Set the receiver's source form top left y coordinate to be the argument, anlnteger.
+
+destRect: aRectangle
+
+Set the receiver's destination form rectangular area to be the argument, aRectangle.
+
+destOrigin: aPoint
+
+Set the receiver's destination form top left coordinates to be the argument, aPoint.
+
+destX: anlnteger
+
+Set the receiver's destination form top left x
+coordinate to be the argument, anlnteger.
+
+destY: anlnteger
+
+Set the receiver's destination form top left y
+coordinate to be the argument, anlnteger.
+
+height: anlnteger
+
+Set the receiver's destination form height to
+be the argument, anlnteger.
+
+width: anlnteger
+
+Set the receiver's destination form width to be
+the argument, anlnteger.
+
+copying
+copyBits
+
+Set the receiver's clipping rectangle to be the
+argument, aRectangle.
+
+Perform the movement of bits from the source
+form to the destination form. Report an error
+if any variables are not of the right type (Integer or Form), or if the combination rule is not
+between 0 and 15 inclusive. Try to reset the
+variables and try again.
+
+The state held in an instance of BitBIt allows multiple operations in a
+related context to be performed without the need to repeat all the initialization. For example, when displaying a scene in a display window,
+the destination form and clipping rectangle will not change from one
+operation to the next. Thus the instance protocol for modifying individual variables can be used to gain efficiency.
+
+Line Drawing
+
+Much of the graphics in the Smalltalk-80 system consists of lines and
+text. These entities are synthesized by repeated invocation of BitBIt.
+
+352
+
+The Graphics Kernel
+The BitBit protocol includes the messages drawFrom: startPoint to:
+stopPoint to draw a line whose end points are the arguments, startPoint
+and stopPoint.
+
+BitBIt instance protocol
+line drawing
+drawFrom: startPoint to: stopPoint
+
+Draw a line whose end points are the arguments, startPoint and stopPoint. The line is
+formed by displaying copies of the current
+source form according to the receiver's halftone mask and combination rule.
+
+By using BitBIt, one algorithm can draw lines of varying widths, different halftones, and any combination rule. To draw a line, an instance of
+BitBIt is initialized with the appropriate destination Form and clipping
+rectangle, and with a source t h a t can be any Form to be applied as a
+pen or "brush" shape along the line. The message drawFrom:to: with
+Points as the two a r g u m e n t s is t h e n sent to the instance. Figure 18.12
+shows a n u m b e r of different pen shapes and the lines they form when
+the BitBIt combination rule is 6 or 7.
+The message drawFrom: startPoint to: stopPoint stores the destX and
+destY values. S t a r t i n g from these stored values, the line-drawing loop,
+drawLoopX: xDeita Y: yDeita, shown next, accepts x and y delta values
+and calculates x and y step values to determine points along the line,
+and t h e n calls copyBits in order to display the appropriate image at
+each point. The method used is the B r e s e n h a m plotting algorithm (IBM
+Systems Journal, Volume 4, N u m b e r 1, 1965). It chooses a principal direction and m a i n t a i n s a variable, p When p's sign changes, it is time
+to move in the m i n o r direction as well. This method is a n a t u r a l unit to
+be implemented as a primitive method, since the computation is trivial
+and the setup in copyBits is almost all constant from one invocation to
+the next.
+The method for drawLoopX: xDelta Y: yDelta in class BitBIt is
+drawLoopX: xDelta Y: yDelta
+t dx dy px py p 1
+dx ~- xDelta sign.
+dy ~- yDelta sign.
+px ~ yDelta abs.
+py ~- xDelta abs.
+self copyBits. "first point"
+
+353
+
+Line Drawing
+
+7
+
+..'.."
+÷
+,"i""J?'
+..-J:.-""'::°""'~:':* i iI~_~1~/"
+l,,'~#
+
+.:f""
+.../"
+
+i'i'~=~=iJ~~=~~=
+(;i'
+,i'i
+
+, ............
+
+/::"
+
+......:S"
+•:-....
+.........:"
+....:"
+
+i/_~
+~~-;7
+~ ~l
+
+#,/~~l'
+
+......:".....
+
+.::'*"
+....i•.:-"""
+."
+
+/' ' $i'
+
+III "L/i2"~I
+~~_
+
+,t
+Figure 18.12
+py > px
+ifTrue: more horizontal
+[ p + - p y / / 2.
+"'
+
+"
+
+1 to: py do:
+[ : i l destx ~ destx + dx.
+(p ,- p px) < 0
+ifTrue: [desty ~ desty + dy. p ~- p -Jr py].
+self copyBits]]
+ifFalse:
+
+"
+
+more vertical"
+
+[p~- p x / / 2 .
+1 to: px do:
+[ :il desty ~ desty + dy.
+(p ~ p - p y )
+< 0
+ifTrue: [destx ~ destx + dx. p ~ p -+- px].
+self copyBits]]
+
+354
+The Graphics
+
+Kernel
+
+Text Display
+
+One of the advantages derived from BitBlt is the ability to store fonts
+compactly and to display them using various combination rules. The
+compact storage arises from the possibility of packing characters horizontally one next to another (as shown earlier in Figure 18.3), since
+BitBIt can extract the relevant bits if supplied with a table of left x coordinates of all the characters. This is called a strike format from the typographical term meaning a contiguous display of all the characters in
+a font.
+The scanning and display of text are performed in the Smalltalk-80
+system by a subclass of BitBlt referred to as CharacterScanner. This subclass inherits all the normal state, with destForm indicating the Form
+in which text is to be displayed and sourceForm indicating a Form containing all the character glyphs side by side (as in Figure 18.3). In addition CharacterScanner defines further state including:
+text.
+textPos
+
+a String of Characters to be displayed
+an Integer giving the current position in text
+
+xTable
+
+an Array of Integers giving the left x location of each character in sourceForm
+
+stopX
+
+an Integer that sets a right boundary past which the inner
+loop should stop scanning
+
+exceptions
+
+an Array of Symbols that, if non-nil, indicate messages for
+handling the corresponding characters specially
+
+printing
+
+a Boolean indicating whether characters are to be printed
+
+Once an instance has been initialized with a given font and text location, the scanWord: loop below will scan or print text until some horizontal position (stopX) is passed, until a special character (determined
+from exceptions) is found, or until the end of this range of text (endRun)
+is reached. Each of these conditions is denoted by a symbolic code referred to as stopXCode, exceptions (an Array of Symbols) and
+endRunCode.
+scanword: endRun
+I charlndex I
+[textPos < endRun] whiteTrue:
+["pick
+character" charlndex ~- text at: textPos.
+" check exceptions"
+(exceptions at: charlndex) > 0
+ifTrue: [texceptions at: charlndex].
+" left x of character in font" sourceX ~- xTable at: charlndex.
+"up to left of next char"
+width ~- (xTable at: charlndex+ 1) - sourceX.
+" p r i n t the character" printing ifTrue: [self copyBits].
+
+355
+
+Simulation of BitBIt
+"advance
+by width of character" destX ~- destX 4-- width.
+destX > stopX ifTrue' [tstopXCode]. " passed right boundary"
+" advance to next character"
+textPos,.- textPos+ 1].
+textPos ~ t e x t P o s - 1.
+tendRunCode
+
+The check on exceptions handles m a n y possibilities in one operation.
+The space character may have to be handled exceptionally in the case
+of text t h a t is padded to achieve a flush right margin. Tabs usually require a computation or table lookup to determine their width. Carriage
+r e t u r n is also identified in the check for exceptions. Character codes beyond the range given in the font are detected similarly, and are usually
+handled by showing an exceptional character, such as a little lightning
+bolt, so t h a t they can be seen and corrected.
+The printing flag can be set false to allow the same code to measure a
+line (break at a word boundary) or to find to which character the cursor
+points. While this provision m a y seem over-general, two benefits (besides compactness) are derived from t h a t generality. First, if one makes
+a change to the basic scanning algorithm, the parallel functions of measuring, printing, and cursor tracking are synchronized by definition. Second, if a primitive i m p l e m e n t a t i o n is provided for the loop, it exerts a
+threefold leverage on the system performance.
+The scanword: loop is designed to be amenable to such primitive implementation; t h a t is, the i n t e r p r e t e r m a y intercept it and execute
+primitive code instead of the Smalltalk-80 code shown. In this way,
+much of the setup overhead for copyBits can be avoided at each character and an entire word or more can be displayed directly. Conversely,
+the S m a l l t a l k text and graphics system requires i m p l e m e n t a t i o n of only
+the one primitive operation (BitBlt)to provide full functionality.
+
+S i m u l a t i o n of
+BitBIt
+
+We provide here a simulation of an i m p l e m e n t a t i o n of copyBits in a
+subclass of BitBIt referred to as BitBItSimulation. The methods in this
+simulation are intentionally written in the style of machine code in order to serve as a guide to implementors. No a t t e m p t is made to hide the
+choice of 16-bit word size. Although the copyBits method is presented as
+a Smalltalk-80 method in BitBItSimulation, it is actually implemented in
+machine-code as a primitive method in class BitBIt; the simulation does
+the same thing, albeit slower.
+
+356
+The
+
+Graphics
+
+Kernel
+
+class n a m e
+superclass
+i n s t a n c e variable n a m e s
+
+class v a r i a b l e n a m e s
+
+BitBltSimulation
+BitBIt
+sourceBits sourceRaster
+destBits destRaster
+hatftoneBits
+skew skewMask
+mask 1 mask2
+preload nWords
+hDir vDir
+sourcelndex sourceDelta
+desttndex destDelta
+sx sy dx dy w h
+AllOnes RightMasks
+
+class m e t h o d s
+
+initialize
+"Initialize a table of bit masks"
+RightMasks ,# ( 0 16rl 16r3 16r7 16rF
+16r1F 16i3F 16r7F 16rFF
+16r1FF 16r3FF 16r7FF 16rFFF
+16r1FFF 16r3FFF 16r7FFF 16rFFFF).
+AflOnes ~ 16rFFFF
+instance methods
+
+operations
+
+copyBits
+" sets w and h "
+self clipRange.
+(w < = 0 or: [h < = 0 ] ) i f T r u e : [1self].
+self computeMasks.
+self checkOverlap.
+self calculateOffsets.
+self copyLoop
+
+"
+
+null range
+
+private
+
+clipRange
+" clip
+
+and adjust source origin and extent appropriately"
+in x "
+destX > = clipX
+"first
+
+ifTrue: [sx ~-- sourceX, dx ~ destX, w ~-- width]
+ifFalse: [sx ~ sourceX + ( c l i p X - destX).
+w ~- width - (clipX - destX).
+dx ~- clipX].
+(dx + w) > (clipX + clipWidth)
+ifTrue: [w ~ w ((dx + w) - (clipX 4--- clipWidth))].
+
+357
+
+Simulation of BitBIt
+" t h e n in y "
+destY > = clipY
+ifTrue: [sy ~ sourceY, dy ~ destY, h ~- height]
+ifFalse: [sy ~-- s o u r c e Y + c l i p Y h ~ height-
+
+dy ~ clipY].
+(dy + h) > (clipY + clipHeight)
+ifTrue: [h ~- h - ((dy + h) sx<0
+ifTrue: [dx ~ dx -
+
+(clipY + clipHeight))].
+
+sx. w ~ w + sx. sx ~ 0].
+
+sx -4-- w > sourceForm width
+ifTrue: [w ~ w (sx + w sy<0
+ifTrue: [dy ~ d y -
+
+destY.
+
+clipY + destY.
+
+sourceForm width)].
+
+sy. h ~- h + sy. sy ~ 0].
+
+sy ÷ h > sourceForm height
+ifTrue: [h ~ h - (sy + h -
+
+sourceForm height)]
+
+Clipping first checks w h e t h e r the destination x lies to the left of the
+clipping rectangle and, if so, adjusts both destination x and width. As
+mentioned previously, the data to be copied into this adjusted rectangle
+comes from a shifted region of the source, so t h a t the source x must
+also be adjusted. Next, the r i g h t m o s t destination x is compared to the
+clipping rectangle and the width is decreased again if necessary. This
+whole process is then repeated for y and height. Then the height and
+width are clipped to the size of the source form. The adjusted parameters are stored in variables sx, sy, dx, dy, w, and h. If either width or
+height is reduced to zero, the entire call to BitBIt can r e t u r n immediately.
+
+computeMasks
+I startBits endBits t
+calculate skew and edge m a s k s "
+"
+
+destBits ~ destForm bits.
+destRaster ~ destForm width --1 / / t 6 + 1.
+sourceForm notNil
+ifTrue: [sourceBits ~ sourceForm bits.
+s o u r c e R a s t e r , - sourceForm width -
+
+1 / / 1 6 ÷ 1].
+
+halftoneForm notNil
+ifTrue: [halftoneBits ~- halftoneForm bits].
+skew ~- (sx -- dx) bitAnd: 15.
+how many bits source gets skewed to right"
+'"
+
+startBits ~- 16 -
+
+(dx bitAnd: 15).
+
+how many bits in first w o r d "
+mask1 ~ RightMasks at: startBits + 1.
+"
+
+endBits ~-- 1 5 "
+
+((dx + w - l ) b i t A n d :
+
+15).
+
+how many bits in last w o r d "
+
+mask2 ~ (RightMasks at: endBits + 1) bitlnvert.
+
+358
+
+The Graphics Kernel
+skewMask
+(skew=0
+ifTrue: [0]
+ifFalse: [ R i g h t M a s k s at: 16 "
+
+skew +
+
+1]).
+
+d e t e r m i n e n u m b e r of w o r d s stored per line; m e r g e m a s k s if n e c e s s a r y "
+
+w < startBits
+ifTrue: [ m a s k 1
+
+~- mask1 bitAnd: mask2.
+
+m a s k 2 ~ 0.
+nWords ~
+
+1]
+
+ifFalse: [ n W o r d s ~- (w -
+
+startBits -
+
+1) / /
+
+16 + 2].
+
+In p r e p a r a t i o n for the actual t r a n s f e r of data, several p a r a m e t e r s are
+computed. First is skew, the horizontal offset of data from source to destination. This represents the n u m b e r of bits by which the data will
+have.to be rotated after being loaded from the source in order to line up
+with the final position in the destination. In the example of Figure 18.3,
+skew would be 5 because the glyph for the c h a r a c t e r ~e" must be
+shifted left by 5 bits prior to being stored into the destination. F r o m
+skew, skewMask is saved for use in rotating (this is unnecessary for machines with a rotate word instruction). T h e n mask1 and mask2 are computed for selecting the bits of the first and last partial words of each
+scan line in the destination. These masks would be 16r1FFF and
+16rFFC0 respectively in the example of Figure 18.3 since startBits= 13
+and endBits=6. In cases such as this where only one word of each destination line is affected, the masks are merged to select the range within
+t h a t word, here 16rl FC0.
+
+checkOverlap
+Itt
+" c h e c k for p o s s i b l e o v e r l a p of s o u r c e and d e s t i n a t i o n "
+hDir ~ vDir ~- t.
+(sourceForm
+
+for no o v e r l a p "
+
+"defaults
+
+= = d e s t F o r m and: [dy > = sy])
+
+ifTrue:
+[dy > sy
+
+"
+
+have to start at b o t t o m "
+
+ifTrue: [vDir ~
+
+-1.
+
+ifFalse: [dx > sx
+
+sy ~- sy + h "y's
+
+1. dy ~- dy --4- h -
+
+are equal, but x ' s are b a c k w a r d
+
+ifTrue: [hDir ~- - 1.
+sx ~- sx + w "
+
+dx ~- dx 4- w "
+
+1.
+
+start at r i g h t "
+1.
+
+and fix up m a s k s "
+
+skewMask
+
+~- s k e w M a s k
+
+t ~- mask1.
+mask1
+
+~- mask2.
+
+m a s k 2 ~- t]]]
+
+bitlnvert.
+
+1]
+"
+
+359
+
+Simulation of BitBIt
+A check m u s t be made for overlapping source and destination. W h e n
+source and destination lie in the same bitmap, there is the possibility of
+the copy operation destroying the data as it is moved. Thus when the
+data is being moved downward, the copy m u s t s t a r t at the bottom and
+proceed upward. Similarly when there is no vertical movement, if the
+horizontal m o v e m e n t is to the right, the copy m u s t s t a r t at the right
+and work back to the left. In all other cases the copy can proceed from
+top to bottom and left to right.
+
+calculateOffsets
+'" check if need to preload buffer
+(i.e., two words of source needed for first word of destination)"
+p r e l o a d ~ (sourceForm notNil) and:
+[skew ,--.,= 0 and: [skew < = (sx bitAnd: 15)]].
+hDir < 0 ifTrue: [preload ~ preload = = false].
+calculate starting offsets"
+sourcelndex ~- s y , sourceRaster + ( s x / / 16).
+destlndex ~ d y , destRaster + ( d x / / 16).
+calculate increments from end of 1 line to start of next"
+sourceDetta ,( s o u r c e R a s t e r , vDir) (nWords + (preload ifTrue: [1] ifFalse: [0]) , hDir).
+destDelta ~- ( d e s t R a s t e r , vDir) - (nWords , hDir)
+"
+
+"
+
+In cases where two words of source are needed to store the first word
+into the destination, a flag preload is set indicating the need to preload
+a 32-bit shifter prior to the inner loop of the copy (this is an optimization; one could simply always load an e x t r a word initially). The offsets
+needed for the inner loop are the s t a r t i n g offset in words from the
+source and destination bases; deltas are also computed for j u m p i n g from
+the end of the data in one scanline to the s t a r t of data in the next.
+inner loop
+
+copyLoop
+I prevWord thisWord skewWord mergeMask
+halftoneWord mergeWord word 1
+1 to: h do: here is the vertical loop:"
+"
+
+[:il
+(halftoneForm notNit)
+ifTrue:
+[halftoneWord ~ halftoneBits at: (1 -i- (dy bitAnd: 15)).
+dy ,- dy + vDir]
+ifFalse: [hatftoneWord ,- AIIOnes].
+skewWord ,- halftoneWord.
+
+360
+The Graphics K e r n e l
+preload
+ifTrue: [prevWord ~ sourceBits at: sourcelndex + 1.
+" l o a d the 32-bit shifter"
+sourcelndex ~- sourcetndex + hDir]
+ifFalse: [prevWord ~- 0].
+m e r g e M a s k ~- mask1.
+1 to to: nWords do: " h e r e is the inner horizontal l o o p "
+[ :word I
+sourceForm notNil
+ifTrue:
+
+"
+
+if source is u s e d "
+
+[prevWord ~- prevWord bitAnd: skewMask.
+thisWord ~ sourceBits at: sourcelndex -t- 1.
+"pick
+up next w o r d "
+skewWord ~prevWord bitOr: (thisWord bitAnd: s k e w M a s k bitlnvert).
+prevWord ~- thisWord.
+
+skewWord ~ (skewWord bitShift: skew) bitOr:
+(skewWord bitShift: skew - 16)].
+" 16-bit rotate"
+mergeWord ~ self merge: (skewWord bitAnd: halftoneWord)
+with: (destBits at: destlndex + 1).
+destBits
+at: destlndex --t- 1
+put: ((mergeMask bitAnd: mergeWord)
+bitOr: (mergeMask bitlnvert
+bitAnd: (destBits at: destlndex + 1))).
+sourcelndex ~ sourcelndex --.t- hDir.
+destlndex ~ destlndex --I- hDir.
+word = (nWords - 1)
+ifTrue: [ m e r g e M a s k ~ mask2]
+ifFalse: [mergeMask ~ AIIOnes]].
+sourcelndex ~ sourcelndex -t- sourceDelta.
+destlndex ~ destlndex + destDelta]
+
+The outer, or vertical, loop includes the overhead for each line,
+selecting the appropriate line of halftone gray, preloading the shifter if
+necessary, and stepping source and destination pointers to the next
+scanline after the inner loop. It should be noted here t h a t the reason
+for indexing the halftone p a t t e r n by the destination y is to eliminate
+~seams" which would occur if the halftones in all operations were not
+coordinated this way.
+The inner, or horizontal, loop picks up a new word of source, rotates
+it with the previous, and merges the result with a word of the destination. The store into the destination m u s t be masked for the first and
+
+361
+
+Simulation of BitBIt
+last partial words on each scanline, but in the middle, no masking is really necessary.
+m e r g e : s o u r c e W o r d with: d e s t i n a t i o n W o r d
+"These are the 16 combination rules:"
+com binationRu!e = 0
+ifTrue: [tO].
+combinationRule= 1
+ifTrue: [tsourceWord bitAnd: destinationWord].
+combination Rule = 2
+ifTrue: [tsourceWord bitAnd: destinationWord bitlnvert].
+combinationRule= 3
+ifTrue: [t sourceWord].
+combinationRule= 4
+ifTrue: [tsourceWord bitlnvert bitAnd: destinationWord].
+combinationRute = 5
+ifTrue: [1destinationWord].
+combinationRule = 6
+ifTrue:[l'sourceWord bitXor: destinationWord].
+combinationRule= 7
+ifTrue: [l"sourceWord bitOr: destinationWord].
+combination Rule = 8
+ifTrue: [tsourceWord bitlnvert bitAnd: destinationWord bitlnvert].
+combination Rule = 9
+ifTrue: [1"sourceWord bitlnvert bitXor: destinationWord].
+combinationRule = 10
+ifTrue: [l"destinationWord bitlnvert].
+combinationRule = 11
+ifTrue: [tsourceWord bitOr: destinationWord bitlnvert].
+combinationRule = 12
+ifTrue: [tsourceWord bitlnvert].
+combinationRule= 13
+ifTrue: [tsourceWord bitlnvert bitOr: destinationWord].
+combinationRule= 14
+ifTrue: [t sourceWord bitlnvert bitOr: destinationWord bittnvert].
+combinationRule = 15
+ifTrue: [tAIIOnes]
+
+Efficiency
+Considerations
+
+Our experience has demonstrated the value of BitBIt's generality. This
+one primitive is so central to the p r o g r a m m i n g interface t h a t any improvement in its performance has considerable effect on the interactive
+quality of the system as a whole. In normal use of the Smalltalk-80 syst e m , most invocations of BitBIt are either in the extreme microscopic or
+macroscopic range.
+
+362
+
+The Graphics Kernel
+In the macroscopic range, the width of transfer spans m a n y words.
+The i n n e r loop across a horizontal scan line gets executed m a n y times,
+and the operations requested tend to be simple moves or constant
+stores. Examples of these are:
+clearing a line of text to white
+clearing an entire window to white
+scrolling a block of text up or down
+Most processors provide a fast m e a n s for block moves and stores, and
+these can be made to serve the applications above. Suppose we structure the horizontal loop of BitBIt as
+1. move left partial word,
+2. move m a n y whole words (or none),
+3. move right partial word (or none).
+Special cases can be provided for 2 if the operation is a simple store or
+a simple copy with no skew (horizontal bit offset) from source to destination. In this way, most macroscopic applications of BitBit can be made
+fast, even on processors of modest power.
+The microscopic range of BitBIt is characterized by a zero count for
+the inner loop. The work on each scanline involves at most two partial
+words, and both overall setup and vertical loop overhead can be considerably reduced for these cases. Because characters tend to be less t h a n
+a word wide and lines tend to be less t h a n a word thick, n e a r l y all text
+and line drawing falls into this category. A convenient way to provide
+such efficiency is to write a special case of BitBIt which assumes the microscopic parameters, but goes to the general BitBlt whenever these are
+not met. Because of the statistics (many small operations and a few
+very large ones), it does not h u r t to pay the penalty of a false assumption on infrequent calls. One can play the same trick with clipping by
+assuming no clipping will occur and r u n n i n g the general code only
+when this assumption fails.
+
+19
+Pens
+
+."
+..."
+
+Class Pen
+
+.--"
+....."'"
+
+Geometric D e s i g n s
+
+Spirals
+Dragon Curve
+Hilbert Curve
+C o m m a n d e r Pen
+
+o j °m°
+
+.....""f
+F"e
+
+Object
+Magnitude
+Character
+Date
+Time
+Number
+Float
+Fraction
+Integer
+LargeNegativelnteger
+LargePositivelnteger
+Smalllnteger
+LookupKey
+Association
+Link
+
+Stream
+PositionableStream
+ReadStream
+WriteStream
+ReadWriteStream
+ExternalStream
+FileStream
+Random
+File
+FileDirectory
+FilePage
+UndefinedObject
+Boolean
+False
+True
+
+Process
+Collection
+Seq uencea b leCol lection
+LinkedList
+Semaphore
+ArrayedCollection
+Array
+Bitmap
+DisplayBitmap
+RunArray
+String
+Symbol
+Text
+ByteArray
+Interval
+OrderedCoilection
+SortedCollection
+Bag
+M a ppedC ol lect ion
+Set
+Dictionary
+IdentityDictionary
+
+ProcessorScheduler
+Delay
+SharedQueue
+Behavior
+ClassDescription
+Class
+MetaClass
+Point
+Rectangle
+BitBit
+CharacterScanner
+
+DisplayObject
+DisplayMedium
+Form
+Cursor
+DisplayScreen
+InfiniteForm
+OpaqueForm
+Path
+Arc
+Circle
+Curve
+Line
+LinearFit
+Spline
+
+365
+Class Pen
+
+As explained in the previous chapter, Forms represent images. Lines
+can be created by copying a Form to several locations in another Form
+at incremental distances between two designated points. Higher-level
+access to line drawing is provided by instances of class Pen.
+Pen is a subclass of BitBIt. As such, it is a holder for source and destination Forms. The source Form can be colored black or white or different tones of gray, and copied into the destination Form with different
+combination rules, different halftone masks, and with respect to different clipping rectangles. The source Form is the Pen's writing tool or
+nib. The destination Form is the Pen's writing surface; it is usually the
+Form representing the display screen.
+In addition to the implementations inherited from BitBIt, a Pen has a
+Point t ha t indicates a position on the display screen and a Number t h a t
+indicates a direction in which the Pen moves. A Pen understands messages t hat cause it to change its position or direction. When its position
+changes, the Pen can leave a copy of its Form at its former position. By
+moving the Pen to different screen positions and copying its Form to
+one or more of these positions, graphic designs are created.
+Several programming systems provide this kind of access to line
+drawing. In these systems, the line drawer is typically called a "turtle"
+after the one first provided in the MIT/BBN Logo language (Seymour
+Papert, MindStorms: Children, Computers and Powerful Ideas, Basic
+Books, 1980; Harold Abelson and Andrea diSessa, Turtle Geometry: The
+Computer as a Medium for Exploring Mathematics, MIT Press, 1981).
+The protocol for Pens supports messages t hat are like the turtle commands provided in Logo. These consist of commands for telling the turtle to go some distance, t u r n some amount, to place a pen in a down
+position, and to place a pen in an up position. When the pen is down
+and it moves, a trace of the turtle's path is created. The corresponding
+Pen messages are go: distance, turn: amount, down, and up.
+Multiple Pens can be created and their movement on the screen coordinated so t h a t the process of creating a graphical design can itself be
+graphically pleasing. The next section contains the protocol t h a t is provided in class Pen. Subsequent sections give examples of designs t h a t
+can be created by sending messages to Pens.
+
+Class Pen
+
+Instances of class Pen are created by sending Pen the message new. A
+Pen created this way can draw anywhere on the display screen; its initial position is the center of the screen, facing in a direction towards
+
+366
+Pens
+
+t h e top of t h e s c r e e n . T h e Pen is set to d r a w (i.e., it is down) w i t h a
+s o u r c e Form or nib t h a t is a 1 by 1 b l a c k dot.
+T h e r e a r e two w a y s to c h a n g e t h e s o u r c e Form of a Pen. O n e w a y is
+to s e n d t h e Pen t h e m e s s a g e defaultNib: widthlnteger. T h e o t h e r w a y is
+to r e s e t t h e s o u r c e Form by s e n d i n g t h e Pen t h e m e s s a g e s it i n h e r i t s
+f r o m its s u p e r c l a s s , BitBIt. F o r e x a m p l e , t h e m e s s a g e s o u r c e F o r m :
+c h a n g e s t h e s o u r c e form, or t h e m e s s a g e mask: c h a n g e s t h e h a l f t o n e
+f o r m (the m a s k ) u s e d in d i s p l a y i n g t h e s o u r c e form. (Note t h a t t h e def a u l t m a s k for d i s p l a y i n g is black.)
+Pen instance protocol
+initialize-release
+defaultNib: shape
+
+A "nib" is the tip of a pen. This is an easy
+way to set up a default pen. The Form for the
+receiver is a rectangular shape with height
+and width equal to (1) the argument, shape, if
+shape is an Integer; or (2) the coordinates of
+shape if shape is a Point.
+
+Thus
+bic ~- Pen new defaultNib: 2
+
+c r e a t e s a Pen w i t h a b l a c k Form t h a t is 2 bits wide by 2 bits high.
+T h e a c c e s s i n g protocol for a P e n p r o v i d e s access to t h e P e n ' s c u r r e n t
+d i r e c t i o n , location, a n d d r a w i n g region. T h e d r a w i n g r e g i o n is r e f e r r e d
+to as t h e P e n ' s frame.
+Pen instance protocol
+accessing
+direction
+location
+frame
+frame: aRectangle
+
+Answer the receiver's current direction. 270 is
+towards the top of the screen.
+Answer the receiver's current location.
+Answer the Rectangle in which the receiver
+can draw.
+Set the Rectangle in which the receiver can
+draw to be the argument, aRectangle.
+
+C o n t i n u i n g to use t h e e x a m p l e , bic, a n d a s s u m i n g t h a t t h e d i s p l a y
+s c r e e n is 600 bits w i d e a n d 800 bits high, we h a v e
+
+expression
+
+result
+
+bic direction
+bic location
+bic frame:
+(50 @50 extent: 200 @200)
+bic location
+
+270
+300 @400
+
+300 @400
+
+367
+Class Pen
+Notice t h a t w h e n t h e Pen d i r e c t i o n is t o w a r d s t h e top of t h e display
+screen, t h e a n g l e is 270 degrees. Notice also t h a t t h e Pen is c u r r e n t l y
+outside its d r a w i n g r e g i o n a n d w o u l d h a v e to be placed w i t h i n t h e Rectangle, 50@ 50 corner: 250 @ 250, before a n y of its m a r k s could be seen.
+T h e " t u r t l e " d r a w i n g c o m m a n d s a l t e r t h e P e n ' s d r a w i n g state, o r i e n t
+its d r a w i n g direction, a n d r e p o s i t i o n it.
+
+Pen instance protocol
+moving
+down
+
+Set the state of the receiver to "down" so t h a t
+it leaves m a r k s when it moves.
+
+up
+
+Set the state of the receiver to '~up" so that it
+does not leave m a r k s when it moves.
+
+turn-degrees
+
+Change the direction t h a t the receiver faces
+by an a m o u n t equal to the argument, degrees.
+
+north
+
+Set the receiver's direction to facing toward
+the top of the display screen.
+
+go: distance
+
+Move the receiver in its current direction a
+number of bits equal to the argument, distance. If the receiver status is "down," a line
+will be drawn using the receiver's Form as the
+shape of the drawing brush.
+
+goto: aPoint
+
+Move the receiver to position aPoint. If the receiver status is '~down", a line will be drawn
+
+place: aPoint
+home
+
+from the current position to the new one using the receiver's Form as the shape of the
+drawing brush. The receiver's direction does
+not change.
+Set the receiver at position aPoint. No lines
+are drawn.
+Place the receiver at the center of the region
+in which it can draw.
+
+T h u s we c a n p l a c e bic in t h e c e n t e r of its f r a m e by e v a l u a t i n g t h e expression
+
+bic home
+If we t h e n a s k
+
+bic location
+t h e r e s p o n s e w o u l d be 150 @ 150.
+S u p p o s e t h a t we d r e w a line w i t h a Pen a n d t h e n decided t h a t we
+w a n t e d to e r a s e it. If t h e line h a d b e e n d r a w n w i t h a b l a c k Form, t h e n
+we c a n e r a s e it by d r a w i n g over it w i t h a w h i t e Form of at least t h e
+s a m e size. T h u s
+
+bic go" 100
+
+368
+Pens
+draws the black line. Then
+
+bic white
+sets the drawing m a s k to be all white (the message white is inherited
+from the protocol of BitBIt), and t h e n
+
+bic go: - 100
+draws over the original line, erasing it.
+An exercise t h a t is common in the Logo examples is to create various
+polygon shapes, such as a square.
+
+4 timesRepeat: [bic go: 100. bic turn: 90]
+The following expression creates a n y polygon shape by computing the
+angle of t u r n i n g as a function of the n u m b e r of sides. If nSides is the
+n u m b e r of sides of the desired polygon, t h e n
+
+nSides timesRepeat: [bic go" 100. bic turn: 3 6 0 / / n S i d e s ]
+will draw the polygon. We can create a class Polygon whose instances
+refer to the n u m b e r of sides and length of each side. In addition, each
+Polygon has its own Pen for drawing. In the definition t h a t follows, we
+specify t h a t a Polygon can be told to draw on the display screen; the
+method is the one described earlier.
+class name
+superclass
+instance variable names
+
+Polygon
+Object
+drawingPen
+nSides
+length
+
+class methods
+
+instance creation
+new
+
+1'super new default
+instance methods
+
+drawing
+draw
+
+drawingPen black.
+nSides timesRepeat: [drawingPen go length' turn: 3 6 0 / / nSides]
+
+

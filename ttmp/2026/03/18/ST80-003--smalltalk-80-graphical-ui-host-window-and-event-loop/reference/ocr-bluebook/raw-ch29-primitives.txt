@@ -1,0 +1,2317 @@
+....--"
+
+29
+Formal Specification
+of the Primitive Methods
+
+Arithmetic Primitives
+Array and Stream Primitives
+Storage Management Primitives
+Control Primitives
+Input/Output Primitives
+System Primitives
+
++
+
+÷
++
+
+•
+
+4'4,
+
+0
+
+4.
+
+,u, ,nn,
+~,u,
+'a' ,hem'
+@
+@
+
+@
+
+4,4'
+
+@
+
+0 e()
+
++
+
+o~
+
+612
+
+Formal Specification of the Primitive Methods
+When a message is sent, the interpreter usually responds by executing
+a Smalltalk CompiledMethod. This involves creating a new
+M e t h o d C o n t e x t for t h a t C o m p i l e d M e t h o d a n d e x e c u t i n g its bytecodes unt i l a r e t u r n bytecode is e n c o u n t e r e d . Some messages, h o w e v e r , m a y be
+
+responded to primitively. A primitive response is performed directly by
+the interpreter without creating a new context or executing any other
+bytecodes. Each primitive response the interpreter can make is described by a primitive routine. A primitive routine removes the message
+receiver and arguments from the stack and replaces them with the appropriate result. Some primitive routines have other effects on the object memory or on some hardware devices. After a primitive response is
+completed, the interpreter proceeds with interpretation of the bytecode
+after the send bytecode that caused the primitive to be executed.
+At any point in its execution, a primitive routine may determine that
+a primitive response cannot be made. This may, for example, be due to
+a message argument of the wrong class. This is called primitive failure.
+When a primitive fails, the Smalltalk method associated with the selector and receiver's class will be executed as if the primitive method did
+not exist.
+The table below shows the class-selector pairs associated with each
+primitive routine. Some of these class-selector pairs have not appeared
+earlier in this book since they are part of the class's private protocol.
+Some of the primitive routines must meet their specification in order
+for the system to function properly. Other primitive routines are optional; the system will simply perform less efficiently if they always
+fail. The optional primitives are marked with an asterisk. The
+Smalltalk methods associated with optional primitive routines must do
+everything the primitive does. The Smalltalk methods associated with
+required primitive routines need only handle the cases for which the
+primitive fails.
+The Smalltalk Primitives
+
+Primitive Index
+1
+2
+3
+4
+5"
+6*
+7
+8*
+9
+1O*
+11 *
+12
+
+Class-Selector Pairs
+Smalllnteger +
+Smalllnteger Smalllnteger <
+Smalllnteger >
+Smalllnteger < =
+Smalllnteger > =
+Smalllnteger =
+Smalllnteger , ~ =
+Smalllnteger *
+Smalllnteger /
+Smalllnteger \ \
+Smalllnteger//
+
+Formal
+
+13"
+14
+15
+16
+17
+18"
+19
+2O
+21"
+22*
+23*
+24*
+25*
+26*
+27*
+28*
+29*
+30*
+31"
+32*
+33*
+34*
+35*
+36*
+37*
+38
+39
+4O
+41
+42
+43
+44
+45*
+46*
+47
+48*
+49
+50
+51
+52*
+53*
+54*
+55
+56
+57
+58
+
+S p e c i f i c a t i o n of t h e P r i m i t i v e
+
+Smalllnteger quo:
+Smalllnteger bitAnd:
+Smalllnteger bitOr:
+Smalilnteger bitXor:
+Smalllnteger bitShift:
+Number @
+
+LargePositivelnteger +
+LargePositivelnteger LargePositivelnteger <
+Integer <
+LargePositivelnteger >
+Integer >
+LargePositivelnteger < =
+Intec~er < =
+LargePositivelnteger > =
+Intec !er > :
+LargePositivelnteger =
+inte£ er =
+LargePositivelnteger ~ =
+Intec er , - ~ :
+LargePositivelnteger,
+Intec e r ,
+LargePositivelnteger /
+Intec er /
+LargePositivelnteger \ \
+er
+\
+\
+Intec
+Integer//
+LargePositivelnteger//
+Integer quo:
+LargePositivelnteger quo:
+Integer bitAnd:
+LargePositivelnteger bitAnd:
+Integer bitOr:
+LargePositivelnteger bitOr:
+Integer bitXor:
+LargePositivelnteger bitXor:
+Integer bitShift:
+LargePositivelnteger bitShift:
+Integer +
+Integer -
+
+Smaillnteger asFIoat
+Float +
+Float Float <
+Float >
+Float < =
+Float > =
+Float -Float ~ =
+Float *
+Float /
+Float truncated
+Float fractionPart
+Float exponent
+Float timesTwoPower:
+
+613
+Methods
+
+614
+Formal
+
+S p e c i f i c a t i o n of t h e P r i m i t i v e M e t h o d s
+
+59
+60
+
+6t
+
+62
+
+63
+64
+65*
+66*
+67*
+68
+69
+70
+71
+72
+73
+74
+75
+
+76
+77
+78
+79
+80*
+81
+
+82
+83*
+
+LargeNegativelnteger digitAt:
+LargePositivelnteger digitAt:
+Object at:
+Object basicAt:
+LargeNegativelnteger digitAt:put:
+LargePositivelnteger digitAt:put:
+Object basicAt:put:
+Object at:put:
+ArrayedCollection size
+LargeNegativelnteger digitLength
+LargePositivelnteger digitLength
+Object basicSize
+Object size
+String size
+String at:
+String basicAt:
+String basicAt:put:
+String at:put:
+ReadStream next ReadWriteStream next
+WriteStream nextPut:
+PositionabteStream atEnd
+CompiledMethod objectAt:
+CompiledMethod objectAt:put:
+Behavior basicNew Behavior new
+Interval class new
+Behavior new:
+Behavior basicNew:
+Object become:
+Object instVarAt:
+Object instVarAt:put:
+Object asOop
+Object hash
+Symbol hash
+Smalllnteger asObject
+Smalllnteger asObjectNoFail
+Behavior somelnstance
+Object nextlnstance
+CompiledMethod class newMethod:header:
+ContextPart blockCopy:
+BlockContext value:value:value:
+BlockContext value:
+BlockContext value:
+BlockContext value:value:
+BlockContext valueWithArguments:
+Object perform:with:with:with:
+
+615
+Formal
+
+84
+85
+86
+87
+88
+89
+90*
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103"
+104"
+105"
+
+106
+107
+108
+109
+110
+111
+112.
+113
+114
+115
+116
+117
+118
+119
+120
+
+S p e c i f i c a t i o n of t h e P r i m i t i v e
+
+Methods
+
+Object perform:with:
+Object perform:with:with:
+Object perform:
+Object perform:withArguments:
+Semaphore signal
+Semaphore wait
+Process resume
+Process suspend
+Behavior flushCache
+InputSensor primMousePt InputState primMousePt
+InputState primCursorLocPut:
+InputState primCursorLocPutAgain:
+Cursor class cursorLink:
+InputState primlnputSemaphore:
+InputState primSamplelnterval:
+InputState primlnputWord
+BitBIt copyBitsAgain BitBIt copyBits
+SystemDictionary snapshotPrimitive
+Time class secondCIocklnto:
+Time class millisecondCIocklnto:
+ProcessorScheduler signal:atMilliseconds:
+Cursor beCursor
+DisplayScreen beDisplay
+CharacterScanner scanCharactersFrom:to:in:
+rightX:stopConditions:displaying:
+BitBlt drawLoopX:Y:
+ByteArray primReplaceFrom:to:with:startingAt:
+ByteArray replaceFrom:to:withString:startingAt:
+String replaceFrom:to:withByteArray:startingAt:
+String primReplaceFrom:to:with:startingAt:
+
+Character =
+Object
+Object class
+SystemDictionary coreLeft
+SystemDictionary quitPrimitive
+SystemDictionary exitToDebugger
+SystemDictionary oopsLeft
+SystemDictionary signal:atOopsLeft:wordsLeft:
+
+616
+
+Formal Specification of the Primitive Methods
+121
+122
+123
+124
+125
+126
+127
+
+An example of a primitive method is the response of instances of
+Smalllnteger to messages with selector + . If the a r g u m e n t is also an instance of Smalllntefler, and the sum of the values of the receiver and arg u m e n t is in the range t h a t can be represented by Smalllntefler, then
+the primitive method will remove the receiver and a r g u m e n t from the
+stack and replace t h e m with an instance of Smalllnteger whose value is
+the sum. If the a r g u m e n t is not a Smalllnteger or the sum is out of
+range, the primitive will fail and the Smalltalk method associated with
+the selector + in Smalllnteger will be executed.
+The control structures used in the specification of the i n t e r p r e t e r given in this book and the control structures used in a machine language
+implementation of the i n t e r p r e t e r will probably use different mechanisms when primitive routines fail to complete. When a failure condition arises, a machine language primitive routine can decide not to
+r e t u r n to its caller and simply j u m p to the appropriate place in the int e r p r e t e r (usually the place t h a t activates a CompiledMethod). However,
+since the formal specification is w r i t t e n in Smalltalk, all routines m u s t
+r e t u r n to their senders and Interpreter must keep track of primitive success or failure independently of the routine call structure. P a r t of the
+book specification, therefore, is a register called s u c c e s s t h a t is initialized to true when a primitive is started and m a y be set to false if the
+routine fails. The following two routines set and test the state of the
+primitive s u c c e s s register.
+success: successValue
+success ~ successValue & success
+
+success
+fsuccess
+
+The following routines set the state of the success flag in the two common cases of initialization before a primitive routine runs and discovery
+by a primitive routine t h a t it cannot complete.
+initPrimitive
+s u c c e s s ~ true
+
+primitiveFail
+s u c c e s s ~- false
+
+617
+Formal Specification of the Primitive Methods
+Many of the primitives manipulate integer quantities, so the interpreter includes several routines that perform common functions. The
+poplnteger routine is used when a primitive expects a Smalltnteger on
+the top of the stack. If it is a Smalllnteger, its value is returned; if not, a
+primitive failure is signaled.
+
+poplnteger
+I integerPointerl
+integerPointer ~- self popStack.
+self success: (memory islntegerObject: integerPointer).
+self success
+ifTrue: [tmemory integerValueOf: integerPointer]
+Recall that the fetchlnteger:ofObject: routine signaled a primitive failure if the indicated field did not contain a Srnaltlnteger. The
+pushlnteger: routine converts a value to a Smalllnteger and pushes it on
+the stack.
+
+pushlnteger: integerValue
+self push: (memory integerObjectOf: integerValue)
+Since the largest indexable collections may have 65534 indexable elements, and Smalllntegers can only represent values up to 16383, primitive routines that deal with indices or sizes must be able to manipulate
+LargePositivelntegers. The following two routines convert back and forth
+between 16-bit unsigned values and object pointers to Smalllntegers or
+LargePositivel ntegers.
+
+positive 16BitlntegerFor: integerValue
+t newLargelnteger I
+integerValue < 0
+ifTrue: [1'self primitiveFail].
+(memory islntegerValue: integerValue)
+ifTrue: [tmemory integerObjectOf: integerValue].
+newLargelnteger ~ memory instantiateClass:
+ClassLargePositivelntegerPointer
+withBytes: 2.
+memory storeByte: 0
+ofObject: newLargelnteger
+withValue: (self IowByteOf: integerValue).
+memory storeByte: 1
+ofObject: newLargelnteger
+withValue: (self highByteOf: integerVatue).
+1newLarge!nteger
+
+positive 16BitValueOf: integerPointer
+1 value I
+(memory islntegerObject: integerPointer)
+
+618
+Formal Specification of the Primitive Methods
+ifTrue: [1'memory integerValueOf: integerPointer].
+(memory fetchClassOf: integerPointer)=
+ClassLargePositivelntegerPointer
+ifFalse: [Tself primitiveFait].
+(memory fetchByteLengthOf: integerPointer) = 2
+ifFalse: [1'self primitiveFail].
+value ~ memory fetchByte: 1
+ofObject: integerPointer.
+value ~ value.256 4- (memory fetchByte: 0
+ofObject: integerPointer).
+;value
+
+There are three ways t h a t a primitive routine can be reached in the
+process of i n t e r p r e t i n g a send-message bytecode.
+1. Some primitive routines are associated with send-special-selector
+bytecodes for certain classes of receiver. These can be reached
+without a message lookup.
+2. The two most common primitive routines (returning self or an instance variable) can be indicated in the flag value of the header of
+a CompiledMethod. These are only found after a message lookup
+has produced a CompiledMethod, but only the header need be examined.
+3. Most primitive routines are indicated by a n u m b e r in the header
+extension of a CompiledMethod. These are also found after a message lookup.
+The first path to a primitive routine was represented by the call on
+specialSelectorPrimitiveResponse
+in the sendSpecialSelectorBytecode
+routine. The specialSelectorPrimitiveResponse r o u t i n e selects an appropriate primitive routine and r e t u r n s true if a primitive response was
+sucessfully
+made
+and
+false
+otherwise.
+Recall
+that
+the
+sendSpecialSelectorBytecode routine looks up the special selector if
+specialSelectorPrimitiveResponse r e t u r n s false.
+
+specialSelectorPrimitiveResponse
+self initPrimitive.
+(currentBytecode between: 176 and: 191)
+ifTrue: [self arithmeticSelectorPrimitive].
+(currentBytecode between: 192 and: 207)
+ifTrue: [self commonSelectorPrimitive].
+1'self success
+
+A primitive r o u t i n e will be accessed by a special arithmetic selector
+only if the receiver is a Smalllnteger. The actual primitive routines will
+be described in the section on arithmetic primitives.
+
+619
+
+Formal Specification of the Primitive Methods
+arithmeticSelectorPrimitive
+self success: (memory islntegerObject: (self stackValue: 1)).
+self success
+ifTrue: [currentBytecode = 176 ifTrue: [tself primitiveAdd].
+currentBytecode = 177 ifTrue: [tself primitiveSubtract].
+currentBytecode = 178 ifTrue: [1self primitiveLessThan].
+currentBytecode = 179 ifTrue: [1"self primitiveGreaterThan].
+currentBytecode = 180 ifTrue: [1'self primitiveLessOrEqual].
+currentBytecode = 181 ifTrue: [1"self primitiveGreaterOrEqual].
+currentBytecode = 182 ifTrue: [1`self primitiveEqual].
+currentBytecode = 183 ifTrue: [1`self primitiveNotEquat].
+currentBytecode = 184 ifTrue: [1`self primitiveMultiply].
+currentBytecode = I85 ifTrue: [1"self primitiveDivide].
+currentBytecode = 186 ifTrue: [1'self primitiveMod].
+currentBytecode = 187 ifTrue: [1"self primitiveMakePoint].
+currentBytecode = 188 ifTrue: [1"self primitiveBitShift].
+currentBytecode = 189 ifTrue: [1'self primitiveDiv].
+currentBytecode = 190 ifTrue: [1'self primitiveBitAnd].
+currentBytecode = 19 t ifTrue: [1'self primitiveBitOr]]
+
+Only five of the non-arithmetic special selectors invoke primitives without a message lookup (= =, class, blockCopy:, value, and value:). The
+primitive routine for = = is found in the section on system primitives
+and the routine for class in storage m a n a g e m e n t primitives. They are
+both invoked for a n y class of receiver. The routines for blockCopy:, value, a n d value: are found in the section on control primitives. The routine for blockCopy: will be invoked if the receiver is a MethodContext or
+a BiockContext. The routines for value and value: will only be invoked if
+the receiver is a BlockContext.
+commonSelectorPrimitive
+I receiverClass I
+argumentCount ~ self fetchtnteger: ( c u r r e n t B y t e c o d e - 1 7 6 ) . 2 + 1
+ofObject: SpecialSelectorsPointer.
+receiverClass
+memory fetchClassOf: (self stackValue: argumentCount).
+currentBytecode = 198 ifTrue: [1self primitiveEquivalent].
+currentBytecode = 199 ifTrue: [1self primitiveClass].
+currentBytecode = 200
+ifTrue: [self success:
+(receiverClass = ClassMethodContextPointer)
+I (receiverClass = ClassBIockContextPointer).
+1self success ifTrue: [self primitiveBlockCopy]].
+(currentBytecode = 201) I (currentBytecode = 202)
+ifTrue: [self success: receiverClass=ClassBIockContextPointer.
+1`self success ifTrue: [self primitiveValue]].
+self primitiveFail
+
+j
+
+=
+
+::=--
+
+620
+Formal Specification of the Primitive Methods
+The second and third paths to primitive routines listed above are taken
+after a CompiledMethod for a message has been found. The presence of
+a primitive is detected by the primitiveResponse routine called in
+e×ecuteNewMethod. The primitiveResponse routine is similar t o the
+specialSelectorPrimitiveResponse routine in t h a t it r e t u r n s true if a
+primitive response was successfully made and false otherwise. Recall
+t h a t the executeNewMethod routine activates the CompiledMethod t h a t
+has been looked up if primitiveResponse r e t u r n s false.
+
+primitiveResponse
+I flagValue thisReceiver offset I
+primitivetndex = 0
+ifTrue: [flagValue ~ self flagValueOf: newMethod.
+flagValue = 5
+ifTrue: [self quickReturnSelf.
+ttrue].
+flagValue = 6
+ifTrue: [self quicktnstanceLoad.
+ttrue].
+tfalse]
+ifFalse: [self initPrimitive.
+self dispatchPrimitives.
+Tself success]
+
+Flag values of 5 and 6 reach the two most commonly found primitives,
+a simple r e t u r n of self and a simple r e t u r n of one of the receiver's instance variables. R e t u r n i n g self is a no-op as far as the i n t e r p r e t e r is
+concerned since self's object pointer occupies the same place on the
+stack as the message receiver t h a t it should occupy as the message response.
+
+quickReturnSelf
+R e t u r n i n g an instance variable of the receiver is almost as easy.
+
+quicklnstanceLoad
+l thisReceiver fietdtndex I
+thisReceiver ~- self popStack.
+fieldlndex ~ self fieldlndexOf: newMethod.
+self push: (memory fetchPointer: fieldlndex
+ofObject: thisReceiver)
+
+The six types of primitives in the formal specification deal with arithmetic, subscripting and streaming, storage m a n a g e m e n t , control structures, i n p u t / o u t p u t , and general system access. These correspond to six
+ranges of primitive indices. A range of primitive indices has been reserved for implementation-private primitive routines. They m a y be
+
+621
+Arithmetic Primitives
+
+assigned any meaning, but cannot be depended upon from interpreter
+to interpreter. Since these are not part of the specification, they cannot
+be described here.
+
+dispatchPrimitives
+primitivelndex < 60
+ifTrue: [1'self dispatchArithmeticPrimitives].
+primitivelndex < 68
+ifTrue: [1self dispatchSubscriptAndStreamPrimitives].
+primitivelndex < 80
+ifTrue: [tself dispatchStorageManagementPrimitives].
+primitivelndex < 90
+ifTrue: [1"self dispatchControtPrimitives].
+primitivelndex < 110
+ifTrue: [tself dispatchlnputOutputPrimitives].
+primitivelndex < 128
+ifTrue: [1"self dispatchSystemPrimitives].
+pnmitivelndex < 256
+ifTrue: [1`self dispatchPrivatePrimitives]
+
+Arithmetic
+Primitives
+
+There are three sets of arithmetic primitive routines, one for
+Smalllntegers,
+one for large integers
+(LargePositivelntegers
+and
+LargeNegativelntegers),
+a n d one for Floats. The p r i m i t i v e s
+for
+Smaillntegers and Floats must be implemented, the primitives for large
+integers are optional.
+
+dispatchArithmeticPrimitives
+primitivelndex < 20
+ifTrue: [1 self dispatchlntegerPrimitives].
+primitivelndex < 40
+i'fTrue: [1`self dispatchLargelntegerPrimitives].
+primitivetndex < 60
+ifTrue: [1self dispatchFIoatPrimitives]
+
+The first set of arithmetic primitive routines all pop a receiver and arg u m e n t off the stack and fail if they are not both Smalllntegers. The
+routines then push on the stack either the integral result of a computation or the Boolean result of a comparison, The routines t h a t produce
+an integral result fail if the value cannot be represented as a
+Smalllnteger.
+
+dispatchlntegerPrimitives
+primitivelndex = 1 ifTrue: [1`self primitiveAdd].
+primitivelndex = 2 ifTrue: [1self primitiveSubtract].
+primitivelndex = 3 ifTrue: [tself primitiveLessThan].
+
+622
+
+Formal Specification of the Primitive Methods
+3rimitive ndex =
+3nmitive ndex =
+3rimitive ndex =
+3r~mitive ndex =
+3rimitive ndex =
+3rimitive ndex =
+3rimitive ndex =
+3rimitive ndex =
+3nmitive ndex =
+3rimitive ndex =
+3rlmitive ndex =
+Dnmitive ndex =
+3nmitive ndex =
+3rimitive ndex =
+3nmitive ndex =
+
+4 ifTrue: [1'self 3rimitiveGreaterThan].
+5 ifTrue: [1`self 9rimitiveLessOrEqual].
+6 ifTrue: [1self 3rimitiveGreaterOrEqual].
+7 ifTrue: [lself 3rimitiveEqual].
+8 ifTrue: [1'self 3rimitiveNotEqual].
+9 ifTrue: [1self 3rimitiveMultiply].
+10 ifTrue: [fself 3rimitiveDivide].
+11 ifTrue: [1'self 3rimitiveMod].
+12 ifTrue: [tself 3rimitiveDiv].
+13 ifTrue: [l'se DrimitiveQuo].
+14 ifTrue: [tse 3rimitiveBitAnd].
+15 ifTrue: [fse 3rimitiveBitOr].
+16 ifTrue: [tse 3rimitiveBitXor].
+17 ifTrue: [tse 3rimitiveBitShift].
+18 ifTrue: [l'se :~rimitiveMakePoint]
+
+The primitiveAdd, primitiveSubtract, and primitiveMultiply routines are all
+identical except for the arithmetic operation used, so only the
+primitiveAdd routine will be shown here.
+
+primitiveAdd
+I integerReceiver integerArgument integerResult J
+integerArgument ~- self poplnteger.
+integerReceiver ~ self poplnteger.
+self success
+ifTrue: [integerResult ~ integerReceiver + integerArgument.
+self success: (memory islntegerValue: integerResult)].
+self success
+ifTrue: [self pushlnteger: integerResult]
+ifFatse: [self unPop: 2]
+
+The primitive routine for division (associated with the s e l e c t o r / ) is different than the other three arithmetic primitives since it only produces
+a result if the division is exact, otherwise the primitive fails. This primitive, and the next three that have to do with rounding division, all fail
+if their a r g u m e n t is 0.
+
+primitiveDivide
+I integerReceiver integerArgument integerResult I
+integerArgument ~ self poplnteger.
+integerReceiver ~ self poplnteger.
+self success: integerArgument,---,=0.
+self success: integerReceiver\ \integerArgument=0.
+self success
+ifTrue: [integerResult ~ integerReceiver//integerArgument.
+self success: (memory islntegerValue: integerResult)].
+
+623
+
+Arithmetic Primitives
+self success
+ifTrue [self push: (memory integerObjectOf: integerResult)]
+ifFatse: [self unPop: 2]
+
+The primitive routine for the modulo function (associated with the selector \ X) gives the remainder of a division where the quotient is always rounded down (toward negative infinity).
+
+primitiveMod
+I integerReceiver integerArgument integerResutt I
+integerArgument ~- self poplnteger.
+integerReceiver ~- self poplnteger.
+self success: integerArgument,--,=0.
+self success
+ifTrue: [integerResult ~ integerReceiverx \integerArgument.
+self success: (memory islntegerValue: integerResult)].
+self success
+ifTrue: [self pushlnteger: integerResult]
+ifFalse: [self unPop: 2]
+
+There are two primitive routines for rounding division (associated with
+the s e l e c t o r s / / and quo:). The result of / / is always rounded down (toward negative infinity).
+
+primitiveDiv
+I integerReceiver integerArgument integerResult t
+integerArgument ~- self poplnteger.
+integerReceiver ~ self poplnteger.
+self success: integerArgument,~=0.
+self success
+ifTrue: [integerResult ~ integerReceiver//integerArgument..
+self success: (memory islntegerValue: integerResult)].
+self success
+ifTrue: [self pushlnteger: integerResult]
+ifFalse: [self unPop: 2]
+
+The result of quo: is truncated (rounded toward zero).
+
+primitiveQuo
+I integerReceiver integerArgument integerResult I
+integerArgument ~ self poplnteger.
+integerFleceiver ~ self poplnteger.
+self success: integerArgument,-~=O.
+self success
+ifTrue: [integerResult ~ integerReceiver quo: integerArgument.
+self success: (memory istntegerValue: integerResult)].
+
+624
+
+Formal Specification of the Primitive Methods
+self success
+ifTrue: [self pushlnteger: integerResult]
+ifFalse: [self unPop: 2]
+
+The
+
+primitiveEqual, primitiveNotEqual, primitiveLessThan, primitiveLessQrEqual, primitiveGreaterThan, and primitiveGreaterOrEqual routines
+
+are all identical except for the comparison operation used, so only the
+primitiveEqual routine will be shown here.
+
+primitiveEqual
+I integerReceiver integerArgument integerResult I
+integerArgument ~ self poplnteger.
+integerReceiver ~- self poplnteger.
+self success
+ifTrue: [integerReceiver = integerArgument
+ifTrue: [self push: TruePointer]
+ifFalse: [self push: FalsePointer]]
+ifFalse: [self unPop: 2]
+The primitiveBitAnd, primitiveBitOr, and primitiveBitXor routines perform
+
+logical operations on the two's-complement binary representations of
+Smalllnteger values. They are identical except for the logical operation
+used, so only the primitiveBitAnd routine will be shown here.
+
+primitiveBitAnd
+I integerReceiver integerArgument integerResult I
+integerArgument ,- self poplnteger.
+integerReceiver ,- self poplnteger.
+self success
+ifTrue: [integerResult ~ integerReceiver bitAnd: integerArgument].
+self success
+ifTrue: [self pushlnteger: integerResult]
+ifFalse: [self unPop: 2]
+
+The primitive routine for shifting (associated with the selector bitShift:)
+returns a Smalllnteger whose value represented in two's-complement is
+
+the receiver's value represented in two's-complement shifted left by the
+number of bits indicated by the argument. Negative arguments shift
+right. Zeros are shifted in from the right in left shifts. The sign bit is
+extended in right shifts. This primitive fails if the correct result cannot
+be represented as a Smalllnteger.
+
+primitiveBitShift
+I integerReceiver integerArgument integerResult 1
+integerArgument ~ self poplnteger.
+integerReceiver ~- self poplnteger.
+
+625
+Arithmetic Primitives
+self success
+ifTrue: [integerResult ~- integerReceiver bitShift: integerArgument.
+self success: (memory islntegerValue: integerResult)].
+self success
+ifTrue: [self pushlnteger: integerResuit]
+ifFalse: [self unPop: 2]
+
+The primitive routine associated with the selector @ returns a new
+Point whose x value is the receiver and whose y value is the argument.
+
+primitiveMakePoint
+I integerReceiver integerArgument pointResult I
+integerArgument ~ self popStack.
+integerReceiver ~ self popStack.
+self success: (memory islntegerValue: integerReceiver).
+•
+self success: (memory islntegerVatue: integerArgument).
+self success
+ifTrue: [pointResult ~ memory instantiateClass: ClassPointPointer
+withPointers: ClassPointSize,
+memory storePointer: XIndex
+ofObject: pointResult
+kwithValue: integerReceiver.
+memory storePointer: Ylndex
+ofObject: pointResult
+withValue: integerArgument.
+self push: pointResult]
+ifFalse: [self unPop: 2]
+
+initializePointlndices
+Xtndex ~--- 0.
+Ylndex ~ 1.
+ClassPointSize ~- 2
+
+The primitive indices 21 to 37 are the same as primitives 1 to 17 except
+that they perform their operations on large integers (instances of
+LargePositivelnteger and LargeNegativelnteger). There are adequate
+Smalltalk implementations for all of these operations so the primitive
+routines are optional and will not be specified in this chapter. To implement them, the corresponding Smalltalk methods should be translated
+into machine language routines.
+
+dispatchLargelntegerPrimitives
+self primitiveFail
+
+Instances of Float are represented in IEEE single-precision (32-bit) format. This format represents a floating point quantity as a number between one and two, a power of two, and a sign. A Float is a word-size,
+nonpointer object. The most significant bit of the first field indicates the
+sign of the number (1 means negative). The next eight most significant
+
+626
+F o r m a l Specification of the Primitive Methods
+bits of the first field are the 8-bit exponent of two biased by 127 (0
+means an exponent of -127, 128 means an exponent of 1, and so on).
+The seven least significant bits of the first field are the seven most significant bits of the fractional p a r t of the n u m b e r between one and two.
+The fractional part is 23 bits long and its 16 least significant bits are
+the contents of the second field of the Float. So a Float whose fields are
+SEEEEEEE E F F F F F F F
+FFFFFFFF FFFFFFFF
+represents the value
+-1 ~ * 2 E-127 * 1 . F
+0 is represented as both fields=O. The floating point primitives fail if
+the a r g u m e n t is not an instance of Float or if the result cannot be represented as a Float. This specification of the Smalltalk-80 virtual machine does not specifically include the parts of the IEEE s t a n d a r d other
+t h a n the representation of floating point numbers. The implementation
+of routines t h a t perform the necessary operations on floating point values is left to the implementer.
+The p r i m i t i v e A s F I o a t routine converts its S m a l l l n t e g e r receiver into a
+Float. The routines for primitives 41 t h r o u g h 50 perform the same operations as 1 t h r o u g h 10 or 21 t h r o u g h 30, except t h a t they operate on
+Floats. The primitiveTruncated routine r e t u r n s a Smalllnteger equal ~to
+the value of the receiver without any fractional part. It fails if its
+t r u n c a t e d value cannot be represented as a Smaillnteger. The
+primitiveFractionalPart r e t u r n s the difference between the receiver and
+its t r u n c a t e d value. The primitiveExponent routine r e t u r n s the exponent
+of the receiver and the primitiveTimesTwoPower routine increases the
+exponent by an a m o u n t specified by the argument.
+
+dispatchFIoatPrimitives
+primitivelndex = 40 ifTrue: [1'self primitiveAsFIoat].
+primitivelndex = 41 ifTrue: [1"self primitiveFIoatAdd].
+primitivelndex = 42 ifTrue: [Tself primitiveFIoatSubtract].
+prnmitivelndex = 43 ifTrue: [tself primitiveFIoatLessThan].
+pnmitivelndex = 44 ifTrue: [tself primitiveFl°atGreaterThan]"
+pnmitivelndex = 45 ifTrue: [1'self primitiveFIoatLessOrEqual].
+pnmitivelndex = 46 ifTrue: [1"self primitiveFIoatGreaterOrEqual].
+prlmitiveindex = 47 ifTrue: [tself primitiveFIoatEqual].
+pnmitivelndex = 48 ifTrue: [1"self primitiveFIoatNotEqual].
+pnmitivetndex = 49 ifTrue: [rself primitiveFIoatMultiply].
+primitivelndex = 50 ifTrue: [1'self primitiveFIoatDivide].
+primitivelndex = 5l ifTrue: [tself primitiveTruncated].
+
+627
+
+Array and S t r e a m Primitives
+primitiveindex = 52 ifTrue: [1self primitiveFractionalPart].
+primitivelndex = 53 ifTrue: [1'self primitiveExponent].
+primitivelndex = 54 ifTrue: [1`self primitiveTimesTwoPower]
+
+Array and
+Stream
+Primitives
+
+The second set of primitive routines are for m a n i p u l a t i n g the indexable
+fields of objects both directly, by subscripting, and indirectly, by streaming. These routines m a k e use of the 16-bit positive integer routines,
+since the limit on indexable fields is 65534.
+dispatchSubscriptAndStreamPrimitives
+pr,mitivelndex = 60 ifTrue: [tself primitiveAt].
+pnmitivetndex = 61 ifTrue: [tself primitiveAtPut].
+pnmitivelndex = 62 ifTrue: [tself primitiveSize].
+pnmitivefndex = 63 ifTrue: [1'self primitiveStringAt].
+pnmitivelndex = 64 ifTrue: [l'self primitiveStringAtPut].
+prtmitivelndex = 65 ifTrue: [tself primitiveNext].
+pr~mitivelndex = 66 ifTrue: [1self primitiveNextPut].
+pnmitivetndex = 67 ifTrue: [1"self primitiveAtEnd]
+
+The following routines are used to check the bounds on subscripting operations and to perform the subscripting accesses. They determine
+w h e t h e r the object being indexed contains pointers, 16-bit integer values, or 8-bit integer values, in its indexable fields. The checkIndexableBoundsOf:in: routine takes a one-relative index and determines w h e t h e r it is a legal subscript of an object. It must take into account any fixed fields.
+checklndexableBoundsOf: index in: array
+I class t
+class ~ memory fetchClassOf: array.
+self success: index> =1.
+self success: index + (self fixedFieldsOf: class)< =(self lengthOf: array)
+lengthOf: array
+(self isWords: (memory fetchClassOf: array))
+ifTrue: [1memory fetchWordLengthOf: array]
+ifFalse: [tmemory fetchByteLengthOf: array]
+
+The subscript:with: and subscript:with:storing:
+
+routines assume t h a t the
+
+n u m b e r of f i x e d fields has been added i n t o the index, so t h e y use it as a
+o n e - r e l a t i v e i n d e x i n t o the object as a whole.
+
+628
+F o r m a l Specification of the P r i m i t i v e Methods
+
+subscript: array with: index
+t class value l
+class ~--- memory fetchClassOf: array.
+(self isWords: class)
+ifTrue: [(self isP0inters: class)
+ifTrue: [tmemory fetchPointer: i n d e x - 1
+of Object: array]
+ifFalse: [value ~- memory fetchWord: index-1
+of Object: array.
+1'self positive 16BitlntegerFor: value]]
+ifFalse: [value ~ memory fetchByte: index-1
+of Object: array.
+1'memory integerObjectOf: value]
+subscript: array with: index storing: value
+I class I
+class ~- memory fetchClassOf: array.
+(self isWords: class)
+ifTrue: [(self isPointers: class)
+ifTrue: [tmemory storePointer: index-1
+of Object: array
+withValue: value]
+ifFalse: [self success: (memory islntegerObject: value).
+self success ifTrue:
+[tmemory
+storeWord: i n d e x - 1
+of Object: array
+withValue: (self positive16BitValueOf:
+value)]]]
+ifFatse: [self success: (memory islntegerObject: value).
+self success ifTrue:
+[tmemory storeByte: i n d e x - 1
+of Object: array
+withValue: (self IowByteOf:
+(memory integerValueOf:
+value))]]
+The primitiveAt and primitiveAtPut routines s i m p l y fetch or store one of
+the indexable fields of the receiver. They fail if the index is not a
+Smalllnteger or if it is out of bounds.
+primitiveAt
+I index array arrayClass result I
+index ~- self positive16BitValueOf: self popStack.
+array ~ self popStack.
+arrayCtass ~- memory fetchClassOf: array.
+self checklndexabteBoundsOf: index
+in: array.
+
+629
+
+Array and Stream Primitives
+self success
+ifTrue: [index ~-index + (self fixedFieldsOf: arrayClass).
+result ~- self subscript: array
+with: index].
+self success
+ifTrue: [self push: result]
+ifFalse: [self unPop: 2]
+
+The primitiveAtPut routine also fails if the receiver is not a pointer type
+and the second a r g u m e n t is not an 8-bit (for byte-indexable objects) or
+16-bit (for word-indexable objects) positive integer. The primitive routine r e t u r n s the stored value as its value.
+
+primitiveAtPut
+1 array index arrayClass value result I
+value ~ self popStack.
+index ~ self positive16BitValueOf: self popStack.
+array ~ self popStack.
+arrayClass ~ memory fetchClassOf: array.
+self checklndexableBoundsOf: index
+in: array.
+self success
+ifTrue: [index ~ index + (self fixedFieldsOf: arrayClass).
+self subscript: array
+with: index
+storing: value].
+self success
+ifTrue: [self push: value]
+ifFatse: [self unPop: 3]
+
+The primitiveSize routine r e t u r n s the n u m b e r of indexable fields the receiver has (i.e., the largest legal subscript).
+
+primitiveSize
+I array class length I
+array ~ self popStack.
+class ~- memory fetchClassOf: array.
+length ~- self positive16BitlntegerFor:
+(self lengthOf: array).-- (self fixedFieldsOf: class).
+self success
+ifTrue: [self push: length]
+ifFalse: [self unPop: 1]
+
+The primitiveStringAt and primitiveStringAtPut routines are special responses to the at: and at:put: messages b y instances of String. A String
+
+630
+Formal Specification of the Primitive Methods
+actually stores 8-bit n u m b e r s in byte-indexable fields, but it communicates t h r o u g h the at: and at:put: messages with instances of Character. A
+Character has a single instance variable t h a t holds a Smalllnteger. The
+value of the Smalllnteger r e t u r n e d from the at: message is the byte
+stored in the indicated field of the String. The primitiveStringAt routine
+always r e t u r n s the same instance of Character for any particular value.
+It gets the Characters from an Array in the object m e m o r y t h a t has a
+g u a r a n t e e d object pointer called characterTablePointer.
+
+primitiveStringAt
+I index array ascii character I
+index ~ self positive16BitVatueOf: self popStack.
+array ~ self popStack.
+self checklndexableBoundsOf: index
+in: array.
+self success
+ifTrue: [ascii ,- memory integerValueOf: (self subscript: array
+with: index).
+character ~- memory fetchPointer: ascii
+ofObject: CharacterTablePointer].
+self success
+ifTrue: [self push: character]
+ifFalse: [self unPop: 2]
+
+initializeCharacterindex
+CharacterValuetndex ~ 0
+
+The primitiveStringAtPut routine stores the value of a Character in one of
+the receiver's indexab]e bytes. I t fails if the second a r g u m e n t of the
+at:put: message is not a Character.
+
+primitiveStringAtPut
+I index array ascii character I
+character ~- self popStack.
+index ~ self positive16BitValue0f: self popStack.
+array ~- self popStack.
+self checklndexableBounds0f: index
+in: array.
+self success: (memory fetchCtass0f: character)=ClassCharacterPointer.
+self success
+ifTrue: [ascii ~- memory fetchPointer: CharacterValuelndex
+of 0bject: character.
+self subscript: array
+with: index
+storing: ascii].
+self success
+ifTrue: [self push: character]
+ifFatse: [self unPop: 2]
+
+631
+
+A r r a y and S t r e a m Primitives
+The p r i m i t i v e N e x t , p r i m i t i v e N e x t P u t , and p r i m i t i v e A t E n d routines are optional primitive versions of the Smalltalk code for the next, nextPut:,
+and atEnd messages to streams. The primitiveNext and primitiveNextPut
+routines only work if the object being s t r e a m e d is an Array or a String.
+
+initializeStreamlndices
+StreamArraylndex ~- 0.
+Streamlndexlndex ~ 1.
+StreamReadLimitlndex ~ 2.
+StreamWriteLimittndex ~ 3
+
+primitiveNext
+I stream index limit array arrayCiass result ascii I
+stream ~- self popStack.
+array ~ memory fetchPointer: StreamArraylndex
+of Object: stream.
+arrayClass ~- memory fetchClassOf: array.
+index ~ self fetchtnteger: Streamlndexlndex
+of Object: stream.
+limit ~ self fetchlnteger: StreamReadLimitlndex
+of Object: stream.
+self success: index < limit.
+self success:
+(arrayClass = CtassArrayPointer) I (arrayClass = ClassStringPointer).
+self checklndexableBoundsOf: index + 1
+in: array.
+self success
+ifTrue: [index ~ - i n d e x + 1.
+result ~- self subscript: array
+with: index].
+self success
+ifTrue: [self storelnteger: Streamlndexlndex
+of Object: stream
+withValue: index].
+self success
+ifTrue: [arrayClass = ClassArrayPointer
+ifTrue: [self push: result]
+ifFalse: [ascii ~- memory integerValueOf: result.
+self push: (memory fetchPointer: ascii
+of Object:
+CharacterTable Pointer)]]
+ifFalse: [self unPop: 1]
+
+primitiveNextPut
+I value stream index limit arraY arrayClass result ascii I
+value ~ self popStack.
+stream ~ self popStack.
+
+632
+Formal
+
+S p e c i f i c a t i o n of t h e P r i m i t i v e M e t h o d s
+
+array - memory fetchPointer: StreamArraylndex
+of Object: stream.
+arrayCiass ~- memory fetchClassOf: array.
+index - self fetchlnteger: Streamlndexlndex
+of Object: stream.
+limit ~- self fetchlnteger: StreamWriteLimitlndex
+of Object: stream.
+self success: index < limit.
+self success:
+(arrayClass = ClassArrayPointer) i (arrayClass = ClassStringPointer).
+self checklndexableBoundsOf: index + 1
+in: array.
+self success
+ifTrue: [index ~ index -4- 1 .
+arrayClass =ClassArrayPointer
+ifTrue: [self subscript: array
+with: index
+storing: value]
+ifFalse: [ascii - memory fetchPointer:
+CharacterValuelndex
+of Object: value.
+self subscript: array
+with: index
+storing: ascii]].
+self success
+ifTrue: [self storelnteger: Streamlndexlndex
+of Object: stream
+withValue: index].
+self success
+ifTrue: [self push: value]
+ifFalse: [self unPop: 2]
+
+primitiveAtlnd
+t stream array arrayClass length index limit 1
+stream - self popStack.
+array ~- memory fetchPointer: StreamArraylndex
+of Object: stream.
+arrayClass ~ memory fetchClassOf: array.
+length ~ self lengthOf: array.
+index ~- self fetchlnteger: Streamlndexlndex
+of Object: stream.
+limit - self fetchlnteger: StreamReadLimitlndex
+of Object: stream.
+self success:
+(array'Class = ClassArrayPointer) I (arrayClass = ClassStringPointer).
+
+633
+Storage Management Primitives
+self success
+ifTrue: [(index > =limit) I (index > =length)
+ifTrue: [self push: TruePointer]
+ifFalse: [self push: FalsePointer]]
+ifFalse: [self unPop: 1]
+
+Storage
+Management
+Primitives
+
+The storage management primitive routines manipulate the representation of objects. They include primitives for manipulating object pointers, accessing fields, creating new instances of a class, and enumerating
+the instances of a class.
+
+dispatchStorageManagementPrimiUves
+~rimitivetndex =
+3r mitive ndex =
+3nmitive ndex =
+9r, mitive ndex =
+3rimitive ndex =
+3nmitive ndex =
+3rimitive ndex =
+3r mitivelndex =
+3nmitivetndex =
+3rimitivelndex =
+orimitivelndex =
+orimitivelndex =
+
+68 ifTrue: [1self primitiveObjectAt].
+69 ifTrue: [fself primitive©bjectAtPut].
+70 ifTrue: [tself primitiveNew].
+71 ifTrue: [1self primitiveNewWithArg].
+72 ifTrue: [tself primi.tiveBecome].
+73 ifTrue: [tsetf primitivelnstVarAt].
+74 ifTrue: [tsetf primitivelnstVarAtPut].
+75 ifTrue: [1self primitiveAsOop].
+76 ifTrue: [tself primitiveAsObject].
+77 ifTrue: [1"self primitiveSomelnstance].
+78 ifTrue: [1self primitiveNextlnstance].
+79 ifTrue: [1self primitiveNewMethod]
+
+T h e p r i m i t i v e O b j e c t A t a n d p r i m i t i v e O b j e c t A t P u t r o u t i n e s are associated
+w i t h t h e objectAt: a n d objectAt:put: messages i n C o m p i l e d M e t h o d . T h e y
+
+provide access to the object pointer fields of the receiver (the method
+header and the literals) from Smalltalk. The header is accessed with an
+index of 1 and the literals are accessed with indices 2 through the number of literals plus 1. These messages are used primarily by the compiler.
+
+primitiveObjectAt
+I thisReceiver index I
+index ~- self poplnteger.
+thisReceiver ~- self popStack.
+self success: index > 0.
+self success: index < =(self objectPointerCountOf: thisReceiver).
+self success
+ifTrue: [self push: (memory fetchPointer: index--1
+ofObject: thisReceiver)]
+ifFalse: [self unPop: 2]
+
+634
+
+F o r m a l Specification of the Primitive Methods
+
+primitiveObjectAtPut
+I thisReceiver index newValue I
+newVatue ~- self popStack.
+index ~ self poptnteger.
+thisReceiver ~ self popStack.
+self success: index > O.
+self success: index < =(self objectPointerCountOf: thisReceiver
+self success
+ifTrue: [memory storePointer: index-1
+ofObject: thisReceiver
+withValue: newValue.
+self push: newValue]
+ifFalse: [self unPop: 3]
+
+The primitiveNew routine creates a new instance of the receiver (a class)
+without indexable fields. The primitive fails if the class is indexable.
+
+primitiveNew
+I classsizel
+class ~ self popStack.
+size ~- self fixedFieldsOf: class.
+self success: (self islndexable: c l a s s ) - - f a l s e .
+self success
+ifTrue: [(self isPointers: class)
+ifTrue: [self push: (memory instantiateCtass: class
+withPointers: size)]
+ifFalse: [self push: (memory instantiateClass: class
+withWords: size)]]
+ifFalse [self unPoP 1]
+
+The primitiveNewWithArg routine creates a new instance of the receiver
+(a class) with the n u m b e r of indexable fields specified by the integer argument. The primitive fails if the class is not indexable.
+
+primitiveNewWithArg
+I size class I
+size ~ self positive16BitValueOf: self popStack.
+class ~ self popStack.
+self success: (self islndexable: class).
+self success
+ifTrue: [size ~- size + (self fixedFieldsOf: class).
+(self isPointers: class)
+ifTrue: [self push: (memory instantiateClass: class
+withPointers: size)]
+ifFalse: [(self isWords: class)
+ifTrue: [self push: (memory instantiateClass:
+class
+withWords: size)]
+
+635
+
+Storage M a n a g e m e n t Primitives
+ifFalse: [self push: (memory instantiateClass:
+class
+withBytes: size)]]]
+ifFalse: [self unPop: 2]
+
+The primitiveBecome routine swaps the instance pointers of the receiver
+and a r g u m e n t . This m e a n s t h a t all objects t h a t used to point to the receiver now point to t h e a r g u m e n t and vice versa.
+
+primitiveBecome
+I thisReceiver otherPointer I
+otherPointer ~- self popStack.
+thisReceiver ~ self popStack.
+self success: (memory islntegerObject: otherPointer) not.
+self success: (memory islntegerObject: thisReceiver) not.
+self success
+ifTrue: [memory swapPointersOf: thisReceiver and: otherPointer.
+self push: thisReceiver]
+ifFalse: [self unpop: 2]
+T h e primitivelnstVarAt and primitivelnstVarAtPut routines are associated.
+w i t h the instVarAt: and instVarAt:put: messages in Object. T h e y are simi|ar to primitiveAt and primitiveAtPut except t h a t the n u m b e r i n g of fields
+
+starts with the fixed fields (corresponding to n a m e d instance variables)
+instead of with the indexable fields. The indexable fields are n u m b e r e d
+starting with one more t h a n the n u m b e r of fixed fields. These routines
+need a different routine to check the bounds of the sUbscript.
+
+checklnstanceVariableBoundsOf: index in: object
+I class I
+class ~- memory fetchClassOf: object.
+self success: index > = 1.
+self success: index < =(self lengthOf: object)
+
+primitivelnstVarAt
+I thisRecejver index value I
+index ~ self poptnteger.
+thisReceiver ~ self popStack.
+self checklnstanceVariableBoundsOf: index
+in: thisReceiver.
+self success
+ifTrue: [value ~ self subscript: thisReceiver
+with: index].
+self success
+ifTrue: [self push: value]
+ifFalse: [self unPop: 2]
+
+primitivelnstVarAtPut
+I thisReceiver index newValue realValue I
+newValue ~ self popStack.
+
+636
+
+Formal Specification of the Primitive Methods
+index ~ self poplnteger.
+thisReceiver ~- self popStack.
+self checklnstanceVariableBoundsOf: index
+in: thisReceiver.
+self success
+ifTrue: [self subscript: thisReceiver
+with: index
+storing: newValue].
+self success
+ifTrue: [self push: newValue]
+ifFalse: [self unPop: 3]
+
+The primitiveAsOop routine produces a Smalllnteger whose value is half
+of the receiver's object pointer (interpreting object pointers as 16-bit
+signed quantities). The primitive only works for non-Smalllnteger receivers. Since non-Smaillnteger object pointers are even, no information in
+the object pointer is lost. Because of the encoding of Smalllntegers, the
+halving operation can be performed by setting the least significant bit
+of the receiver's object pointer.
+
+primitiveAsOop
+I thisReceiver I
+thisReceiver ~- self popStack.
+self success: (memory islntegerObject: thisReceiver)= =false.
+self success
+ifTrue: [self push: (thisReceiver bitOr: 1)]
+ifFalse: [self unPop: 1]
+
+The primitiveAsObject routine performs the inverse operation of
+primitiveAsOop. It only works for Smalllnteger receivers (it is associated
+with the asObject message in Srnalllnteger). It produces the object pointer that is twice the receiver's value. The primitive fails if there is no
+object for that pointer.
+
+primitiveAsObject
+I thisReceiver newOop I
+thisReceiver ~- self popStack.
+newOop ~ thisReceiver bitAnd: 16rFFFE.
+self success: (memory hasObject: newOop).
+self success
+ifTrue: [self push: newOop]
+ifFalse: [self unPop: 1]
+
+The primitiveSomelnstance and primitiveNextfnstance routines allow for
+the enumeration of the instances of a class. They rely on the ability of
+the object memory to define an ordering on object pointers, to find the
+first instance of a class in that ordering, and, given an object pointer, to
+find the next instance of the same class.
+
+637
+
+Control Primitives
+
+primitiveSomelnstance
+I class I
+class ~- self popStack.
+(memory instancesOf: class)
+ifTrue: [self push: (memory initiallnstanceOf: class)]
+ifFalse: [self primitiveFait]
+
+primitiveNexUnstance
+1 object I
+object ~- self popStack.
+(memory isLastlnstance: object)
+ifTrue: [self primitiveFail]
+ifFalse: [self push: (memory instanceAfter: object)]
+The
+primitiveNewMethod
+routine
+is
+associated
+with
+the
+newMethod:header: message in CompiledMethod class. Instances of
+CompitedMethod are created w i t h a special message. Since the p a r t of a
+CompiledMethod that contains pointers instead of bytes is indicated in
+
+the header, all CompiledMethods must have a valid header. Therefore,
+CompiledMethods are created with a message (newMethod:header:) that
+takes the number of bytes as the first argument and the header as the
+second argument. The header, in turn, indicates the number of pointer
+fields.
+
+primiUveNewMethod
+I header bytecodeCount class size I
+header ~- self popStack.
+bytecodeCount ~ self poplnteger.
+class ~- self popStack.
+size ~ (self literalCountOfHeader: header) 4-- 1 , 2 + bytecodeCount.
+self push: (memory instantiateClass: class
+withBytes: size)
+
+Control
+Primitives
+
+The control primitives provide the control structures not provided by
+the bytecodes. They include support for the behavior of BlockConte×ts,
+Processes, and Semaphores. They also provide for messages with parameterized selectors.
+
+dispatchControlPrimitives
+primitivelndex = 80 ifTrue: [1self primitiveBIockCopy].
+primitivelndex = 81 ifTrue: [1"self primitiveValue].
+primitivelndex = 82 ifTrue: [1`self primitiveValueWithArgs].
+primitivelndex = 83 ifTrue: [1'self primitivePerform].
+primitivelndex = 84 ifTrue: [1'self primitivePerformWithArgs].
+primitivelndex = 85 ifTrue: [1"self primitiveSignal].
+
+638
+Formal Specification of the Primitive Methods
+primitivelndex =
+primitivelndex =
+primitivelndex =
+primitivelndex =
+
+86 ifTrue: [1'self primitiveWait].
+87 ifTrue: [tself primitiveResume].
+88 ifTrue: [1'self primitiveSuspend].
+89 ifTrue: [tself primitiveFlushCache]
+
+The primitiveBIockCopy r o u t i n e is associated w i t h the blockCopy: message in b o t h BlockContext and MethodContext. This message is o n l y produced by the compiler. The n u m b e r of block a r g u m e n t s the new
+
+BlockConte×t takes is passed as the argument. The primitiveBIockCopy
+routine creates a new instance of BlockConte×t. If the receiver is a
+
+MethodContext, it becomes the new BlockContext's home context. If the
+is a BlockConte×t, its h o m e context is used for the new
+BlockConte×t's home context.
+
+receiver
+
+primitiveBIockCopy
+I context methodContext blockArgumentCount newContext initiallP
+contextSize I
+blockArgumentCount ~ self popStack.
+context ~ self popStack.
+(self isBIockContext: context)
+ifTrue: [methodContext ~- memory fetchPointer: Homelndex
+of Object: context]
+ifFalse: [methodContext ~ context].
+contextSize ~- memory fetchWordLengthOf: methodContext.
+newContext ~- memory instantiateClass: ClassBIockContextPointer
+withPointers: contextSize.
+initiallP ~- memory integerObjectOf: instructionPointer -t- 3.
+memory storePointer: InitiallPIndex
+ofObject: newContext
+withValue: initiallP.
+memory storePointer: InstructionPointerlndex
+ofObject: newContext
+withValue: initiallP.
+self storeStackPointerValue: 0
+inContext: newContext.
+memory storePointer: BlockArgumentCountlndex
+ofObject: newContext
+withValue: blockArgumentCount.
+memory storePointer: Homelndex
+ofObject: newContext
+withValue: methodContext.
+self push: newContext
+
+The primitiveValue routine is associated with all revalue" messages in
+
+BlockContext (value, value:, value:value:, and so on). It checks t h a t the
+receiver takes the s a m e n u m b e r of block a r g u m e n t s t h a t the "value"
+message did and then transfers t h e m from the active context's stack to
+
+639
+
+Control Primitives
+the receiver's stack. The primitive fails if the number of arguments do
+not match. The primitiveValue routine also stores the active context in
+the receiver's caller field and initializes the receiver's instruction pointer and stack pointer. After the receiver has been initialized, it becomes
+the active context.
+
+primitiveValue
+I blockContext blockArgumentCount initiallP I
+blockContext ~- self stackValue: argumentCount.
+blockArgumentCount ~ self argumentCountOfBIock: blockContext.
+self success: argumentCount=blockArgumentCount.
+self success
+ifTrue: [self transfer: argumentCount
+fromlndex: stackPointer-argumentCount -t- 1
+ofObject: activeContext
+totndex: TempFrameStart
+ofObject: blockContext.
+self pop: argumentCount -I- 1.
+initiatlP ~ memory fetchPointer: InitiallPtndex
+ofObject: blockContext.
+memory storePointer: InstructionPointerlndex
+ofObject: blockContext
+withValue: initiallP.
+self storeStackPointerVatue: argumentCount
+inContext: blockContext.
+memory storePointer: Callerlndex
+ofObject: blockContext
+withValue: activeContext.
+self newActiveContext: btockContext]
+The
+primitiveValueWithArgs
+routine
+is
+associated
+with
+the
+valueWithArguments: messages in BlockContext. I t is basically the same
+as the primitiveValue r o u t i n e except t h a t the block a r g u m e n t s come in a
+single Array a r g u m e n t to the valueWithArguments: message instead of as
+
+multiple arguments to the revalue" message.
+
+primitiveValueWithArgs
+i argumentArray blockContext blockArgumentCount
+arrayCtass arrayArgumentCount initialtP I
+argumentArray ~- self popStack.
+blockContext ~- self popStack.
+blockArgumentCount ~ self argumentCountOfBIock: blockContext.
+arrayCtass ~- memory fetchClassOf: argumentArray.
+self success: (arrayClass = ClassArrayPointer).
+self success
+ifTrue: [arrayArgumentCount ~ memory fetchWordLengthOf:
+argumentArray.
+self success: arrayArgumentCount=blockArgumentCount].
+
+640
+Formal Specification of the Primitive Methods
+self s u c c e s s
+ifTrue: [self transfer: arrayArgumentCount
+fromlndex: 0
+ofObject: argumentArray
+tolndex: TempFrameStart
+ofObject: blockContext.
+initiallP ,- memory fetchPointer: InitiallPIndex
+ofObject: blockContext.
+memory storePointer: InstructionPointerlndex
+ofObject: btockContext
+withValue: initiallP.
+self storeStackPointerValue: arrayArgumentCount
+inContext: blockContext.
+memory storePointer: Callerlndex
+ofObject: blockContext
+withValue: activeContext.
+self newActiveContext: blockContext]
+ifFalse: [self unPop: 2]
+
+The primitivePerform routine is associated with all ~perform" messages
+in Object (perform:, perform:with:,
+
+perform:with:with:,
+
+and so on). I t is
+
+equivalent to sending a message to the receiver whose selector is the
+first argument of and whose arguments are the remaining arguments.
+It is, therefore, similar to the sendSelector:argumentCount: routine except that it must get rid of the selector from the stack before calling
+executeNewMethod and it must check that the CompiledMethod it finds
+takes one less argument that the "perform" message did, The primitive
+fails if the number of arguments does not match.
+primitivePerform
+I performSelector newReceiver selectorlndex I
+performSelector ~- messageSelector.
+messageSelector ~- self stackValue: argumentCount- 1.
+newReceiver ~- self stackValue: argumentCount.
+self IookupMethodlnCtass: (memory fetchClassOf: newReceiver).
+self success: (self argumentCountOf: newMethod)=(argumentCount-1).
+self success
+ifTrue: [selectorlndex ~ stackPointer-argumentCount -I- 1.
+self transfer: argumentCount- 1
+fromlndex: selectorindex -I- 1
+ofObject: activeContext
+tolndex: selectorlndex
+ofObject: activeContext.
+self pop: 1.
+argumentCount ,-- argumentCount- 1.
+self executeNewMethod]
+ifFalse: [messageSelector ~ performSelector]
+
+641
+
+Control Primitives
+The
+primitivePerformWithArgs
+routine
+is
+associated
+with
+the
+perforrnWithArguments: messages in Object. I t is basically the same as
+the primitivePerform r o u t i n e except t h a t the message a r g u m e n t s come in
+a single Array a r g u m e n t to the performWithArguments: message instead
+
+of as multiple arguments to the ~perform" message.
+
+primitivePerformWithArgs
+I thisReceiver performSelector argumentArray arrayClass arraySize
+index I
+argumentArray ~ self popStack.
+arraySize ~ memory fetchWordLengthOf: argumentArray.
+arrayClass ~ memory fetchClassOf argumentArray.
+self success: (stackPointer + arraySize)
+< (memory fetchWordLengthOf: activeContext).
+self success: (arrayClass = ClassArrayPointer).
+self success
+ifTrue: [performSelector ,--- messageSelector.
+messageSetector ~- self popStack.
+thisReceiver ,- self stackTop.
+argumentCount ~ arraySize.
+index ~ 1.
+[index < = argumentCount]
+whiteTrue: [self push (memory fetchPointer: index-1
+ofObject: argumentArray).
+index ~ index --t- 1].
+self IookupMethodlnClass:
+(memory fetchClassOf: thisReceiver).
+self success (self argumentCountOf: newMethod)
+=argumentCount.
+self success
+ifTrue: [self executeNewMethod]
+ifFalse: [self unPop: argumentCount.
+self push messageSelector.
+self push' argumentArray.
+argumentCount ~ 2.
+messageSelector ~ performSetector]]
+ifFalse: [self unPop: 1]
+
+The next four primitive routines (for primitive indices 85 through 88)
+are used for communication and scheduling of independent processes.
+The following routine initializes the indices used to access Processes,
+ProcessorSchedulers, and Semaphores.
+
+initializeSchedulerlndices
+"Class ProcessorScheduler"
+ProcessListslndex ~ 0.
+ActiveProcesslndex ~ 1.
+
+642
+
+F o r m a l Specification of the P r i m i t i v e M e t h o d s
+" Class LinkedList"
+FirstLinklndex ~- 0.
+LastLinklndex ~- 1.
+" Class Semaphore"
+ExcessSignalslndex ~ 2.
+" Class Link"
+NextLinkindex ~ 0.
+" Class Process"
+SuspendedContexttndex ~ 1.
+Prioritylndex ~ 2.
+MyListlndex ~ 3
+
+Process switching m u s t be s y n c h r o n i z e d w i t h the execution of
+bytecodes. This is done using the following four i n t e r p r e t e r registers
+a n d t h e four routines: checkProcessSwitch, asynchronousSignal:,
+synchronousSignal:, a n d transferTo:.
+
+Process-related Registers of the Interpreter
+newProcessWaiting
+
+The newProcessWaiting register will be true if a process
+switch is called for and false otherwise.
+
+newProcess
+
+If newProcessWaiting is true then the newProcess register
+will point to the Process to be transferred to.
+
+semaphoreList
+
+The semaphoreList register points to an Array used by the
+interpreter to buffer Semaphores that should be signaled.
+This is an Array in Interpreter, not in the object memory. It
+
+will be a table in a machine-language interpreter.
+semaphorelndex
+
+The semaphorelndex register holds the index of the last
+Semaphore in the semaphoreList buffer.
+
+The asynchronousSignal: r o u t i n e adds a S e m a p h o r e to the buffer.
+
+asynchronousSignal: aSemaphore
+semaphorelndex ~- s e m a p h o r e l n d e x + 1.
+semaphoreList at: semaphorelndex put: aSemaphore
+
+The S e m a p h o r e s will a c t u a l l y be signaled in t h e checkProcessSwitch
+r o u t i n e w h i c h calls the synchronousSignal: r o u t i n e once for each Semaphore in the buffer. If a P r o c e s s is w a i t i n g for the Semaphore, the
+synchronousSignal: r o u t i n e resumes it. If no Process is w a i t i n g , the
+synchronousSignal: r o u t i n e i n c r e m e n t s the S e m a p h o r e ' s c o u n t of excess
+signals. The isEmptyList:, resume:, and removeFirstLinkOfList: r o u t i n e s
+a r e d e s c r i b e d l a t e r i n this section.
+
+643
+
+Control P r i m i t i v e s
+synchronousSignah aSemaphore
+I excessSignals I
+(self isEmptyList: aSemaphore)
+ifTrue: [excessSignals ~ self fetchlnteger: ExcessSignalsindex
+ofObject: aSemaphore.
+self storelnteger: ExcessSignalslndex
+ofObject: aSemaphore
+withValue: excessSignals + 1]
+ifFalse: [self resume: (self removeFirstLinkOfList: aSemaphore)]
+
+The transferTo: routine is used whenever the need to switch processes is
+detected. It sets the newProcessWaiting and newProcess registers.
+transferTo: aProcess
+newProcessWaiting ~ true.
+newProcess ~ aProcess
+
+The checkProcessSwitch routine is called before each bytecode fetch (in
+the interpret routine) and performs the actual process switch if one has
+been called for. It stores t h e active context p o i n t e r in the old Process,
+stores t h e new P r o c e s s in the P r o c e s s o r S c h e d u l e r ' s active process field,
+a n d loads the new active context out of t h a t Process.
+
+checkProcessSwitch
+I activeProcessl
+[semaphoretndex > O]
+whileTrue:
+[self synchronousSignal: (semaphoreList at: semaphorelndex).
+semaphorelndex ~- semaphorelndex-- 1].
+newProcessWaiting
+ifTrue: [newProcessWaiting ~ false.
+activeProcess ~- self activeProcess.
+memory storePointer: SuspendedContextlndex
+ofObject: activeProcess
+withValue: activeContext.
+memory storePointer: ActiveProcesslndex
+of Object: self schedulerPointer
+withVatue: newProcess.
+self newActiveContext:
+(memory fetchPointer: SuspendedContextlndex
+ofObject: newProcess)]
+
+Any routines desiring to know what the active process will be must
+take into account the newerocessWaiting and newerocess registers.
+Therefore, they use the following routine.
+
+644
+
+Formal Specification of the Primitive Methods
+activeProcess
+newProcessWaiting
+ifTrue: [l'newProcess]
+6
+ifFalse: [1memory fetchPointer: ActiveProcesslndex
+of Object: self schedulerPointer]
+
+The instance of ProcessorScheduler responsible for scheduling the actual processor needs to be known globally so that the primitives will
+
+know where to resume and suspend Processes. This ProcessorScheduler
+is bound to the name Processor in the Smalltalk global dictionary. The
+association corresponding to Processor has a guaranteed object p o i n t e r ,
+so the appropriate ProcessorScheduler can be found.
+schedulerPointer
+1memory fetchPointer: Valuelndex
+ofObject: SchedulerAssociationPointer
+
+When S m a l l t a l k is started up, the initial active context is found
+through the scheduler's active Process.
+firstContext
+newProcessWaiting ~- false.
+1"memory fetchPointer: SuspendedContextlndex
+of Object: self active Process
+
+If the object memory automatically deallocates objects on the basis of
+reference counting, special consideration must be given to reference
+counting in the process scheduling routines. During the execution of
+some of these routines, there will be times at which there are no references to some object from the object memory (e.g., after a Process has
+been removed from a Semaphore but before it h a s b e e n placed on one
+of the ProcessorScheduler's LinkedLists). If the object m e m o r y uses garbage collection, it simply must avoid doing a collection in the middle of
+
+a primitive routine. The routines listed here ignore the reference-counting problem in the interest of clarity. Implementations using reference
+counting will have to modify these routines in order to prevent premature deallocation of objects.
+The following three routines are used to manipulate LinkedLists.
+removeFirstLinkOfList: aLinkedList
+I firstLink lastLink nextLink I
+firstLink ~- memory fetchPointer: FirstLinktndex
+ofObject: aLinkedList.
+lastLink ~- memory fetchPointer: LastLinklndex
+ofObject: aLinkedList.
+lastLink = firstLink
+ifTrue: [memory storePointer: FirstLinklndex
+ofObject: aLinkedList
+withValue: NilPointer.
+
+645
+Control Primitives
+memory storePointer: LastLinklndex
+ofObject: aLinkedList
+withValue: NilPointer]
+ifFalse: [nextLink ~- memory fetchPointer: NextLinklndex
+ofObject: firstLink.
+memory storePointer: FirstLinklndex
+ofObject aLinkedList
+withValue: nextLink].
+memory storePointer: NextLinklndex
+ofObject: firstLink
+withValue" NilPointer.
+l"firstLink
+
+addLastLink: aLink toList: aLinkedList
+t lastLinkl
+(self isEmptyList: aLinkedList)
+ifTrue' [memory storePointer: FirstLinklndex
+ofObject: aLinkedList
+withValue aLink]
+ifFalse: [lastLink ~ memory fetchPointer: LastLinktndex
+ofObject: aLinkedList.
+memory storePointer: NextLinklndex
+ofObject: lastLink
+withValue' aLink].
+memory storePointer: LastLinklndex
+ofObject: aLinkedList
+withValue" aLink.
+memory storePointer: MyListlndex
+ofObject: aLink
+withValue: aLinkedList
+
+isEmptyList: aLinkedList
+1'(memory fetchPointer FirstLinklndex
+ofObject: aLinkedList)
+= NilPointer
+
+These t h r e e LinkedList routines are used, in turn, to i m p l e m e n t the following two routines t h a t remove links from or add links to the
+ProcessorScheduler's LinkedLists of quiescent Processes.
+
+wakeHighestPriority
+I priority processLists processList I
+processLists ~- memory fetchPointer: ProcessListslndex
+of Object: self schedulerPointer.
+priority ~- memory fetchWordLengthOf: processLists.
+[processList ~- memory fetchPointer: priority-1
+ofObject: processLists.
+self is EmptyList: processList] whileTrue: [priority ~- priority -
+
+1].
+
+646
+
+Formal Specification of the Primitive Methods
+1self removeFirstLinkOfList: processList!
+
+sleep: aProcess
+I priority processLists processList I
+priority ~- self fetchlnteger: Prioritylndex
+ofObject: aProcess.
+processLists ~ memory fetchPointer: ProcessListslndex
+of Object: self schedulerPointer.
+process List ~- memory fetchPointer: priority- 1
+ofObject: processLists.
+self addLastLink: aProcess
+toList: processList
+
+These two routines are used, in turn, to implement the following two
+routines that actually suspend and resume Processes.
+suspendActive
+self transferTo: self wakeHighestPriority
+
+resume: aProcess
+I activeProcess activePriority newPriority I
+activeProcess ~ self activeProcess.
+activePriority ~ self fetchlnteger: Prioritytndex
+ofObject: activeProcess.
+newPriority ~- self fetchlnteger: Prioritylndex
+ofObject: aProcess.
+newPriority > activePriority
+ifTrue: [self sleep: activeProcess.
+self transferTo: aProcess]
+ifFalse: [self sleep: aProcess]
+
+The primitiveSignal routine is associated with the signal message in
+Semaphore. Since i t is called in the process of interpreting a bytecode,
+it can use the synchronousSignal: routine. Any other signaling of Semaphores by the interpreter (for example, for timeouts and keystrokes)
+must use the asynchronousSignal: routine.
+primitiveSignal
+self synchronousSignal: self stackTop.
+The primitiveWait r o u t i n e is associated, w i t h the wait message in Semaphore. If the receiver has an excess signal count greater than O, the
+
+primitiveWait routine decrements the count. If the excess signal count is
+O, the primitiveWait suspends the active Process and adds it to the receiver's list of Processes.
+primitiveWait
+I thisReceiver excessSignals I
+thisReceiver ~ self stackTop.
+excessSignals ~ self fetchlnteger: ExcessSignalslndex
+ofObject: thisReceiver.
+
+647
+I n p u t / O u t p u t Primitives
+excessSignals > 0
+ifTrue: [self storelnteger: ExcessSignalslndex
+ofObject: thisReceiver
+withValue: excessSignals- 1]
+ifFalse: [self addLastLink: self activeProcess
+toList: thisReceiver.
+self suspendActive]
+
+The primitiveResume routine is associated with the resume message in
+Process. It simply calls the resume: routine with the receiver as argument.
+
+primitiveResume
+self resume: self stackTop
+
+The primitiveSuspend routine is associated with the suspend message in
+Process. The primitiveSuspend r o u t i n e suspends the receiver if it is the
+active Process. If the receiver is not the active Process, the primitive
+fails.
+
+primitiveSuspend
+self success: self stackTop=self activeProcess.
+self success
+ifTrue: [self popStack.
+self push: NilPointer.
+self suspendActive]
+
+The primitiveFlushCache routine removes the contents of the method
+cache. I m p l e m e n t a t i o n s t h a t do not use a method cache can t r e a t this
+as a no-op.
+
+primitiveFlushCache
+self initializeMethodCache
+
+Input/Output
+Primitives
+
+The i n p u t / o u t p u t primitive routines provide S m a l l t a l k with access to
+the s t a t e of the h a r d w a r e devices. Since the i m p l e m e n t a t i o n of these
+routines will be dependent on the s t r u c t u r e of the i m p l e m e n t i n g machine, no routines will be given, just a specification of the behavior of
+the primitives.
+
+dispatchlnputOutputPrimitives
+primitivelndex = 90 ifTrue: [1'self primitiveMousePoint].
+primitivelndex = 9I ifTrue: [1'self primitiveCursorLocPut].
+primitivelndex = 92 ifTrue: [1self primitiveCursorLink].
+
+648
+
+Formal Specification of the Primitive Methods
+primitivelndex =
+pnmitivelndex =
+primitivelndex =
+pnmitivelndex =
+primitivelndex =
+prmmitivelndex =
+prlmitivelndex =
+pnmitivelndex =
+pnmitivelndex =
+primitivelndex =
+primitivelndex =
+primitivelndex =
+primitivelndex =
+
+93 ifTrue: [tself. primitivelnputSemaphore].
+94 ifTrue: [1'self primitiveSamplelnterval].
+95 ifTrue: [1'self primitivelnputWord].
+96 ifTrue: [1'self primitiveCopyBits].
+97 ifTrue: [1'self primitiveSnapshot].
+98 ifTrue: [1self primitiveTimeWordslnto].
+99 ifTrue: [1`self primitiveTickWordslnto].
+100 ifTrue: [tself primitiveSignalAtTick].
+10t ifTrue: [tself primitiveBeCursor].
+102 ifTrue: [1"self primitiveBeDisplay].
+103 ifTrue: [1`self primitiveScanCharacters].
+t04 ifTrue: [lself primitiveDrawLoop].
+t05 ifTrue: [1`self primitiveStringReplace]
+
+Four of the primitive routines are used to detect actions by the user.
+The two types of user action the system can detect are changing the
+state of a bi-state device and moving the pointing device. The bi-state
+devices are the keys on the keyboard, three buttons associated with the
+pointing device and an optional five-paddle keyset. The buttons associated with the pointing device may or may not actually be on the physical pointing device. Three of the four input primitive routines
+( p r i m i t i v e l n p u t S e m a p h o r e , p r i m i t i v e l n p u t W o r d , and p r i m i t i v e S a m p l e l n t e r v a l )
+provide an active or event-initiated mechanism to detect either state
+change or movement. The other primitive routine (primitiveMousePoint)
+provides a passive or polling mechanism to detect pointing device location.
+The event-initiated mechanism provides a buffered stream of 16-bit
+words that encode changes to the bi-state devices or the pointing device
+location. Each time a word is placed in the buffer, a Semaphore is signaled (using the asynchronousSignal: routine). The Semaphore to signal
+is initialized by the primitivelnputSemaphore routine. This routine is associated with the primlnputSemaphore: message in InputState and the
+argument of the message becomes the Semaphore to be signaled. The
+primitivelnputWord routine (associated with the primlnputWord message
+in InputState) returns the next word in the buffer, removing it from the
+buffer. Since the Semaphore is signaled once for every word in the buffer, the Smalltalk process emptying the buffer should send the Semaphore a wait message before sending each primlnputWord message. There
+are six types of 16-bit word placed in the buffer. Two types specify the
+t i m e of an event, two types specify state change of a bi-state device, and
+two types specify pointing device movement. The type of the word is
+stored in its high order four bits. The low order 12-bits are referred to
+a s the parameter.
+The six type codes have the following meanings.
+
+649
+I n p u t / O u t p u t Primitives
+
+type code
+
+meaning
+Delta time (the parameter is
+the number of milliseconds
+since the last event of any
+type)
+X location of the pointing
+device
+Y location of the pointing
+device
+Bi-state device turned on
+(the parameter indicates
+which device)
+Bi-state device turned off
+(the parameter indicates
+which device)
+Absolute time (the parameter is ignored, the next two
+words in the buffer contain
+a 32-bit unsigned number
+that is the absolute value of
+the millisecond clock)
+
+W h e n e v e r a device state changes or the pointing device moves, a time
+word is put into the buffer. A type 0 word will be used if the n u m b e r of
+milliseconds since the last event can be represented in 12 bits. Otherwise, a type 5 event is used followed by two words representing the absolute time. Note t h a t the Semaphore will be signaled 3 times in the
+latter case. Following the time word(s) will be one or more words of
+type 1 t h r o u g h 4. Type 1 and 2 words will be generated whenever the
+pointing device moves at all. It should be r e m e m b e r e d t h a t Smalltalk
+uses a left-hand coordinate system to talk about the screen. The origin
+is the upper left corner of the screen, the x dimension increases toward
+the right, and the y dimension increases toward the bottom. The minim u m time span between these events can be set by the
+primitiveSamplelntervat
+routine
+which
+is
+associated
+with
+the
+primSamplelnterval:
+message
+in
+lnputState.
+The
+argument
+to
+primSamplelnterval: specifies the n u m b e r of milliseconds between movem e n t events if the pointing device is moving constantly.
+Type 3 and 4 words use the low-order eight bits of the p a r a m e t e r to
+specify which device changed state. The n u m b e r i n g scheme is set up to
+work with both decoded and undecoded keyboards. An undecoded keyboard is made up of independent keys with independent down and up
+transitions. A decoded keyboard consists of some independent keys and
+some ~meta" keys (shift and escape) t h a t cannot be detected on their
+
+650
+F o r m a l Specification of the Primitive Methods
+own, but t h a t change the value of the other keys. The keys on a
+decoded keyboard only indicate their down transition, not their up transition. On an undecoded keyboard, the s t a n d a r d keys produce parameters t h a t are the ASCII code of the c h a r a c t e r on the keytop without
+shift or control information (i.e,, the key with ~A" on it produces the
+ASCII for '~a" and the key with ~2" and ¢¢@" on it produces the ASCII
+for ~2"). The other s t a n d a r d keys produce the following parameters.
+
+key
+
+parameter
+
+backspace
+tab
+line feed
+return
+escape
+space
+delete
+
+8
+9
+10
+13
+27
+32
+127
+
+For an undecoded keyboard, the m e t a keys have the following parameters.
+
+key
+
+parameter
+
+left shift
+right shift
+control
+alpha-lock
+
+136
+137
+138
+139
+
+For a decoded keyboard, the full shifted and ~controlled" ASCII should
+b e used as a p a r a m e t e r a n d successive type 3 and 4 words should be
+produced for each keystroke.
+The r e m a i n i n g bi-state devices have the following parameters.
+
+key
+
+parameter
+
+left or top "pointing device"
+button
+center '~pointing device"
+button
+right or bottom '~pointing device"
+button
+keyset paddles right to left
+
+128
+129
+130
+131 through 135
+
+651
+I n p u t / O u t p u t Primitives
+
+The primitiveMousePoint routine allows the location of the pointing device to be polled. It allocates a new Point and stores the location of the
+pointing device in its x and y fields.
+The display screen is a rectangular set of pixels t h a t can each be one
+of two colors. The colors of the pixels are determined by the individual
+bits in a specially designated instance of DisplayScreen. DisplayScreen is
+a subclass of Form. The instance of DisplayScreen t h a t should be used to
+update the screen is designated by sending it the message beDisplay.
+This message invokes the primitiveBeDisplay primitive routine. The
+screen will be updated from the last recipient of beDisplay approximately 60 times a second.
+Every time the screen is updated, a c u r s o r is ORed into its pixels.
+The cursor image is determined by a specially designated instance of
+Cursor. Cursor is a subclass of Form whose instances always have both
+width and height of 16. The instance of Cursor t h a t should be ORed into
+the screen is designated by sending it the message beCursor. This message invokes the primitiveBeCursor primitive routine.
+The location at which the cursor image should appear is called the
+c u r s o r l o c a t i o n . The cursor location m a y be linked to the location of the
+pointing device or the two locations m a y be independent. W h e t h e r or
+not the two locations are linked is determined by sending a message to
+class Cursor with the selector cursorLink: and either true or false as the
+argument. If the a r g u m e n t is true, then the two locations will be t h e
+same; if it is false, they are independent. The cursorLink: message in
+Cursor's metaclass invokes the primitiveCursorLink primitive routine.
+The cursor can be moved in two ways. If the cursor and pointing device have been linked, then moving the pointing device moves the
+cursor. The cursor can also be moved by sending the message
+primCursorLocPut: to an instance of lnputState. This message takes a
+Point as an a r g u m e n t and invokes the primitiveCursorLocPut primitive
+routine. This routine moves the cursor to the location specified by the
+argument. If the cursor and pointing device are linked, the
+primitiveCursorLocPut routine also changes the location indicated by the
+pointing device.
+The primitiveCopyBits routine is associated with the copyBits message
+in BitBIt and performs an operation on a bitmap specified by the receiver. This routine is described in Chapter 18.
+The primitiveSnapshot routine writes the current state of the object
+m e m o r y on a file of the same format as the Smalltalk-80 release file.
+This file can be resumed in exactly the same way t h a t the release file
+was originally started. Note t h a t the pointer of the active context at the
+time of the primitive call must be stored in the active Process on the
+file.
+The primitiveTimeWordslnto and primitiveTickWordslnto routines are
+associated with the timeWordslnto: and tickWordsinto: messages in Sen-
+
+652
+
+Formal Specification of the Primitive Methods
+sor. Both of these messages take a byte indexable object of at least four
+bytes as an argument. The primitiveTimeWordslnto routine stores the
+number of seconds since the midnight previous to J a n u a r y 1, 1901 as an
+unsigned 32-bit integer into the first four bytes of the argument. The
+primitiveTickWordslnto routine stores the number of ticks of the millisecond clock (since it last was reset or rolled over) as an unsigned 32-bit
+integer into the first four bytes of the argument.
+The primitiveSignalAtTick routine is associated with the siflnal:atTick:
+messages in ProcessorScheduler. This message takes a Semaphore as
+the first argument and a byte indexable object of at least four bytes as
+the second argument. The first four bytes of the second a r g u m e n t are
+interpreted as an unsigned 32-bit integer of the type stored by the
+primitiveTickWordslnto routine. The interpreter should signal the Semaphore a r g u m e n t when the millisecond clock reaches the value specified
+by the second argument. If the specified time has passed, the Semaphore i s s i g n a l e d immediately. This primitive signals the last Semaphore to be passed to it. If a new call is made on it before the last timer
+value has been reached, the last Semaphore will not be signaled. If the
+first a r g u m e n t is not a Semaphore, any currently waiting Semaphore
+will be forgotten.
+The primitiveScanCharacters routine is an optional primitive associated with the scanCharactersFrom:to:in:rightX:stopConditions:displaying
+message in CharacterScanner. If the function of the Smalltalk method
+is duplicated in the primitive routine, text display will go faster. T h e
+primitiveDrawLoop routine is similarly an optional primitive associated
+with the drawLoopX:Y: message in BitBIt. If the function of the
+Smalltalk method is duplicated in the primitive routine, drawing lines
+will go faster.
+
+System
+Primitives
+
+The seven final primitives are grouped together as system primitives.
+
+dispatchSystemPrimitives
+primitivelndex
+primitivelndex
+primitivelndex
+primitivelndex
+primitivetndex
+primitivelndex
+primitivelndex
+
+=
+=
+=
+=
+=
+=
+=
+
+110 ifTrue: [tself primitiveEquivatent].
+111 ifTrue: [1self primitiveClass].
+112 ifTrue: [tself primitiveCoreLeft].
+t 13 ifTrue: [tsetf primitiveQuit].
+114 ifTrue: [1"self primitiveExitToDebugger].
+115 ifTrue: [tself primitiveOopsLeft].
+116 ifTrue: [tself primitiveSignalAtOopsLeftWordsLeft]
+
+653
+System Primitives
+
+The primitiveEquivalent routine is associated with the = = message in
+Object. It r e t u r n s true if the receiver and a r g u m e n t are the same object
+(have the same object pointer) and false otherwise.
+
+primitiveEquivalent
+I thisObject otherObject I
+otherObject ~- self popStack.
+thisObject ~ self popStack.
+thisObject = otherObject
+ifTrue: [self push: TruePointer]
+ifFalse: [self push: FalsePointer]
+
+The primitiveClass routine is associated with the class message in Object.
+It r e t u r n s the object pointer of the receiver's class.
+
+primitiveClass
+1 instancet
+instance ~ self popStack.
+self push: (memory fetchClassOf: instance)
+
+The primitiveCoreLeft routine r e t u r n s the n u m b e r of unallocated words
+i n the object space. The primitiveQuit routine exits to a n o t h e r operating
+system for the host machine, if one exists. The primitiveExitToDebugger
+routine calls the machine language debugger, if one exists.
+
+

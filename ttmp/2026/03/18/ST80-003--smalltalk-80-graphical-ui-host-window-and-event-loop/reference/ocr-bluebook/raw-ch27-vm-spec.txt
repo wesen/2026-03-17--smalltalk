@@ -1,0 +1,1405 @@
+".eLm
+•
+
+•
+
+~.0
+0 ~+0
+
+.
++
+
+Specification
+of the Virtual Machine
+•
+
+Form of the Specification
+Object Memory Interface
+Objects Used by the Interpreter
+Compiled Methods
+Contexts
+Classes
+
+568
+Specification of the Virtual Machine
+Chapter 26 described the function of the Smalltalk virtual machine,
+which consists of an interpreter and an object memory. This chapter
+and the next three present a more formal specification of these two
+parts of the virtual machine. Most implementations of the virtual machine will be written in machine language or microcode. However, for
+specification purposes, these chapters will present an implementation of
+the virtual machine in Smalltalk itself. While this is a somewhat circular proposition, every attempt has been made to ensure that no details
+are hidden as a result.
+This chapter consists of three sections. The first describes the conventions and terminology used in the formal specification. It also provides some warnings of possible confusion resulting from the form of
+this specification. The second section describes the object memory routines used by the interpreter. The implementation of these routines will
+be described in Chapter 30. The third section describes the three main
+types of object that the interpreter manipulates, methods, contexts, and
+classes. Chapter 28 describes the bytecode set and how it is interpreted;
+Chapter 29 describes the primitive routines.
+
+Form of the
+Specification
+
+Two class descriptions named Interpreter and ObjectMemory make up
+the formal specification of the Smalltalk-80 virtual machine. The implementation of Interpreter will be presented in detail in this chapter and
+the following two; the implementation of ObjectMemory in Chapter 30.
+A potential source of confusion in these chapters comes from the two
+Smalltalk systems involved in the descriptions, the system containing
+Interpreter and ObjectMemory and the system being interpreted. Interpreter and ObjectMernory have methods and instance variables and they
+also manipulate methods and instance variables in the system they interpret. To minimize the confusion, we will use a different set of terminology for each system. The methods of Interpreter and ObjectMemory
+will be called routines; the word method will be reserved for the methods being interpreted. Similarly, the instance variables of Interpreter
+and ObjectMemory will be called registers; the word instance variable
+will be reserved for the instance variables of objects in the system being
+interpreted.
+The arguments of the routines and the contents of the registers of Interpreter and ObjectMemory will almost always be instances of Integer
+(Smalllntegers and LargePositivelntegers). This can also be a source of
+confusion since there are Integers in the interpreted system. The Integers that are arguments to routines and contents of registers represent
+object pointers and numerical values of the interpreted system. Some of
+these will represent the object pointers or values of Integers in the
+interpreted system.
+
+569
+
+Form of the Specification
+The interpreter routines in this specification will all be in the form
+of Smalltalk method definitions. For example
+routineName: argumentName
+I temporaryVariable I
+temporaryVariable ~- self anotherRoutine: argumentName.
+1~temporaryVariable - 1
+
+The routines in the specification will contain five types of expression.
+1. Calls on other routines of the interpreter. Since both the invocation
+and definition of the routine are in Interpreter, they will appear as
+messages to self.
+• self headerOf: n e w M e t h o d
+• self storelnstructionPointerValue: value
+inContext: contextPointer
+
+2. Calls on routines of the object memory. An Interpreter uses the
+n a m e memory to refer to its object memory, so these calls will appear as messages to memory.
+• m e m o r y fetchCiassOf: n e w M e t h o d
+• m e m o r y storePointer: s e n d e r l n d e x
+ofObject: contextPointer
+withValue: activeContext
+
+3. Arithmetic operations on object pointers and numerical values.
+Arithmetic operations will be represented by s t a n d a r d Smalltalk
+arithmetic expressions, so they will appear as messages to the
+n u m b e r s themselves.
+• receiverValue + a r g u m e n t V a l u e
+• selectorPointer bitShift: - 1
+
+4. Array accesses. Certain tables m a i n t a i n e d by the i n t e r p r e t e r are
+represented in the formal specification by Arrays. Access to these
+will appear as at: and at:put: messages to the Arrays.
+• m e t h o d C a c h e at: hash
+• s e m a p h o r e L i s t at: s e m a p h o r e l n d e x put: s e m a p h o r e P o i n t e r
+
+5. Conditional control structures. The control structures of the virtual machine will be represented by s t a n d a r d Smalltalk conditional
+control structures. Conditional selections will appear as messages
+to Booleans. Conditional repetitions will appear as messages to
+blocks.
+
+570
+
+Specification of the Virtual Machine
+• i n d e x < l e n g t h ifTrue: [... ]
+• s i z e F l a g = 1 ifTrue: [... ]
+ifFalse: [ ... ]
+• [currentClass ~=
+NilPointer]
+
+whileTrue:
+
+[ ... ]
+
+The definition of Interpreter describes the function of the Smalltalk-80
+bytecode interpreter; however, the form of a machine language implementation of the interpreter may be very different, particularly in the
+control structures it uses. The dispatch to the appropriate routine to execute a bytecode is an example of something a machine language interpreter might do differently. To find the right routine to execute, a
+machine ianguage interpreter would probably do some kind of address
+arithmetic to calculate where to jump; whereas, as we will see, Interpreter does a series of conditionals and routine calls. In a machine language
+implementation, the routines that execute each bytecode would simply
+jump back to the beginning of the bytecode fetch routine when they
+were finished, instead of returning through the routine call structure.
+Another difference between Interpreter and a machine language implementation is the degree of optimization of the code. For the sake of
+clarity, the routines specified in this chapter have not been optimized.
+For example, to perform a task, Interpreter may fetch a pointer from the
+object memory several times in different routines, when a more optimized interpreter might save the value in a register for later use. Many
+of the routines in the formal specification will not be subroutines in a
+machine language implementation, but will be written in-line instead.
+
+Object Memory
+Interface
+
+Chapter 26 gave an informal description of the object memory. Since
+the routines of Interpreter need to interact with the object memory, we
+need its formal functional specification. This will be presented as the
+protocol specification of class ObjectMemory. Chapter 30 will describe
+one way to implement this protocol specification.
+The object memory associates a 16-bit object pointer with
+1. the object pointer of a class-describing object and
+2. a set of 8- or 16-bit fields that contain object pointers or numerical
+values.
+The interface to the object memory uses zero-relative integer indices to
+indicate an object's fields. Instances of Integer are used for both object
+pointers and field indices in the interface between the interpreter and
+object memory.
+
+571
+Object M e m o r y Interface
+The protocol of ObjectMemory contains pairs of messages for fetching
+and storing object pointers or n u m e r i c a l values in an object's fields.
+object pointer access
+
+fetchPointer: fieldlndex ofObject: objectPointer
+Return the object pointer found in the field
+numbered fieldlndex of the object associated
+with objectPointer.
+storePointer: fieldlndex ofObject: objectPointer withValue: valuePointer
+Store the object pointer valuePointer in the
+field numbered fieldlndex of the object associated with objectPointer.
+word access
+fetchWord: fieldlndex ofObject: objectPointer
+Return the 16-bit numerical value found in
+the field numbered fieldlndex of the object associated with objectPointer.
+storeWord: fieldlndex ofObject: objectPointer withValue: valueWord
+Store the 16-bit numerical value valueWord in
+the field numbered fieldlndex of the object associated with objectPointer.
+byte access
+
+fetchByte: bytelndex ofObject: objectPointer
+Return the 8-bit numerical value found in the
+byte numbered bytelndex of the object associated with objectPointer.
+storeByte: bytelndex ofObject: objectPointer withValue: valueByte
+Store the 8-bit numerical value valueByte in
+the byte numbered bytelndex of the object associated with objectPointer.
+Note t h a t fetchPointer:ofObject: a n d fetchWord:ofObject: will probably
+be i m p l e m e n t e d in an identical fashion, since t h e y both load a 16-bit
+q u a n t i t y . However, the i m p l e m e n t a t i o n of storePointer:ofObject: will be
+different from the i m p l e m e n t a t i o n of storeWord:ofObject: since it will
+have to p e r f o r m reference counting (see C h a p t e r 30) if the object memory keeps d y n a m i c reference counts. We have m a i n t a i n e d a s e p a r a t e interface for fetchPointer:ofObject: a n d fetchWord:ofObject: for the sake of
+symmetry.
+Even t h o u g h most of the m a i n t e n a n c e of reference counts can be
+done a u t o m a t i c a l l y in t h e storePointer:ofObject:withValue: routine, t h e r e
+are some points at which the i n t e r p r e t e r r o u t i n e s m u s t directly manipu l a t e t h e reference counts. Therefore, the following two routines are included in the object m e m o r y interface. If a n object m e m o r y uses only
+garbage collection to reclaim u n r e f e r e n c e d objects, these r o u t i n e s are
+no-ops.
+
+reference counting
+increaseReferencesTo: objectPointer
+Add one to the reference count of the object
+whose object pointer is objectPointer.
+
+572
+S p e c i f i c a t i o n of t h e V i r t u a l M a c h i n e
+
+decreaseReferencesTo: objectPointer
+Subtract one from the reference count of the
+object whose object pointer is objectPointer.
+Since e v e r y object c o n t a i n s t h e object p o i n t e r of its class d e s c r i p t i o n ,
+t h a t p o i n t e r could b e c o n s i d e r e d t h e c o n t e n t s of o n e of t h e object's
+fields. U n l i k e o t h e r fields, h o w e v e r , a n object's class m a y be fetched,
+b u t its v a l u e m a y n o t be c h a n g e d . G i v e n t h e special n a t u r e of this
+p o i n t e r , it w a s decided n o t to access it in t h e s a m e way. T h e r e f o r e ,
+t h e r e is a special protocol for f e t c h i n g a n object's class.
+
+class pointer access.
+fetchClassOf: objectPointer
+
+Return the object pointer of the class-describing object for the object associated with
+
+objectPointer.
+
+T h e l e n g t h of a n object m i g h t also be t h o u g h t of as t h e c o n t e n t s of one
+of its fields. H o w e v e r , it is like t h e class field in t h a t it m a y n o t be
+c h a n g e d . T h e r e a r e t w o m e s s a g e s in t h e object m e m o r y protocol t h a t
+a s k for t h e n u m b e r of w o r d s in a n object a n d t h e n u m b e r of b y t e s in a n
+object. N o t e t h a t we h a v e n o t m a d e a d i s t i n c t i o n b e t w e e n w o r d s a n d
+p o i n t e r s in t h i s case since we a s s u m e t h a t t h e y b o t h fit in e x a c t l y one
+field.
+
+length access
+fetchWordLengthOf: objectPointer
+Return the number of fields in the object associated with objectPointer.
+
+fetchByteLengthOf: objectPointer
+Return the number of byte fields in the object
+associated with objectPointer.
+A n o t h e r i m p o r t a n t s e r v i c e of t h e object m e m o r y is to c r e a t e n e w objects. T h e object m e m o r y m u s t be s u p p l i e d w i t h a class a n d a l e n g t h
+a n d will r e s p o n d w i t h a n e w object p o i n t e r . Again, t h e r e a r e t h r e e versions for c r e a t i n g objects w i t h p o i n t e r s , words, or bytes.
+
+object creation
+instantiateClass: classPointer withPointers: instanceSize
+Create a new instance of the class whose object pointer is classPointer with instanceSize
+fields that will contain pointers. Return the
+object pointer of the new object.
+instantiateClass: classPointer withWords: instanceSize
+Create a new instance of the class whose object pointer is classPointer with instanceSize
+fields that will contain 16-bit numerical values. Return the object pointer of the new object.
+
+instantiateClass: classPointer withBytes: instanceByteSize
+Create a new instance of the class whose object pointer is classPointer with room for
+instanceByteSize 8-bit numerical values. Return the object pointer of the new object.
+
+573
+Object M e m o r y Interface
+Two r o u t i n e s of the object m e m o r y allow the i n s t a n c e s of a class to be
+e n u m e r a t e d . These follow a n a r b i t r a r y ordering of object pointers. Using t h e n u m e r i c a l order of t h e pointers t h e m s e l v e s is reasonable.
+
+instance enumeration
+initiallnstanceOf: classPointer
+
+instanceAfter: objectPointer
+
+Return the object pointer of the first instance
+of the class whose object pointer is
+ciassPointer in the defined ordering (e.g., the
+one with the smallest object pointer).
+Return the object pointer of the next instance
+of the same class as the object whose object
+pointer is objectPointer in the defined ordering
+(e.g., the one with the next larger object pointer).
+
+A n o t h e r r o u t i n e of t h e object m e m o r y allows the object pointers of two
+objects to be i n t e r c h a n g e d .
+pointer swapping
+swapPointersOf: firstPointer and: secondPointer
+Make firstPointer refer to the object whose object pointer was secondPointer and make
+secondPointer refer to the object whose object
+pointer was firstPointer.
+As described in C h a p t e r 26, integers b e t w e e n - 1 6 3 8 4 a n d 16383 are
+encoded directly as object pointers w i t h a 1 in t h e low-order bit position
+a n d the a p p r o p r i a t e 2's c o m p l e m e n t value stored in the high-order 15
+bits. These objects a r e instances of class Smailinteger. A Smalllnteger's
+value, w h i c h would o r d i n a r i l y be stored in a field, is a c t u a l l y determ i n e d from its object pointer. So i n s t e a d of storing a value i n t o a
+Smalllnteger's field, t h e i n t e r p r e t e r m u s t r e q u e s t the object pointer of a
+Smalllnteger w i t h t h e desired value (using t h e integerObjectOf: routine).
+A n d i n s t e a d of fetching the value from a field, it m u s t r e q u e s t t h e value
+associated w i t h t h e object p o i n t e r (using the integerValueOf: routine).
+T h e r e a r e also two r o u t i n e s t h a t d e t e r m i n e w h e t h e r an object pointer
+refers to a Smalllnteger (islntegerObject:) a n d w h e t h e r a value is in the
+r i g h t r a n g e to be r e p r e s e n t e d as a Smalllnteger (islntegerValue:). The
+function of t h e isintegerObject: r o u t i n e can also be p e r f o r m e d by req u e s t i n g the class of t h e object a n d seeing if it is Smalllnteger.
+
+integer access
+integerValueOf: objectPointer
+integerObjectOf: value
+isintegerObject: objectPointer
+islntegerValue: value
+
+Return the value of the instance of
+Smalllnteger whose pointer is objectPointer.
+Return the object pointer for an instance of
+Smalllnteger whose value is value.
+Return true if objectPointer is an instance of
+Smalltnteger, false if not.
+Return true if value can be represented as an
+instance of Smalllnteger, false if not.
+
+The i n t e r p r e t e r provides two special routines to access fields t h a t cont a i n Smallinteflers. The Ietchlnteger:otObject: r o u t i n e r e t u r n s t h e value
+
+574
+Specification of the Virtual Machine
+
+of a Smalllnteger whose pointer is stored in the specified field. The
+check to m a k e sure t h a t the pointer is for a Smalllnteger is made for
+uses of this routine when non-Smalllntegers can be tolerated. The
+primitiveFail routine will be described in the section on primitive routines.
+
+fetchlnteger: fieldlndex ofObject: objectPointer
+I integerPointerl
+integerPointer ~- memory fetchPointer: fieldlndex
+ofObject: objectPointer.
+(memory islntegerObject: integerPointer)
+ifTrue: [1'memory integerValueOf: integerPointer]
+ifFalse: [1self primitiveFail]
+The storelnteger:ofObject:withValue: r o u t i n e stores the p o i n t e r of the
+Smalllnteger with specified value in the specified field.
+
+storelnteger: fieldlndex
+ofObject: objectPointer
+withValue: integerValue
+I integerPointerl
+(memory islntegerValue: integerValue)
+ifTrue: [integerPointer ~ memory integerObjectOf: integerValue.
+memory storePointer: fieldtndex
+ofObject: objectPointer
+withValue: integerPointer]
+ifFalse: [1self primitiveFail]
+The i n t e r p r e t e r also provides a routine to perform a transfer of several
+pointers from one object to another. It takes the n u m b e r of pointers to
+transfer, and the initial field index and object pointer of the source and
+destination objects as arguments.
+transfer: count
+fromlndex: firstFrom
+ofObject: fromOop
+tolndex: firstTo
+ofObject: toOop
+I fromlndex tolndex lastFrom oop I
+fromlndex ~ firstFrom.
+lastFrom ~- firstFrom -.I-- count.
+tolndex ,- firstTo.
+[fromlndex < lastFrom] whileTrue:
+[oop ,- memory fetchPointer: fromlndex
+ofObject: fromOop.
+memory storePointer: tolndex
+ofObject: toOop
+withVafue: oop..
+
+575
+
+Objects Used by the Interpreter
+memory storePointer: fromlndex
+ofObject: f r o m O o p
+withValue: NitPointer.
+fromlndex
+tolndex
+
+~
+
+fromlndex +
+
+1.
+
+~- tolndex + 1]
+
+The interpreter also provides routines to extract bit fields from numerical values. These routines refer to the high-order bit with index 0 and
+the low-order bit with index 15.
+extractBits: firstBitlndex to: lastBitlndex of: a n l n t e g e r
+l'(anlnteger bitShift: lastBitlndex -
+
+15)
+
+bitAnd: (2 raisedTo: lastBitlndex -
+
+firstBittndex +
+
+1) -
+
+1
+
+highByteOf: a n l n t e g e r
+t setf extractBits: 0 to: 7
+of: anlnteger
+
+IowByteOf: a n l n t e g e r
+1'self extractBits: 8 to: 15
+of: anlnteger
+
+Objects Used
+by the
+Interpreter
+
+This section describes what might be called the data structures of the
+interpreter. Although they are objects, and therefore more th a n data
+structures, the interpreter treats these objects as data structures. The
+first two types of object correspond to data structures found in the interpreters for most languages. Methods correspond to programs, subroutines, or procedures. Contexts correspond to stack frames or activation
+records. The final structure described in this section, that of classes, is
+not used by the interpreter for most languages but only by the compiler. Classes correspond to aspects of the type declarations of some other
+languages. Because of the nature of Smalltalk messages, the classes
+must be used by the interpreter at runtime.
+There are many constants included in the formal specification. They
+mostly represent object pointers of known objects or field indices for
+certain kinds of objects. Most of the constants will be named and a routine t h at initializes them will be included as a specification of their value. As an example, the following routines initialize the object pointers
+known to the interpreter.
+i nitia iiz eSmalll ntege rs
+"' Smalllntegers'"
+MinusOnePointer ~ 65535.
+ZeroPointer ~- 1.
+OnePointer ~ 3.
+TwoPointer ~ 5
+
+576
+
+Specification of the Virtual Machine
+initializeGuaranteedPointers
+" U n d e f i n e d O b j e c t and B o o l e a n s "
+NilPointer ~- 2.
+F a l s e P o i n t e r ~ 4.
+T r u e P o i n t e r ~- 6.
+"Root"
+SchedulerAssociationPointer
+
+~ 8.
+
+"Classes"
+ClassStringPointer ~
+
+14.
+
+ClassArrayPointer ~
+
+16.
+
+ClassMethodContextPointer
+
+~ 22.
+
+C l a s s B I o c k C o n t e x t P o i n t e r ~ 24.
+C l a s s P o i n t P o i n t e r ~- 26.
+ClassLargePositivelntegerPointer
+ClassMessagePointer
+
+~- 28.
+
+~- 32.
+
+C l a s s C h a r a c t e r P o i n t e r ~ 40.
+"Selectors"
+DoesNotUnderstandSelector
+
+~ 42.
+
+C a n n o t R e t u r n S e l e c t o r ~ 44.
+MustBeBooleanSelector
+
+~- 52.
+
+"Tables"
+S p e c i a l S e l e c t o r s P o i n t e r ~- 48.
+C h a r a c t e r T a b l e P o i n t e r ~- 50
+
+Compiled Methods
+
+The bytecodes executed by the i n t e r p r e t e r are found in instances of
+CompiledMethod. The bytecodes are stored as 8-bit values, two to a
+word. In addition to the bytecodes, a CompiledMethod contains some object pointers. The first of these object pointers is called the method
+header and the rest of the object pointers m a k e up the method's literal
+frame. Figure 27.1 shows the structure of a CompiledMethod and the
+following routine initializes the indices used to access fields of
+CompiledMethods.
+
+header
+
+literal f r a m e
+I
+÷
+
+bytecodes
+÷
+
++
+
+Figure 27.1
+
+i
+
+577
+
+Objects Used by the Interpreter
+initializeMethodlndices
+
+"' Class CompiledMethod"
+Headerlndex ~ O.
+LiteralStart ~ 1
+
+The header is a Smalllnteger that encodes certain information about the
+CompiledMethod.
+headerOf:
+
+methodPointer
+
+1memory fetchPointer: Headerlndex
+ofObject: methodPointer
+
+The literal frame contains pointers to objects referred to by the
+bytecodes. These include the selectors of messages that the method
+sends, and shared variables and constants to which the method refers.
+literal:
+
+offset
+
+ofMethod:
+
+methodPointer
+
+1'memory fetchPointer: offset --t- LiteralStart
+ofObject: methodPointer
+
+Following the header and literals of a method are the bytecodes. Methods are the only objects in the Smalltalk system that store both object
+pointers (in the header and literal frame) and numerical values (in the
+bytecodes). The form of the bytecodes will be discussed in the next
+chapter.
+
+[~] Method Headers Since the method header is a Smalllnteger, its value will be encoded in its pointer. The high-order 15 bits of the pointer
+are available to encode information; the low-order bit must be a one to
+indicate that the pointer is for a Smalllntefler. The header includes four
+bit fields that encode information about the CompiledMethod. Figure
+27.2 shows the bit fields of a header.
+
+Figure 27.2
+
+I ' i 't i ' i ' J' 'a l I I ' i
+flag temporary large
+value
+count
+context
+flag
+
+i' '
+
+I
+,'
+1'
+I1 ]
+literal
+count
+
+The temporary count indicates the number of temporary variables used
+by the CompiledMethod. This includes the number of arguments.
+temporaryCountOf:
+
+methodPointer
+
+Tsetf extractBits: 3 to: 7
+of: (self headerOf: methodPointer)
+
+The large context flag indicates which of two sizes of MethodContext are
+needed. The flag indicates whether the sum of the maximum stack
+
+578
+
+Specification of the Virtual Machine
+I
+depth and the n u m b e r of t e m p o r a r y variables needed is g r e a t e r t h a n
+twelve. The smaller MethodContexts have room for 12 and the larger
+have room for 32.
+largeContextFlagOf: methodPointer
+tsetf extractBits: 8 to: 8
+of: (self headerOf: methodPointer)
+
+The literal count indicates the size of the M e t h o d C o n t e x t ' s literal frame.
+This, in turn, indicates where the MethodContext's bytecodes start.
+literalCountOf: methodPointer
+t self literalCountOfHeader: (self headerOf: methodPointer)
+literalCountOfHeader: headerPointer
+tself extractBits: 9 to: 14
+of: headerPointer
+
+The object pointer count indicates the total n u m b e r of object pointers in
+a MethodContext, including the h e a d e r and literal frame.
+objectPointerCountOf: methodPointer
+r(self literalCountOf: methodPointer) + LiteralStart
+
+The following routine r e t u r n s the byte index of the first bytecode of a
+CompiledMethod.
+
+initiallnstructionPointerOfMethod: methodPointer
+t((setf literalCountOf: methodPointer) + LiteralStart) . 2 -t- 1
+
+The
+
+flag
+
+value
+
+is
+
+used
+
+to
+
+encode
+
+the
+
+number
+
+of a r g u m e n t s
+
+a
+
+C o m p i l e d M e t h o d takes and w h e t h e r or not it has an associated primi-
+
+tive routine.
+flagValueOf: methodPointer
+1"self extractBits: 0 to: 2
+of: (self headerOf: methodPointer)
+
+The eight possible flag values have the following meanings:
+
+flag value
+
+meaning
+
+0-4
+
+no primitive and 0 to
+4 arguments
+primitive return of self
+
+5
+
+(0 arguments)
+
+6
+
+primitive return of
+an instance variable
+(0 arguments)
+
+579
+
+Objects Used by the I n t e r p r e t e r
+a header extension
+contains the number
+of arguments and a
+primitive index
+Since the majority of CompiledMethods have four or fewer a r g u m e n t s
+and do not have an associated primitive routine, the flag value is usually simply the n u m b e r of arguments.
+
+D Special Primitive Methods
+
+Smalltalk methods t h a t only r e t u r n the
+receiver of the message (self)produce CompiledMethods t h a t have no
+literals or bytecodes, only a header with a flag value of 5. In similar
+fashion, Smalltalk methods t h a t only r e t u r n the value of one of the receiver's instance variables produce CompiledMethods t h a t contain only
+headers with a flag value of 6. All other methods produce
+CompiledMethods with bytecodes. When the flag value is 6, the index of
+the instance variable to r e t u r n is found in the header in the bit field ordinarily used to indicate the n u m b e r of t e m p o r a r y variables used by the
+CornpiledMethod. Figure 27.3 shows a CompiledMethod for a Smalltalk
+method t h a t only r e t u r n s a receiver instance variable.
+
+II ~! iIO
+l
+1
+
+Figure 27.3
+
+I
+l
+
+I
+I
+
+I
+I
+
+', !'o'o'o',
+, ,o'o, ,'o,'o111
+
+field
+index
+
+flag
+value
+
+The following routine r e t u r n s the index of the field representing the instance variable to be r e t u r n e d in the case t h a t the flag value is 6.
+fieldlndexOf: methodPointer
+t self extractBits: 3 to 7
+of: (self headerOf methodPointer)
+
+E] Method Header Extensions If the flag value is 7, the next to last
+literal is a header extension, which is another Smatllnteger. The header
+extension includes two bit fields t h a t encode the a r g u m e n t count and
+primitive index of the CompiledMethod. Figure 27.4 shows the bit fields
+of a header extension.
+I
+
+Figure 27.4
+
+I
+
+i
+
+i
+
+I
+
+argument
+count
+
+I
+
+I
+
+I
+
+!
+
+I
+
+i
+
+i
+
+primitive
+index
+
+The following routines are used to access a header extension and its bit
+fields.
+
+580
+
+Specification of the Virtual Machine
+headerExtensionOf: methodPointer
+I literalCountl
+literalCount ~- self literalCount©f: methodPointer.
+tself literal: literalCount- 2
+ofMethod: methodPointer
+
+argumentCountOf: methodPointer
+1 flagValue I
+flagValue ~ self flagVatueOf: methodPointer.
+flagValue < 5
+ifTrue: [tflagValue].
+flagValue < 7
+ifTrue: [tO]
+ifFalse: [tself extractBits: 2 to: 6
+of: (self headerExtensionOf: methodPointer)]
+
+primitivelndexOf: methodPointer
+I ffagValue I
+flagValue ~ self flagValueOf: methodPointer.
+flagVatue=7
+ifTrue: [tself extractBits: 7 to: 14
+of: (self headerExtensionOf: methodPointer)]
+ifFalse: [tO]
+
+Any CompiledMethod t h a t s e n d s a superclass message (i.e., a message to
+super) or contains a header extension, will have as its last literal an Association whose value is the class in whose message dictionary the
+CompiledMethod is found. This is called the method class and is
+accessed by the following routine.
+methodClassOf: methodPointer
+I literalCount association I
+literalCount ~- self literalCount©f: methodPointer,
+association ~ self literal: literalCount- 1
+ofMethod: methodPointer.
+tmemory fetchPointer" Valuelndex
+of©bject: association
+
+An example of a CompiledMethod whose literal frame contained a
+method class was given in the last chapter. The CompiledMethod for t h e
+intersect: message to ShadedRectangle was shown in the section of the
+last chapter called Messages.
+
+Contexts
+
+The i n t e r p r e t e r uses contexts to r e p r e s e n t the state of its execution of
+CompiledMethods and blocks. A context can be a MethodContext or a
+BlockContext. A MethodContext represents the execution of a
+CompiledMethod t h a t was invoked by a message. Figure 27.5 shows a
+M e t h o d C o n t e x t and its C o m p i l e d M e t h o d .
+
+581
+
+Objects Used by the I n t e r p r e t e r
+sender
+instruction pointer
+stack pointer
+method
+
+header
+
+(unused)
+receiver
+
+literal frame
+
+arguments
+other
+temporaries
+stack
+contents
+
+r
+
+÷
+bytecodes
+
+t " t
+I
+
+Figure 27.5
+
+A B l o c k C o n t e x t represents a block encountered in a C o m p i l e d M e t h o d . A
+BlockContext refers to the MethodContext whose CompiledMethod cont a i n e d the block it represents. This is called the BlockContext's home.
+Figure 27.6 shows a BlockContext and its home.
+The indices used to access the fields of contexts are initialized by the
+following routine.
+initializeContextlndices
+" C l a s s MethodContext"
+Sendertndex ~ 0.
+lnstructionPointerlndex ~ 1 .
+StackPointerlndex ,- 2.
+Methodlndex ,-- 3.
+Receiverlndex ~- 5.
+T e m p F r a m e S t a r t ~- 6.
+"
+
+Class BlockContext"
+
+Callerlndex ~- 0.
+BlockArgumentCountlndex ~ 3.
+tnitiallPlndex ~- 4.
+Homelndex ~ 5
+
+Both kinds of context have six fixed fields corresponding to six n a m e d
+instance variables. These fixed fields are followed by some indexable
+fields. The indexable fields are used to store the t e m p o r a r y frame (arguments and t e m p o r a r y variables) followed by the contents of the evaluation stack. The following routines are used to fetch and store the
+instruction pointer and stack pointer stored in a context.
+
+582
+S p e c i f i c a t i o n of t h e V i r t u a l M a c h i n e
+
+sender
+instruction pointer
+stack pointer
+method
+(unused)
+
+he
+
+receiver
+
+literal frame ~
+
+arguments
+
+~
+
+,
+÷
+
+other
+temporaries
+
+/
+
+-
+
+bytecodes
+÷
+
+stack
+contents
+caller
+"
+instruction pointer
+stack pointer
+argument count
+initial i. p.
+home
+stack
+contents
+
+m~
+
+Figure 27.6
+
+instructionPointerOfContext: contextPointer
+
+1self fetchlnteger: InstructionPointerlndex
+ofObject: contextP.ointer
+storelnstructionPointerValue: value inContext: c o n t e x t P o i n t e r
+
+self storelnteger: InstructionPointertndex
+ofObject: contextPointer
+withValue: value
+stackPointerOfContext: contextPointer
+
+1"self fetchlnteger: StackPointerlndex
+ofObject: contextPointer
+
+583
+Objects Used by the Interpreter
+
+storeStackPointerValue: value inContext: contextPointer
+self storelnteger: StackPointerlndex
+ofObject: contextPointer
+withValue: value
+A BlockContext s t o r e s t h e n u m b e r
+of i t s fields.
+
+of b l o c k a r g u m e n t s
+
+it e x p e c t s i n o n e
+
+argumentCountOfBlock: blockPointer
+1'self fetchlnteger: BlockArgumentCountlndex
+ofObject: blockPointer
+The c o n t e x t t h a t represents the CompiledMethod or block c u r r e n t l y being e x e c u t e d is c a l l e d t h e active context. T h e i n t e r p r e t e r c a c h e s i n its
+r e g i s t e r s t h e c o n t e n t s of t h e p a r t s of t h e a c t i v e c o n t e x t it u s e s m o s t often. These registers are:
+
+Context-related Registers of the Interpreter
+activeContext
+
+This is the active context itself.
+MethodContext or a BlockContext.
+
+homeContext
+
+If the active context is a MethodContext, the home context
+is the same context. If the active context is a BlockContext,
+the home context is the contents of the home field of the
+active context. This will always be a MethodContext.
+
+method
+
+This is the CompiledMethod that contains the bytecodes the
+interpreter is executing.
+
+receiver
+
+This is the object that received the message that invoked
+the home context's method.
+
+instructionPointer
+
+This is the byte index of the next bytecode of the method
+to be executed.
+
+stackPointer
+
+This is the index of the field of the active context containing the top of the stack.
+
+It
+
+is
+
+either
+
+a
+
+W h e n e v e r t h e a c t i v e c o n t e x t c h a n g e s ( w h e n a n e w CompiledMethod is
+i n v o k e d , w h e n a C o m p i l e d M e t h o d r e t u r n s o r w h e n a p r o c e s s s w i t c h occ u r s ) , a l l of t h e s e r e g i s t e r s m u s t b e u p d a t e d u s i n g t h e f o l l o w i n g r o u t i n e .
+
+fetchContextRegisters
+(self isBIockContext: activeContext)
+ifTrue: [homeContext ~ memory fetchPointer: Hometndex
+ofObject: activeContext]
+ifFalse: [homeContext ~ activeContext].
+receiver ,-- memory fetchPointer: Receiverlndex
+ofObject: homeContext.
+method ~ memory fetchPointer: Methodlndex
+ofObject: homeContext.
+instructionPointer ,- (self instructionPointerOfContext: activeContext)- 1.
+stackPointer
+(self stackPointerOfContext: activeContext) 4--- TempFrameStart - 1
+
+584
+
+Specification of the Virtual Machine
+Note t h a t the receiver and method are fetched from the homeContext
+and the instructionPointer and stackPointer are fetched f r o m the
+activeContext.
+The
+interpreter
+tells
+the
+difference
+between
+MethodContexts
+and
+BiockContexts
+based
+on
+the
+fact
+that
+MethodContexts store the method pointer (an object p o i n t e r ) a n d
+BlockContexts store the n u m b e r of block a r g u m e n t s (an integer pointer)
+in the same field. If this location contains an integer pointer, the context is a BlockContext; otherwise, it is a MethodContext. The distinction
+could be made on the basis of the class of the context, but special provision would have to be made for subclasses of MethodContext and
+BlockContext.
+
+isBIockContext: contextPointer
+t methodOrArguments I
+methodOrArguments ,- memory fetchPointer: Methodlndex
+ofObject: contextPointer.
+1'memory islntegerObject: methodOrArguments
+
+Before a new context becomes the active context, the values of the instruction pointer and stack pointer must be stored into the active context with the following routine.
+storeContextRegisters
+self storelnstructionPointerValue: instructionPointer + 1
+inContext: activeContext.
+self storeStackPointerValue: stackPointer - TempFrameStart + 1
+inContext: activeContext
+
+The values of the other cached registers do not change so they do not
+need to be stored back into the context. The instruction pointer stored
+in a context is a one-relative index to the method's fields because
+subscripting in S m a l l t a l k (i.e., the at: message) takes one-relative indices. The memory, however, uses zero-relative indices; so the
+fetchContextRegisters routine s u b t r a c t s one to convert it to a m e m o r y
+index and the storeContextRegisters routine adds the one back in. The
+stack pointer stored in a context tells how far the top of the evaluation
+stack is beyond the fixed fields of the context (i.e., how far after the
+start of the t e m p o r a r y frame) because subscripting in S m a l l t a l k takes
+fixed fields into account and fetches from the indexable fields after
+them. The memory, however, wants an index relative to the s t a r t of the
+object; so the fetchContextRegisters routine adds in the offset of the
+s t a r t of the t e m p o r a r y frame (a constant) and the storeContextRegisters
+routine subtracts the offset.
+The following routines perform various operations on the stack of the
+active context.
+
+585
+
+Objects Used by the I n t e r p r e t e r
+push: object
+stackPointer ~ stackPointer + 1.
+memory storePointer: stackPointer
+ofObject: activeContext
+withValue: object
+
+popStack
+t stackTop I
+stackTop ~ memory fetchPointer: stackPointer
+ofObject: activeContext.
+stackPointer ~- s t a c k P o i n t e r - 1.
+tstackTop
+
+stackTop
+1memory fetchPointer: stackPointer
+ofObject: activeContext
+
+stackValue: offset
+tmemory fetchPointer: stackPointer-offset
+ofObject: activeContext
+
+pop: number
+stackPointer ~ s t a c k P o i n t e r - number
+
+unPop: number
+stackPointer ~ stackPointer + number
+
+The active context register m u s t count as a reference to the p a r t of the
+object m e m o r y t h a t deallocates unreferenced objects. If the object memory m a i n t a i n s dynamic reference counts, the routine to change active
+contexts m u s t perform the appropriate reference counting.
+newActiveContext: aContext
+self storeContextRegisters.
+memory decreaseReferencesTo: activeContext.
+activeContext ~- aContext.
+memory increaseReferencesTo: activeContext.
+self fetchContextRegisters
+
+The following routines fetch fields of contexts needed by the i n t e r p r e t e r
+infrequently enough t h a t they are not cached in registers. The sender is
+the context to be r e t u r n e d to when a CompiledMethod r e t u r n s a value
+(either because of a ~'t" or at the end of the method). Since an explicit
+r e t u r n from within a block should r e t u r n from the CompiledMethod
+enclosing the block, the sender is fetched from the home context.
+sender
+1memory fetchPointer: Senderlndex
+ofObject: homeContext
+
+The caller is the context to be r e t u r n e d to when a BlockContext r e t u r n s
+a value (at the end of the block).
+
+586
+Specification of the Virtual Machine
+caller
+
+1'memory fetchPointer: Senderlndex
+ofObject: activeContext
+Since t e m p o r a r i e s referenced in a block are the same as those referenced in the CompiledMethod enclosing the block, the temporaries are
+fetched from the home context.
+.temporary:
+
+offset
+
+1'memory fetchPointer: offset + TempFrameStart
+ofObject: homeContext
+The following routine provides convenient access to the literals of the
+c u r r e n t l y executing CompiledMethod.
+,
+
+literal:
+
+offset
+
+•
+
+1"self literal: offset
+of Method: method
+
+The i n t e r p r e t e r finds the appropriate CompiledMethod to execute in response to a message by searching a message dictionary. The message
+dictionary is found in the class of the message receiver or one of the
+superclasses of t h a t class. The s t r u c t u r e of a class and its associated
+message dictionary is shown in Figure 27.7. In addition to the message
+dictionary and superclass the i n t e r p r e t e r uses the class's instance specification to d e t e r m i n e its instances' m e m o r y requirements. The other
+fields of a class are used only by S m a l l t a l k methods and ignored by the
+interpreter. The following routine initializes the indices used to access
+fields of classes and their message dictionaries.
+
+Classes
+
+superclass
+t
+message dict.
+instance spec.
+
+tally
+method array
+
+m
+
+selectors
+
+methods
+m
+
+Figure 27.7
+
+m
+
+m
+
+m
+
+m
+
+m
+
+m
+
+587
+
+Objects Used by the I n t e r p r e t e r
+initializeClasslndices
+" Class C l a s s "
+S u p e r c l a s s l n d e x ,- 0.
+M e s s a g e D i c t i o n a r y l n d e x ~ 1.
+InstanceSpecificationtndex ~ 2.
+
+"Fields of a message dictionary"
+M e t h o d A r r a y l n d e x ~- 1.
+SelectorStart ~- 2
+
+The i n t e r p r e t e r uses several registers to cache the state of the m e s s a g e
+lookup process.
+Class-related Registers of the Interpreter
+
+argumentCount
+
+This is the selector of the message being sent. It is always
+a Symbol.
+This is the number of arguments in the message currently
+being sent. It indicates where the message receiver can be
+found on the stack since it is below the arguments.
+
+newMethod
+
+This is the method associated with the messageSelector.
+
+primitivelndex
+
+This is the index of a primitive routine associated with
+newMethod if one exists.
+
+messageSelector
+
+A m e s s a g e d i c t i o n a r y is a n I d e n t i t y D i c t i o n a r y . I d e n t i t y D i c t i o n a r y is a subclass of Set w i t h an additional Array c o n t a i n i n g values associated w i t h
+t h e c o n t e n t s of the Set. The m e s s a g e selectors are stored in t h e indexed
+i n s t a n c e variables i n h e r i t e d from Set. The CompiledMethods are stored
+in a n Array added by IdentityDictionary. A CompiledMethod has t h e s a m e
+index in t h a t Array t h a t its selector has in t h e indexable variables of
+the d i c t i o n a r y object itself. The index at which to store the selector a n d
+CompiledMethod are c o m p u t e d by a h a s h function.
+The selectors a r e instances of Symbol, so t h e y m a y be tested for
+e q u a l i t y by testing t h e i r object pointers for equality. Since the object
+pointers of Symbols d e t e r m i n e equality, t h e h a s h function m a y be a
+function of the object pointer. Since object pointers a r e allocated quasir a n d o m l y , the object p o i n t e r itself is a r e a s o n a b l e h a s h function. The
+pointer shifted r i g h t one bit will produce a b e t t e r h a s h function, since
+all object pointers o t h e r t h a n Smalllntegers are even.
+hash: objectPointer
+l'objectPointer bitShift: -- 1
+
+The m e s s a g e selector lookup a s s u m e s t h a t m e t h o d s h a v e been put into
+t h e d i c t i o n a r y using t h e s a m e h a s h i n g function. The h a s h i n g a l g o r i t h m
+reduces t h e original h a s h function modulo t h e n u m b e r of indexable locations in the dictionary. This gives an index in t h e dictionary. To
+m a k e t h e c o m p u t a t i o n of the modulo reduction simple, message diction-
+
+588
+
+Specification of the Virtual Machine
+aries have an exact power of two fields. Therefore the modulo calculation can be performed by m a s k i n g off an appropriate n u m b e r of bits. If
+the selector is not found at the initial hash location, successive fields
+are examined until the selector is found or a nil is encountered. If a nil
+is encountered in the search, the selector is not in the dictionary. If the
+end of the dictionary is encountered w h i l e searching, the search wraps
+around and continues with the first field.
+The following routine looks in a dictionary for a CompiledMethod associated with the Symbol in the messageSelector register. If it finds the
+Symbol, it stores the associated CompiledMethod's pointer into the
+newMethod register, its primitive index into the primitivelndex register
+and r e t u r n s true. If the Symbol is not found in the dictionary, the routine r e t u r n s false. Since finding a nil or an appropriate Symbol are the
+only exit conditions of the loop, the routine must check for a full dictionary (i.e., no nils). It does this by keeping track of whether i t has
+wrapped around. If the search wraps around twice, the selector is not in
+the dictionary.
+
+IookupMethodlnDictionary: dictionary
+I length index mask wrapAround nextSelector methodArray I
+length ~ memory fetchWordLengthOf: dictionary.
+mask ~- l e n g t h - SelectorStart- 1.
+index ~ (mask bitAnd: (self hash: messageSelector)) + SelectorStart.
+wraparound ~ false.
+[true] whileTrue:
+[nextSelector ~ memory fetchPointer: index
+of Object: dictionary.
+nextSelector=NitPointer ifTrue: [tfalse].
+nextSetector = messageSelector
+ifTrue: [methodArray ~ memory fetchPointer: MethodArraylndex
+of Object: dictionary.
+newMethod ~-- memory fetchPointer: index-SetectorStart
+ofObject: methodArray.
+primitivelndex ~- self primitivelndex©f: newMethod.
+ttrue],
+index ~-index + 1.
+index=length
+ifTrue: [wrapAround ifTrue: [tfalse].
+wraparound ~- true.
+index ~ SelectorStart]]
+
+This routine is used in the following routine to find the method a class
+associates with a selector. If the selector is not found in the initial
+class's dictionary, it is looked up in the next class on the superclass
+chain. The search continues up the superclass chain until a method is
+found or the superclass chain is exhausted.
+
+589
+
+Objects Used by the I n t e r p r e t e r
+
+IookupMethodlnClass: class
+I currentClass dictionary t
+currentClass ~- class.
+[currentClass,--.,= NilPointer] whileTrue:
+[dictionary ~ memory fetchPointer: MessageDictionarylndex
+ofObject: currentClass.
+(self IookupMethodlnDictionary: dictionary)
+ifTrue: [ttrue].
+currentCtass ~ self superclassOf: currentClass].
+messageSelector = DoesNotUnderstandSelector
+ifTrue: [self error: ' Recursive not understood error encountered'].
+self createActualMessage.
+messageSelector ~ DoesNotUnderstandSelector.
+1'self IookupMethodlnCfass: class
+
+superclassOf: classPointer
+1'memory fetchPointer: Superclasstndex
+ofObject: classPointer
+
+The i n t e r p r e t e r needs to do something out of the ordinary when a message is sent to an object whose class and superclasses do not contain a
+CompiledMethod associated with the message selector. In keeping with
+the philosophy of Smalltalk, the i n t e r p r e t e r sends a message. A
+CompiledMethod for this message is g u a r a n t e e d to be found. The interpreter packages up the original message in an instance of class Message and then looks for a CompiledMethod associated with the selector
+doesNotUnderstand:. The Message becomes the single ia r g u m e n t for the
+doesNotUnderstand: message. The doesNotUnderstand: message is defined in Object with a CompiledMethod t h a t notifies the user. This
+CompiledMethod can be overridden in a. user-defined class to do something else. Because of this, the iookupMethodlnClass: routine will always complete by storing a pointer to a CompiledMethod in the
+newMethod register.
+
+createActualMessage
+I argumentArray message I
+argumentArray ~- memory instantiateClass: ClassArrayPointer
+withPointers: argumentCount.
+message ~- memory instantiateClass: ClassMessagePointer
+withPointers: self messageSize.
+memory storePointer: MessageSelectorlndex
+of Object: message
+withValue: messageSelector.
+memory storePointer: MessageArgumentslndex
+of Object: message
+withValue: argumentArray.
+
+590
+
+Specification of the Virtual Machine
+self transfer: argumentCount
+fromField: stackPointer- (argumentCount- 1)
+ofObject: activeContext
+toField: 0
+ofObject: argumentArray.
+self pop: argumentCount.
+self push: message.
+argumentCount ~ 1
+
+The following routine initializes the indices used to access fields of a
+Message.
+
+initializeMessagelndices
+MessageSelectorlndex ~ 0.
+MessageArgumentslndex ,- 1.
+MessageSize ~ 2
+
+The instance specification field of a class contains a Smalllnteger pointer
+t hat encodes the following four pieces of information:
+1. Whether the instances' fields contain object pointers or numerical
+values
+2. Whether the instances' fields are addressed in word or byte quantities
+.
+
+3. Whether the instances have indexable fields beyond their fixed
+fields
+4. The number of fixed fields the instances have
+Figure 27.8 shows how this information is encoded in the instance specification.
+
+!IIio!::
+1
+
+Figure 27.8
+
+I
+
+pointers I indexable
+words
+
+' ' ' ' ' ' ' '
+1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+I
+
+1
+
+111
+
+number of fixed fields
+
+The four pieces of information are not independent. If the instances'
+fields contain object pointers, they will be addressed in word quantities.
+If the instances' fields contain numerical values, they will have
+indexable fields and no fixed fields.
+
+instancespecificationOf: classPointer
+tmemory fetchPointer: Instancespecificationlndex
+ofObject classPointer
+
+591
+
+Objects Used by the Interpreter
+isPointers: classPointer
+I pointersFlag I
+pointersFlag ~ self extractBits: 0 to: 0
+of: (self instanceSpecificationOf: classPointer).
+lpointersFlag = 1
+isWords: classPointer
+I wordsFlag I
+wordsFlag ~- self extractBits: 1 to: 1
+of: (self instanceSpecificationOf: classPointer).
+twordsFlag = 1
+islndexable: classPointer
+I indexableFlagl
+indexableFlag ~ self extractBits: 2 to: 2
+of: (self instanceSpecificationOf: classPointer).
+l'indexableFlag = 1
+fixedFieldsOf: classPointer
+tsetf extractBits: 4 to: 14
+of: (self instanceSpecificationOf: classPointer)
+
+Note: the instance specification of C o m p i l e d M e t h o d does not accurately
+reflect the structure of its instances since CompiledMethods are not homogeneous. The instance s p e c i f i c a t i o n s a y s t h a t the instances do not
+contain pointers and are addressed by bytes. This is true of the
+bytecode section of a CompiledMethod only. The storage m a n a g e r needs
+to know t h a t CompiledMethods are special and actually contain some
+pointers. For all other classes, the instance specification is accurate.
+
+
