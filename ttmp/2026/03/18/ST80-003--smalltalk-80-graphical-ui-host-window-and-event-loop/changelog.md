@@ -175,3 +175,19 @@ Step 15: verified the intern's Blue Book OCR pack against the live VM/UI code, c
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/10-blue-book-ocr-verification-pass.md — OCR-backed verification results, commands, and concrete discrepancies
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Detailed diary entry for the OCR verification pass
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/tasks.md — Marked the OCR-pack task done and added follow-up tasks for primitive `97` and default test-suite hygiene
+
+
+## 2026-03-18
+
+Step 16: implemented Blue Book primitive `97` (`snapshotPrimitive`) by adding image serialization support, wiring the interpreter snapshot path, and verifying both raw image round-tripping and receiver-preserving primitive behavior (commit fec10f5).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/image/loader.go — Added `WriteImage` as the inverse of `LoadImage`, including object-table alignment handling (commit fec10f5)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/image/loader_test.go — Added raw object-memory round-trip coverage for snapshot serialization (commit fec10f5)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go — Added raw object-space and object-table export helpers for serialization (commit fec10f5)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added `SetSnapshotPath`, primitive `97` dispatch, and `primitiveSnapshot` (commit fec10f5)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Added direct primitive-97 coverage for snapshot write success and receiver preservation (commit fec10f5)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — Configures the interpreter snapshot path from the loaded image path (commit fec10f5)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/snapshot.go — Configures the interpreter snapshot path for headless snapshot runs (commit fec10f5)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/11-snapshot-primitive-97-support-writeup.md — Detailed writeup of the primitive-97 bug and fix

@@ -21,5 +21,5 @@
 - [ ] Audit live image behavior around the new timer primitives and delayed-process wakeups in a real desktop session
 - [ ] Verify the host-rendered cursor shape/location visually in a real desktop session
 - [ ] Figure out why the off-screen Xvfb exercise is not producing any recorded host events in the SDL loop
-- [ ] Implement or explicitly defer Blue Book primitive `97` (`snapshotPrimitive`) after the OCR verification pass confirmed it is missing from the current I/O dispatch table
+- [x] Implement or explicitly defer Blue Book primitive `97` (`snapshotPrimitive`) after the OCR verification pass confirmed it is missing from the current I/O dispatch table
 - [ ] Split long-running interpreter diagnostics out of the default `go test ./pkg/...` path so package-wide verification is practical

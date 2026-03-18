@@ -35,6 +35,8 @@ RelatedFiles:
         SDL host window and display bitmap presentation loop (commit 8e85254)
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/10-blue-book-ocr-verification-pass.md
       Note: New OCR-backed verification checkpoint recorded in Step 15
+    - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/11-snapshot-primitive-97-support-writeup.md
+      Note: Primitive 97 checkpoint documented in Step 16
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh
       Note: Reusable off-screen screenshot helper for the SDL UI
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh
@@ -55,6 +57,7 @@ LastUpdated: 2026-03-18T09:33:46.413235314-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 
 
@@ -1687,3 +1690,108 @@ docmgr validate frontmatter --doc 2026/03/18/ST80-003--smalltalk-80-graphical-ui
   - `<ProcessorScheduler>signal:atMilliseconds:`
   - `<DisplayScreen>beDisplay`
   - `<Cursor>beCursor`
+
+## Step 16: Primitive 97 Snapshot Support And Image Writer
+
+The OCR verification pass isolated primitive `97` as a real spec/code mismatch, so this step closed that gap directly. The missing piece was not just one more `case` in the primitive table. The interpreter had no way to serialize the current object memory back into the on-disk image format, so implementing `snapshotPrimitive` meant adding the inverse of `LoadImage`, deciding where snapshots should be written, and preserving the expected receiver/stack behavior.
+
+This was a good next slice because it was concrete and bounded. The OCR pass had already done the hard part of making the gap precise. What remained was engineering discipline: do the smallest correct write path, test it as an actual round trip, and avoid cheating with a hardcoded output path or a lossy dump format that would only be useful for debugging.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, continue then"
+
+**Assistant interpretation:** Continue with the next highest-value concrete task from the verification pass without pausing for more planning.
+
+**Inferred user intent:** Keep momentum, close the remaining audited VM gaps one by one, and preserve the same detailed ticket/diary/commit trail while doing it.
+
+**Commit (code):** fec10f5 — "Implement snapshot primitive 97 support"
+
+### What I did
+- Confirmed that the current gap was real:
+  - primitive `97` was present in the OCR primitive audit
+  - primitive `97` was still missing from `dispatchInputOutputPrimitives`
+- Read the existing image loader in `pkg/image/loader.go` and established the inverse file-format requirements.
+- Measured the checked-in `data/VirtualImage` layout and confirmed there is a padding gap between object space and object table because the object table starts on a `512`-byte boundary.
+- Added raw-word export helpers in `pkg/objectmemory/objectmemory.go`:
+  - `ObjectTableWords()`
+  - `ObjectSpaceWords()`
+- Added `WriteImage(path, memory)` in `pkg/image/loader.go`.
+- Added a round-trip serializer test in `pkg/image/loader_test.go`.
+- Added `snapshotPath` plus `SetSnapshotPath(path string)` to the interpreter.
+- Wired primitive `97` into `dispatchInputOutputPrimitives`.
+- Implemented `primitiveSnapshot()` so it:
+  - pops the receiver
+  - writes the configured image path
+  - pushes the receiver back on success
+  - restores the stack and primitive-fails on error
+- Threaded the loaded image path into the interpreter from:
+  - `pkg/ui/ui.go`
+  - `pkg/ui/snapshot.go`
+  - `loadTestInterpreter` in `pkg/interpreter/interpreter_test.go`
+- Added `TestPrimitiveSnapshotWritesImageAndReturnsReceiver`.
+- Ran formatting and focused verification:
+
+```bash
+gofmt -w pkg/objectmemory/objectmemory.go pkg/image/loader.go pkg/image/loader_test.go pkg/interpreter/interpreter.go pkg/interpreter/interpreter_test.go pkg/ui/ui.go pkg/ui/snapshot.go
+go test ./pkg/image ./pkg/interpreter ./pkg/ui ./cmd/st80-ui -run 'TestWriteImageRoundTripsObjectMemory|TestPrimitiveSnapshotWritesImageAndReturnsReceiver|TestTrace2SendSelectorsMatch|TestTrace3DisplayStartupSendSelectorsMatch|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles|TestPrimitive(MousePointReturnsConfiguredPoint|CursorLocPutUpdatesCursorAndReturnsReceiver|CursorLocPutUpdatesMouseWhenLinked|InputSemaphoreStoresSemaphoreAndReturnsReceiver|SampleIntervalStoresMillisecondsAndReturnsReceiver|InputWordReturnsQueuedWord|SecondClockIntoStoresLittleEndianSeconds|MillisecondClockIntoStoresLittleEndianTicks|SignalAtMillisecondsSignalsImmediatelyWhenPastDue|SignalAtMillisecondsSchedulesFutureSignal)'
+```
+
+### Why
+- Primitive `97` was the cleanest audited mismatch left by the OCR pass.
+- An image writer is useful beyond the primitive itself; it becomes infrastructure for later debugging and VM-state capture.
+- Using the loaded image path as the configured snapshot target is better than inventing a silent fallback output path.
+
+### What worked
+- The new `WriteImage` path round-trips object memory through the same format that `LoadImage` reads.
+- Primitive `97` now exists in the interpreter’s I/O dispatch table.
+- The primitive returns the receiver on success and preserves normal primitive-failure behavior when no path is configured.
+- The focused verification set stayed green after the changes:
+
+```text
+ok  	github.com/wesen/st80/pkg/image	0.007s
+ok  	github.com/wesen/st80/pkg/interpreter	0.066s
+ok  	github.com/wesen/st80/pkg/ui	0.011s [no tests to run]
+?   	github.com/wesen/st80/cmd/st80-ui	[no test files]
+```
+
+### What didn't work
+- There was no implementation blocker here, but there was one design trap I explicitly avoided: `filepath.Clean(\"\")` becomes `.`. If I had blindly cleaned an empty snapshot path, primitive `97` would have attempted to write to the current directory path instead of failing cleanly.
+- I still did not use `go test ./pkg/...` as the verification command because the earlier verification pass already showed that it is not a practical routine check while the long-running interpreter diagnostics remain mixed into the default package tree.
+
+### What I learned
+- The image writer does need to preserve the object-table alignment rule. The checked-in image has a `384`-byte gap between object space and object table because the object table starts on a `512`-byte boundary.
+- The clean way to support snapshot writes in this codebase is to configure the interpreter with the image path at construction time, not to make the primitive itself invent filesystem policy.
+- The OCR verification pass is already paying off directly: it turned a missing primitive from a vague suspicion into a one-step implementation target.
+
+### What was tricky to build
+- The tricky part was not serialization itself. It was preserving the real file shape instead of only writing something the current loader would happen to accept. The object-table alignment gap is easy to miss if you only read the loader loosely.
+- The second subtle point was stack behavior. Snapshot is a no-argument receiver primitive, so the implementation had to preserve the receiver on success and restore the popped stack slot on failure.
+
+### What warrants a second pair of eyes
+- Review whether reusing the loaded image path is the right long-term primitive-97 policy or whether later work should add an explicit “snapshot as” host feature.
+- Review the object-table alignment rule in `WriteImage` and confirm that `512`-byte alignment is the right invariant for future images as well.
+- Review whether the new raw-word export helpers on `ObjectMemory` are the right public surface or whether they should eventually move behind a more explicit serialization API.
+
+### What should be done in the future
+- Keep the `go test ./pkg/...` hygiene task open and split the long-running interpreter diagnostics out of the default package verification path.
+- After that, return to the remaining UI blocker: why the off-screen `Xvfb` exercise is still not delivering observable SDL input events.
+
+### Code review instructions
+- Start with [11-snapshot-primitive-97-support-writeup.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/11-snapshot-primitive-97-support-writeup.md).
+- Then inspect:
+  - [loader.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/image/loader.go)
+  - [objectmemory.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go)
+  - [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go)
+  - [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go)
+- Validate with the focused test command listed above.
+
+### Technical details
+- Alignment fact observed from the checked-in image:
+  - header = `512` bytes
+  - object space = `517760` bytes
+  - object table = `77472` bytes
+  - padding gap before object table = `384` bytes
+- New test coverage added:
+  - `TestWriteImageRoundTripsObjectMemory`
+  - `TestPrimitiveSnapshotWritesImageAndReturnsReceiver`
