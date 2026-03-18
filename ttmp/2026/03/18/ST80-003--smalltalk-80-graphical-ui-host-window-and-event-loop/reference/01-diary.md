@@ -242,6 +242,110 @@ That capture answered the current-state question cleanly. The UI window exists a
 bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh
 ```
 
+## Step 3: Direct Framebuffer Snapshot Diagnostics and Proof That the Display Is White Upstream of SDL
+
+The screenshot script showed a white window, but that still left one important ambiguity: was SDL showing a white window because the host renderer was wrong, or because the VM’s own designated display form was already white? To remove that ambiguity, I added a non-SDL snapshot path that runs the interpreter headlessly, captures the display form directly, writes it to PNG, and reports framebuffer metrics.
+
+That diagnostic immediately paid off. The current display surface is not merely blank; it is also suspiciously small. At both one million and two million cycles, the designated display snapshot is `640x16`, all white, with a stable hash. So the current bug is not “SDL only renders white.” The current bug is that the VM-visible display form being presented to SDL is itself `640x16` and contains no black pixels.
+
+### Prompt Context
+
+**User prompt (verbatim):** "how would you check that the input program doesn't justrender white? But yet, you should add a way to quickly snapshot diagnostic screenshots so that you can self iterate without necessarily using xfvb all the time."
+
+**Assistant interpretation:** Add a fast framebuffer-dump path that bypasses SDL/Xvfb so the visible display contents can be diagnosed directly, and use it immediately to determine whether the display buffer itself is white.
+
+**Inferred user intent:** Shorten the debug loop by replacing window-capture gymnastics with a direct snapshot tool, and use that tool to distinguish renderer bugs from VM/display-state bugs.
+
+**Commit (code):** ee69a09 — "Add framebuffer snapshot diagnostics"
+
+### What I did
+- Added [snapshot.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/snapshot.go) with:
+  - `SnapshotOptions`
+  - `SnapshotDiagnostic`
+  - `CaptureSnapshot`
+- Added [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-snapshot/main.go) so snapshots can be taken directly from the command line with no SDL dependency.
+- Reused the existing display unpacking path in [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) so the diagnostic PNG and SDL renderer are driven by the same bitmap interpretation.
+- Added ticket-local wrapper script [dump-display-snapshot.sh](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh).
+- Ran:
+
+```bash
+bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh
+CYCLES=2000000 bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh
+```
+
+- Captured diagnostic results:
+
+```text
+cycles=1000000 width=640 height=16 raster=40 blackPixels=0 whitePixels=10240 wordHash=bfe492baf731a0dbf6e1e050f5bc3fe8c1b049383194dcdf82f023bfa409f462
+cycles=2000000 width=640 height=16 raster=40 blackPixels=0 whitePixels=10240 wordHash=bfe492baf731a0dbf6e1e050f5bc3fe8c1b049383194dcdf82f023bfa409f462
+```
+
+- Saved PNG snapshots at:
+  - [display-1000000.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-1000000.png)
+  - [display-2000000.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-2000000.png)
+
+### Why
+- The screenshot script answered “what does the window look like?” but not “where does the whiteness originate?”
+- A direct framebuffer snapshot is the shortest path to the root distinction:
+  - if the raw display snapshot contains content, the SDL host renderer is wrong
+  - if the raw display snapshot is white, the bug is upstream in the VM/display state
+
+### What worked
+- The direct snapshot command builds and runs cleanly with `go test ./...` still green.
+- The snapshot path removes any dependence on `Xvfb` for framebuffer inspection.
+- The result is decisive:
+  - the SDL renderer is not inventing the white window
+  - the underlying designated display form is already white
+  - its shape is currently `640x16`, which is itself suspicious for a supposed full display surface
+
+### What didn't work
+- The current visible-state problem did not disappear by bypassing SDL. The raw framebuffer is still white.
+- That means the next bug is not in the host presentation shell.
+
+### What I learned
+- The new highest-value clue is not “all white”; it is “all white and only 16 rows tall.”
+- The hash staying identical between one million and two million cycles means the designated display form is not being meaningfully updated during the quiescent period.
+- The next investigation should target display/form initialization or the exact object registered by `beDisplay`, not SDL texture upload or Xvfb timing.
+
+### What was tricky to build
+- The main trick was keeping the diagnostic path honest by reusing the same bitmap unpacking logic as the SDL renderer. If the snapshot command had used a separate conversion routine, it would have been much less trustworthy as a renderer-vs-VM discriminator.
+
+### What warrants a second pair of eyes
+- Review whether `DisplaySnapshot` is looking at the correct object designated by `beDisplay`.
+- Review whether the `Form` field interpretation for `DisplayScreen` is fully correct in this image, especially given the observed `640x16` surface.
+
+### What should be done in the future
+- Investigate why the designated display form is `640x16` rather than an expected full screen extent.
+- Trace display initialization again with the new snapshot tool in hand.
+- Keep the direct snapshot command as the primary display diagnostic while the UI remains visually blank.
+
+### Code review instructions
+- Start in [snapshot.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/snapshot.go).
+- Then review [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-snapshot/main.go).
+- Then inspect the wrapper script [dump-display-snapshot.sh](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh).
+- Validate with:
+  - `go test ./...`
+  - `bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh`
+  - `CYCLES=2000000 bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh`
+
+### Technical details
+- The snapshot command reports:
+  - cycle count
+  - width
+  - height
+  - raster
+  - black pixel count
+  - white pixel count
+  - SHA-256 hash of the raw display words
+- Commands used:
+
+```bash
+go test ./...
+bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh
+CYCLES=2000000 bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh
+git commit -m "Add framebuffer snapshot diagnostics"
+```
+
 - Saved the resulting screenshot at:
   - [st80-ui.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png)
 

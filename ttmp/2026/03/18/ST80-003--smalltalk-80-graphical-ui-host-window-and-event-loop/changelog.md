@@ -24,3 +24,15 @@ Step 2: Added a ticket-local `Xvfb` screenshot script for `st80-ui`, ran it succ
 
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh — Reproducible off-screen UI capture script
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png — First captured UI image
+
+
+## 2026-03-18
+
+Step 3: Added a direct non-SDL framebuffer snapshot command and ticket-local wrapper script, proving that the designated display surface itself is `640x16`, all white, and unchanged between one million and two million cycles (commit ee69a09).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/snapshot.go — Direct framebuffer capture and PNG writing without SDL/Xvfb (commit ee69a09)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-snapshot/main.go — Command-line entrypoint for direct framebuffer snapshots (commit ee69a09)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh — Fast ticket-local snapshot wrapper
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-1000000.png — First direct framebuffer PNG
