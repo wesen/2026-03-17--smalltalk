@@ -12,4 +12,5 @@
 - [ ] Implement Blue Book `spaceOccupiedBy:` / deallocation semantics for non-pointer objects and compiled methods more faithfully
 - [ ] Decide whether heap compaction is needed immediately after OT reclamation or can wait until heap-space pressure is real
 - [ ] Diagnose the new post-GC `checkProcessSwitch` invalid `suspendedContext` frontier reached in off-screen runs
+- [x] Verify whether the later `checkProcessSwitch` invalid `suspendedContext` frontier actually occurs after GC or independently of it
 - [ ] Validate that the Ebiten UI survives past the previous `object table exhausted` panic during real desktop use

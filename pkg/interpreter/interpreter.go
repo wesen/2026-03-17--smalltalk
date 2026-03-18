@@ -2706,13 +2706,20 @@ func (interp *Interpreter) checkProcessSwitch() {
 		targetContext := interp.fetchPointer(SuspendedContextIndex, interp.newProcess)
 		if !interp.isMethodContext(targetContext) && !interp.isBlockContext(targetContext) {
 			panic(fmt.Sprintf(
-				"checkProcessSwitch: newProcess has invalid suspendedContext newProcess=%s fields=[%s] activeProcess=%s activeFields=[%s] scheduler=%s targetContext=%s",
+				"checkProcessSwitch: newProcess has invalid suspendedContext newProcess=%s fields=[%s] activeProcess=%s activeFields=[%s] scheduler=%s targetContext=%s gcCount=%d lastGC={roots=%d marked=%d freed=%d freeBefore=%d freeAfter=%d reusableBodies=%d}",
 				interp.oopSummary(interp.newProcess),
 				interp.oopFieldsSummary(interp.newProcess, 4),
 				interp.oopSummary(activeProcess),
 				interp.oopFieldsSummary(activeProcess, 4),
 				interp.oopSummary(scheduler),
 				interp.oopSummary(targetContext),
+				interp.garbageCollectionCount,
+				interp.lastGarbageCollection.RootsExamined,
+				interp.lastGarbageCollection.MarkedObjects,
+				interp.lastGarbageCollection.FreedObjects,
+				interp.lastGarbageCollection.FreeEntriesBefore,
+				interp.lastGarbageCollection.FreeEntriesAfter,
+				interp.lastGarbageCollection.ReusableBodies,
 			))
 		}
 		interp.newActiveContext(targetContext)

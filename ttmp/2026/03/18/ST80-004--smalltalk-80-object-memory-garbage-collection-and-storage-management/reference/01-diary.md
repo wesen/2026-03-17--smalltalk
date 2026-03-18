@@ -197,3 +197,92 @@ go run ./cmd/st80-exercise-snapshot -before-cycles 50000 -after-cycles 500000 -c
   - it does not yet implement Blue Book free-chunk lists
   - it does not yet compact heap segments
   - it does not yet rectify dynamic reference counts
+
+## Step 2: Prove Whether the Later Scheduler Frontier Is Actually GC-Related
+
+After the first-pass collector landed, the next question was whether the newly exposed `checkProcessSwitch` invalid-`suspendedContext` failure was caused by the collector or merely unmasked by it. That distinction matters. If the later crash happened immediately after collection, the GC root set or safe-point policy would be the obvious next target. If it happened before any collection at all, then the scheduler frontier belongs to the older interpreter/runtime thread and should not be blamed on the new storage-management work.
+
+This step was intentionally diagnostic and narrow. I added GC counters to the existing scheduler invalid-context panic, reran the off-screen exercise that had reached the later failure, and used that result to split the work correctly: the new first-pass GC is real and useful, but the later `checkProcessSwitch` corruption is independent.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue after the GC ticket kickoff instead of stopping at the first implementation slice, and keep separating real progress from false attribution.
+
+**Inferred user intent:** The user wants the debugging to continue until the next frontier is better understood, not merely documented.
+
+### What I did
+- Updated [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) so the `checkProcessSwitch` invalid-`suspendedContext` panic now includes:
+  - `gcCount`
+  - `lastGC.RootsExamined`
+  - `lastGC.MarkedObjects`
+  - `lastGC.FreedObjects`
+  - `lastGC.FreeEntriesBefore`
+  - `lastGC.FreeEntriesAfter`
+  - `lastGC.ReusableBodies`
+- Re-ran:
+
+```bash
+go test ./pkg/interpreter -run 'TestInstantiateClassWithPointersCollectsGarbageOnObjectTableExhaustion|TestPositiveIntegerValueOfLargePositiveInteger|TestPrimitiveMousePointReturnsConfiguredPoint|TestPrimitiveInputWordReturnsQueuedWord'
+go run ./cmd/st80-exercise-snapshot -before-cycles 50000 -after-cycles 500000 -click none -text '' -return=false
+```
+
+### Why
+- The first-pass GC moved the frontier, but “moved the frontier” is not the same as “caused the next crash.”
+- Without this diagnostic, it would be too easy to misattribute the next scheduler failure to the collector and waste time auditing roots when the real bug is elsewhere.
+
+### What worked
+- The focused interpreter tests stayed green after the diagnostic-only patch.
+- The off-screen exercise reproduced the later failure with the new GC-aware panic payload.
+- The crucial result was:
+
+```text
+gcCount=0 lastGC={roots=0 marked=0 freed=0 freeBefore=0 freeAfter=0 reusableBodies=0}
+```
+
+### What didn't work
+- The off-screen exercise still failed in:
+
+```text
+panic: checkProcessSwitch: newProcess has invalid suspendedContext ...
+```
+
+- So this step did not solve the scheduler/process frontier; it only localized responsibility correctly.
+
+### What I learned
+- The later scheduler corruption is not caused by the new first-pass collector, because the reproducer reaches it before any GC runs at all.
+- That means the GC ticket should keep tracking storage-management work, but the immediate next debugging move for that scheduler failure belongs to the interpreter/scheduler thread rather than to Chapter 30 reclaim logic.
+
+### What was tricky to build
+- The subtle part here was not code complexity; it was blame assignment. After landing a big subsystem change, every later crash is easy to over-credit to that change. The diagnostic had to answer that question directly instead of relying on intuition.
+
+### What warrants a second pair of eyes
+- [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) around the `checkProcessSwitch` panic payload:
+  - confirm the added GC counters are the right minimal diagnostic and do not distort control flow
+- The scheduler/process failure itself:
+  - it is now clearly a separate bug
+  - but it still blocks longer off-screen/UI validation
+
+### What should be done in the future
+- Move the `checkProcessSwitch` / invalid-`suspendedContext` frontier back into active interpreter debugging.
+- Keep the GC ticket focused on:
+  - root-set audit
+  - safe GC trigger points
+  - free-chunk / heap-management implementation
+- Revisit the GC ticket only when a reproducer actually hits `gcCount > 0` and then fails.
+
+### Code review instructions
+- Review [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) at the invalid-scheduler-context panic site.
+- Re-run:
+
+```bash
+go run ./cmd/st80-exercise-snapshot -before-cycles 50000 -after-cycles 500000 -click none -text '' -return=false
+```
+
+- Confirm that the panic payload still reports `gcCount=0`.
+
+### Technical details
+- This result does not invalidate the first-pass collector. It sharpens the project map:
+  - GC solved the earlier `object table exhausted` frontier
+  - the later scheduler frontier already existed independently

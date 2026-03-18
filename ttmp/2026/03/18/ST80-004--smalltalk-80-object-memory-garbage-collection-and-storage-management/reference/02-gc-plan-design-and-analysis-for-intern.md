@@ -220,6 +220,10 @@ That later failure suggests one of three things:
 2. GC is being triggered at a point where scheduler/process state is transiently inconsistent
 3. a later independent corruption path was already present but previously masked by OT exhaustion
 
+Update after the first diagnostic rerun:
+- the current off-screen reproducer reaches that scheduler failure with `gcCount=0`
+- so, for that reproducer at least, option 3 is the active interpretation right now
+
 ### Likely next debugging questions
 
 #### Question 1: Is the current root set sufficient?
