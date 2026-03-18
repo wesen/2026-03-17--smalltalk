@@ -592,3 +592,103 @@ go run ./cmd/st80 data/VirtualImage 700000
 go run ./cmd/st80 data/VirtualImage 800000
 git commit -m "Fix block/value context handling and string writes"
 ```
+
+## Step 5: Late BlockCopy Corruption Trace and Object-Space Growth Hypothesis
+
+This was a diagnostic-only continuation after the Step 4 commits. I did not land another runtime fix in this step because the first attempted repair for the new hypothesis destabilized early startup, which is the exact kind of half-proven change I do not want to preserve as the new baseline. The value of this step is the narrower explanation of the remaining long-run failure.
+
+The important new observation is that the bad `value:` receiver at cycle `708768` is not becoming invalid later inside `Number>>to:do:`. It is already invalid immediately after the preceding `blockCopy:` in `IdentityDictionary>>keyAtValue:ifAbsent:`. That shifts the next investigation from “why does the block break later?” to “why is `primitiveBlockCopy` producing an invalid object after enough runtime growth?”
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Keep pushing past the Step 4 checkpoint instead of stopping at the last clean commit, but avoid preserving broken experiments; keep the diary detailed enough that the next debugging pass starts from the newest hard evidence.
+
+**Inferred user intent:** Preserve momentum without letting the repo drift into an unstable state. It is better to record a failed hypothesis and revert it than to leave a speculative memory-management rewrite half-landed.
+
+**Commit (code):** 85de9e9 — "Trace late blockCopy corruption frontier"
+
+### What I did
+- Added a new skipped/manual diagnostic test in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestTraceAroundLateValueReceiverCorruption`
+- Used it to trace cycles `708752..708768` around the late `Recursive not understood error encountered`.
+- The trace showed:
+  - `IdentityDictionary>>keyAtValue:ifAbsent:` computes a `basicSize`
+  - pushes the active context
+  - sends `blockCopy:`
+  - then sends `to:do:` with the result of that `blockCopy:`
+- Crucially, I logged the object left on the stack immediately after `blockCopy:`:
+
+```text
+createdBlock oop=0xAA7E class=0x0002() wordLen=49169 field0=0x0002 field1=0x0023 field2=0x0001 field3=0x0003 field4=0x0023 field5=0xAA7C
+```
+
+- That is not a healthy freshly allocated block object:
+  - class OOP is already wrong (`0x0002`)
+  - word length is absurd (`49169`)
+  - the object looks like it is reading from the wrong place in object space
+- Based on that result, I tested a new hypothesis: OOP-slot recycling is not enough because object bodies still append forever, and the OTE segment/location encoding is eventually wrapping to the wrong object-space address.
+- I implemented a first pass at freed-body reuse in object memory, then immediately tested it with the same diagnostic.
+- That experiment failed early and reproducibly:
+
+```text
+panic at cycle=95 method=0x0362(<DisplayScreen class>displayExtent:): FetchPointer: OOP 0x02AC field 3: addr 259221 out of bounds
+```
+
+- I reverted that body-reuse experiment rather than leaving the tree in a broken state.
+- I kept only the skipped diagnostic test, because the trace itself is still valuable for the next pass.
+
+### Why
+- Step 4 narrowed the remaining failure to a bad `value:` receiver, but it was still unclear whether the receiver was corrupted during loop execution or already wrong when the loop started.
+- The new trace answers that directly: the receiver is already wrong at `blockCopy:` output time.
+- That points at allocation/addressing pressure, not the `Number>>to:do:` logic itself.
+- The failed body-reuse implementation still served a purpose: it tested the right layer, even though the first implementation was not safe.
+
+### What worked
+- I now have a precise late-runtime observation that was not available in Step 4:
+  - the `blockCopy:` result is invalid immediately after allocation
+- That makes the current next hypothesis much sharper:
+  - object-space growth / addressability pressure
+  - not just later block invocation corruption
+- The repo was returned to a clean, green baseline after the failed experiment was backed out.
+
+### What didn't work
+- The first object-body reuse implementation was not correct. It caused an early startup failure around cycle `95`, so I did not keep it.
+- I still do not have the final fix for the late `blockCopy:` failure.
+
+### What I learned
+- The remaining frontier is likely below the Smalltalk send/lookup layer.
+- Reusing only object-table entries delays one class of exhaustion but does not solve object-space growth.
+- The right next slice is probably a safer body reuse strategy for recycled method contexts, or a more principled memory-management pass that respects the Blue Book object-space addressing model.
+
+### What was tricky to build
+- The subtle part here was resisting the temptation to keep the first body-reuse patch just because it fit the hypothesis. It clearly regressed early startup, so it had to be backed out.
+- The trace had to capture the exact moment after `blockCopy:`; looking only at the later `value:` send made the failure appear much higher level than it really is.
+
+### What warrants a second pair of eyes
+- The next object-space reuse attempt should be reviewed carefully before landing, because it touches core allocator invariants.
+- The current evidence strongly suggests segment/location addressing pressure, but the next implementation needs validation against both:
+  - early startup correctness
+  - long-run late-runtime survival
+
+### What should be done in the future
+- Re-open `TestTraceAroundLateValueReceiverCorruption`.
+- Design a safer object-body reuse or memory-reclamation mechanism for recycled method contexts.
+- Revalidate immediately at two levels:
+  - early startup (`go test ./...`)
+  - late runtime (`go run ./cmd/st80 data/VirtualImage 800000`)
+
+### Code review instructions
+- Start with [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestTraceAroundLateValueReceiverCorruption`
+- Cross-check the trace against the Step 4 runtime changes in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go).
+- Reviewers should treat this step as evidence-gathering, not as a landed allocator fix.
+
+### Technical details
+- Commands used in this step:
+
+```bash
+go test ./pkg/interpreter -run TestTraceAroundLateValueReceiverCorruption -v
+go test ./... 
+```

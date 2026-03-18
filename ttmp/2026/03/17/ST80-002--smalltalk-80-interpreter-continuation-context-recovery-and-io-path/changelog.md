@@ -57,3 +57,12 @@ Step 4: Fixed block/value register handling, implemented String at:put:, added g
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Retained skipped diagnostics documenting the investigation path (commit 1a02e02)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go — MethodContext OOP-slot recycling support (commit 1a02e02)
 
+
+## 2026-03-18
+
+Step 5: Added a focused late-runtime diagnostic showing that the bad value: receiver is already invalid immediately after blockCopy:, pointing the next investigation at object-space growth / allocation corruption rather than later loop execution (commit 85de9e9).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Late blockCopy/value corruption trace retained in skipped/manual form (commit 85de9e9)
+

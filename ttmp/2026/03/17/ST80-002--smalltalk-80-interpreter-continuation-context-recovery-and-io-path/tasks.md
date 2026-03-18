@@ -8,6 +8,7 @@
 - [x] Trace the failing `LargePositiveInteger>>digitAt:put:` allocation/size path reached from `DisplayScreen class>>displayExtent:`
 - [ ] Diagnose the current late `value:` receiver corruption in `Behavior>>selectorAtMethod:setClass:` / `IdentityDictionary>>keyAtValue:ifAbsent:`
 - [ ] Revisit method-context recycling roots if the late `value:` failure is still caused by stale context/block OOP reuse
+- [ ] Design a safe method-context body reuse or equivalent memory-reclamation strategy; OOP-slot recycling alone does not stop late `blockCopy:` allocation corruption
 - [ ] Restore correct small-vs-large context allocation once metadata decoding and runtime stability are trustworthy
 - [ ] Implement the missing runtime pieces needed to reach a stable idle loop again (remaining primitives, I/O, display path)
 - [ ] Create a separate UI ticket only after the interpreter/runtime is stable enough to support display work
