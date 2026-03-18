@@ -85,3 +85,13 @@ Step 7: Reused freed context bodies safely, reserved tracked recycled context OO
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go — Exact-size body reuse, tracked retired bodies, and explicit segment-wrap guard (commit 6cb8881)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory_test.go — Focused allocator regressions for safe reuse and segment exhaustion (commit 6cb8881)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Defensive context-shape checks for undersized non-context objects (commit 6cb8881)
+
+
+## 2026-03-18
+
+Step 8: Implemented `perform:` / `perform:withArguments:`, `beCursor`, `cursorLink:`, and correct `asOop` / `asObject` semantics; added a hard `trace2` regression plus a two-million-cycle state probe, and moved the long-run notifier/debugger frontier down into `BitBlt>>copyBits` (commit d0346da).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Control/input/system primitive fixes for the long-run notifier path (commit d0346da)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — `trace2` selector regression and 2,000,000-cycle state probe (commit d0346da)

@@ -892,3 +892,122 @@ go run ./cmd/st80 data/VirtualImage 800000
 go run ./cmd/st80 data/VirtualImage 2000000
 git commit -m "Reuse freed context bodies safely"
 ```
+
+## Step 8: Long-Run Notifier Path Reduction via perform:, Cursor, and asOop Fixes
+
+After the allocator fix, the interpreter could survive long runs again, but the new question was whether it was *doing the right thing* at long run. I promoted the old two-million-cycle diagnostic into a real test and used its sender chain to inspect the live state instead of just asking whether the process crashed. That immediately showed the image was not idling; it was sitting inside the Smalltalk notifier/debugger path after `primitiveFailed`.
+
+What followed was a useful sequence of concrete primitive fixes rather than one big speculative refactor. First the two-million-cycle chain exposed the missing `perform:` primitives. After implementing those, the same chain moved to `Cursor>>beCursor`, then to `Cursor class>>cursorLink:`, then to a wrong `Object>>asOop` implementation. Fixing each one advanced the notifier/debugger frontier deeper until it finally bottomed out in `BitBlt>>copyBits`, which is a much more honest display-subsystem blocker.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 7)
+
+**Assistant interpretation:** Keep pushing beyond the allocator fix rather than stopping at “stable for 2,000,000 cycles,” identify the next concrete runtime gap, and keep the diary detailed and commit history granular while doing it.
+
+**Inferred user intent:** Convert long-run stability into actual semantic progress toward a usable image by removing the next primitive failures one by one, and preserve the reasoning trail for later review.
+
+**Commit (code):** d0346da — "Implement perform and cursor primitives"
+
+### What I did
+- Promoted two verification hooks in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestTrace2SendSelectorsMatch` is now a real regression using local `data/trace2`
+  - `TestLogStateAtTwoMillionCycles` is now a real long-run state probe rather than a skipped diagnostic
+- Added small interpreter-test helpers for:
+  - loading trace cycle lines
+  - running a chosen number of cycles with useful panic reporting
+  - comparing traced send selectors against `trace2`
+- Kept the `trace3` comparison only as a skipped diagnostic because the display/control path is still under active change and it was too brittle to serve as a hard gate right now.
+- Used the two-million-cycle state probe repeatedly and recorded the active sender chains after each fix.
+- Implemented `primitivePerform` in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) using the Blue Book stack rewrite:
+  - replace the perform selector with the real selector argument
+  - shift arguments down over the selector slot
+  - decrement `argumentCount`
+  - execute the looked-up method directly
+- Implemented `primitivePerformWithArgs`:
+  - validate the array argument
+  - push its elements as real arguments
+  - verify argument count against the looked-up method
+  - restore the original stack shape if validation fails
+- Added minimal but correct VM-side cursor bookkeeping:
+  - `primitiveBeCursor`
+  - `primitiveCursorLink`
+- Corrected storage-management primitives:
+  - `primitiveAsOop` now follows the Blue Book and succeeds only for non-SmallInteger receivers, pushing `receiver | 1`
+  - `primitiveAsObject` is now implemented as the inverse for valid object pointers
+- Re-ran:
+  - `go test ./pkg/interpreter -run 'TestTrace2SendSelectorsMatch|TestTrace3SendSelectorsMatch|TestLogStateAtTwoMillionCycles' -v`
+  - `go test ./...`
+
+### Why
+- “Survives two million cycles” was not enough. The sender chain showed the image was still going through its own debugger path, so the VM was mechanically stable but semantically incomplete.
+- The notifier/debugger chain gave a concrete work queue:
+  - fix the primitive at the bottom
+  - rerun two million cycles
+  - see what the next real missing piece is
+- This was a much better use of time than guessing at higher-level UI behavior because the image itself was naming the next unsupported primitive.
+
+### What worked
+- `trace2` is now part of the hard regression suite.
+- The two-million-cycle state probe became a reliable way to expose the next actual runtime gap.
+- The notifier/debugger path moved forward exactly as intended:
+  - first `perform:` / `perform:withArguments:`
+  - then `beCursor`
+  - then `cursorLink:`
+  - then `asOop`
+  - now `BitBlt>>copyBits`
+- `go test ./...` is green after this primitive cluster.
+
+### What didn't work
+- Trying to harden `trace3` into a strict regression was not worth it yet. The display/control path is still changing and the exact cycle/send alignment drifted under active work, so I demoted that check back to a skipped diagnostic rather than leaving a brittle failing test in the suite.
+- The image is still not idling at two million cycles. The state probe now shows a notifier/debugger chain rooted in `BitBlt>>copyBits`, so the display primitive frontier remains open.
+
+### What I learned
+- The two-million-cycle state probe is more valuable than a bare “no panic” assertion because it tells me *where* the image is living when it keeps running.
+- Some of the remaining blockers are true omissions (`perform:`, `beCursor`, `cursorLink:`), but others are incorrect partial implementations (`asOop`). The debugger path is useful because it distinguishes the two.
+- Once the primitive/debugger chain moved into `BitBlt`, the project crossed from “general interpreter/runtime missing pieces” into “real display subsystem work.”
+
+### What was tricky to build
+- `primitivePerformWithArgs` was the trickiest of the new primitive fixes because it must temporarily transform a `perform:withArguments:` send into a normal send without permanently mangling the original stack if validation fails.
+- `asOop` was easy to get superficially wrong. The Blue Book does not say “shift the OOP and push an integer.” It says that for a non-SmallInteger even OOP, the encoded SmallInteger result is obtained by setting the low bit. That distinction matters.
+- Keeping the trace/testing story honest was also tricky: `trace2` is stable enough to enforce, `trace3` is still diagnostic-only right now.
+
+### What warrants a second pair of eyes
+- `primitivePerformWithArgs` should be reviewed carefully for stack restoration on failure paths.
+- The current cursor primitives are intentionally minimal VM bookkeeping, not full host-integrated cursor behavior.
+- The next real correctness frontier is now `BitBlt>>copyBits`, which is much larger and more stateful than the primitives fixed in this step.
+
+### What should be done in the future
+- Implement `BitBlt>>copyBits` and the remaining display/input primitives exposed by the new long-run notifier path.
+- Revisit `trace3` only after the display/control path is stable enough that exact cycle alignment becomes meaningful again.
+- Keep using the two-million-cycle state probe after each display-path fix to verify that the notifier/debugger chain keeps moving forward instead of regressing.
+
+### Code review instructions
+- Start in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `primitivePerform`
+  - `primitivePerformWithArgs`
+  - `primitiveBeCursor`
+  - `primitiveCursorLink`
+  - storage-management cases `75` and `76`
+- Then review [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestTrace2SendSelectorsMatch`
+  - `TestLogStateAtTwoMillionCycles`
+  - helper functions `loadTraceSendLines`, `runInterpreterCycles`, `assertTraceSendSelectorsMatchUpTo`
+- Validate with:
+  - `go test ./...`
+  - `go test ./pkg/interpreter -run TestLogStateAtTwoMillionCycles -v`
+
+### Technical details
+- Successive long-run notifier/debugger bottoms during this step:
+  - `Object>>perform:` / `perform:withArguments:`
+  - `Cursor>>beCursor`
+  - `Cursor class>>cursorLink:`
+  - `Object>>asOop`
+  - current frontier: `BitBlt>>copyBits`
+- Commands used in this step:
+
+```bash
+go test ./pkg/interpreter -run 'TestTrace2SendSelectorsMatch|TestTrace3SendSelectorsMatch|TestLogStateAtTwoMillionCycles' -v
+go test ./...
+git commit -m "Implement perform and cursor primitives"
+```
