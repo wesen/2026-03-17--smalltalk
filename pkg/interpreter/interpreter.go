@@ -56,6 +56,44 @@ const (
 	ValueIndex = 1
 )
 
+// Form field indices.
+const (
+	FormBitsIndex   = 0
+	FormWidthIndex  = 1
+	FormHeightIndex = 2
+	FormOffsetIndex = 3
+)
+
+// Point field indices.
+const (
+	PointXIndex = 0
+	PointYIndex = 1
+)
+
+// Rectangle field indices.
+const (
+	RectangleOriginIndex = 0
+	RectangleCornerIndex = 1
+)
+
+// BitBlt field indices. These match the Blue Book BitBlt state vector.
+const (
+	BitBltDestFormIndex        = 0
+	BitBltSourceFormIndex      = 1
+	BitBltHalftoneFormIndex    = 2
+	BitBltCombinationRuleIndex = 3
+	BitBltDestXIndex           = 4
+	BitBltDestYIndex           = 5
+	BitBltWidthIndex           = 6
+	BitBltHeightIndex          = 7
+	BitBltClipXIndex           = 8
+	BitBltClipYIndex           = 9
+	BitBltClipWidthIndex       = 10
+	BitBltClipHeightIndex      = 11
+	BitBltSourceXIndex         = 12
+	BitBltSourceYIndex         = 13
+)
+
 // Method cache size (must be power of 2 * 4)
 const methodCacheSize = 1024
 
@@ -99,6 +137,11 @@ type Interpreter struct {
 
 	// Cycle counter for tracing
 	cycleCount uint64
+
+	// BitBlt diagnostics for long-run primitive failures.
+	lastCopyBitsFailure string
+	lastCopyBitsBitBlt  uint16
+	lastCopyBitsCycle   uint64
 }
 
 // Scheduling constants
@@ -160,6 +203,14 @@ func (interp *Interpreter) fetchClassOf(oop uint16) uint16 {
 
 func (interp *Interpreter) fetchByte(byteIndex int, ofObject uint16) byte {
 	return interp.memory.FetchByte(byteIndex, ofObject)
+}
+
+func (interp *Interpreter) fetchWord(wordIndex int, ofObject uint16) uint16 {
+	return interp.memory.FetchWord(wordIndex, ofObject)
+}
+
+func (interp *Interpreter) storeWord(wordIndex int, ofObject uint16, withValue uint16) {
+	interp.memory.StoreWord(wordIndex, ofObject, withValue)
 }
 
 func (interp *Interpreter) instantiateClassWithPointers(classPointer uint16, instanceSize int) uint16 {
@@ -1465,12 +1516,362 @@ func (interp *Interpreter) primitiveCursorLink() {
 	interp.push(rcvr)
 }
 
+type formWords struct {
+	bits   uint16
+	width  int
+	height int
+}
+
+func (interp *Interpreter) smallIntegerValueOf(oop uint16) (int, bool) {
+	if !om.IsSmallInteger(oop) {
+		return 0, false
+	}
+	return int(om.SmallIntegerValue(oop)), true
+}
+
+func (interp *Interpreter) pointValue(point uint16) (x int, y int, ok bool) {
+	if om.IsSmallInteger(point) || !interp.memory.ValidOop(point) || interp.fetchClassOf(point) != om.ClassPointPointer {
+		return 0, 0, false
+	}
+	x, ok = interp.smallIntegerValueOf(interp.fetchPointer(PointXIndex, point))
+	if !ok {
+		return 0, 0, false
+	}
+	y, ok = interp.smallIntegerValueOf(interp.fetchPointer(PointYIndex, point))
+	return x, y, ok
+}
+
+func (interp *Interpreter) rectangleValue(rectangle uint16) (left int, top int, width int, height int, ok bool) {
+	if om.IsSmallInteger(rectangle) || !interp.memory.ValidOop(rectangle) || interp.fetchClassOf(rectangle) != 0x0CB0 {
+		return 0, 0, 0, 0, false
+	}
+	origin := interp.fetchPointer(RectangleOriginIndex, rectangle)
+	corner := interp.fetchPointer(RectangleCornerIndex, rectangle)
+	ox, oy, ok := interp.pointValue(origin)
+	if !ok {
+		return 0, 0, 0, 0, false
+	}
+	cx, cy, ok := interp.pointValue(corner)
+	if !ok {
+		return 0, 0, 0, 0, false
+	}
+	return ox, oy, cx - ox, cy - oy, true
+}
+
+func (interp *Interpreter) formWordsOf(form uint16) (formWords, bool) {
+	if om.IsSmallInteger(form) || !interp.memory.ValidOop(form) {
+		return formWords{}, false
+	}
+	bits := interp.fetchPointer(FormBitsIndex, form)
+	width, ok := interp.smallIntegerValueOf(interp.fetchPointer(FormWidthIndex, form))
+	if !ok {
+		return formWords{}, false
+	}
+	height, ok := interp.smallIntegerValueOf(interp.fetchPointer(FormHeightIndex, form))
+	if !ok {
+		return formWords{}, false
+	}
+	if bits == om.NilPointer || !interp.memory.ValidOop(bits) {
+		return formWords{}, false
+	}
+	bitsClass := interp.fetchClassOf(bits)
+	if !interp.isWords(bitsClass) || interp.isPointers(bitsClass) {
+		return formWords{}, false
+	}
+	return formWords{bits: bits, width: width, height: height}, true
+}
+
+func rotate16(value uint16, skew int) uint16 {
+	if skew == 0 {
+		return value
+	}
+	return uint16((uint32(value)<<uint(skew) | uint32(value)>>uint(16-skew)) & 0xFFFF)
+}
+
+func mergeWord(rule int, sourceWord uint16, destinationWord uint16) uint16 {
+	allOnes := uint16(0xFFFF)
+	switch rule {
+	case 0:
+		return 0
+	case 1:
+		return sourceWord & destinationWord
+	case 2:
+		return sourceWord &^ destinationWord
+	case 3:
+		return sourceWord
+	case 4:
+		return (^sourceWord) & destinationWord
+	case 5:
+		return destinationWord
+	case 6:
+		return sourceWord ^ destinationWord
+	case 7:
+		return sourceWord | destinationWord
+	case 8:
+		return (^sourceWord) & (^destinationWord)
+	case 9:
+		return (^sourceWord) ^ destinationWord
+	case 10:
+		return ^destinationWord
+	case 11:
+		return sourceWord | (^destinationWord)
+	case 12:
+		return ^sourceWord
+	case 13:
+		return (^sourceWord) | destinationWord
+	case 14:
+		return (^sourceWord) | (^destinationWord)
+	case 15:
+		return allOnes
+	default:
+		return destinationWord
+	}
+}
+
+func (interp *Interpreter) copyBitsFailure(bitBlt uint16, format string, args ...any) bool {
+	interp.lastCopyBitsBitBlt = bitBlt
+	interp.lastCopyBitsCycle = interp.cycleCount
+	interp.lastCopyBitsFailure = fmt.Sprintf(format, args...)
+	return false
+}
+
+func (interp *Interpreter) doPrimitiveCopyBits(bitBlt uint16) bool {
+	destForm := interp.fetchPointer(BitBltDestFormIndex, bitBlt)
+	dest, ok := interp.formWordsOf(destForm)
+	if !ok || dest.width <= 0 || dest.height <= 0 {
+		return interp.copyBitsFailure(bitBlt, "invalid dest form oop=0x%04X ok=%v width=%d height=%d", destForm, ok, dest.width, dest.height)
+	}
+
+	sourceForm := interp.fetchPointer(BitBltSourceFormIndex, bitBlt)
+	var source formWords
+	hasSource := sourceForm != om.NilPointer
+	if hasSource {
+		source, ok = interp.formWordsOf(sourceForm)
+		if !ok {
+			return interp.copyBitsFailure(bitBlt, "invalid source form oop=0x%04X", sourceForm)
+		}
+	}
+
+	halftoneForm := interp.fetchPointer(BitBltHalftoneFormIndex, bitBlt)
+	var halftone formWords
+	hasHalftone := halftoneForm != om.NilPointer
+	if hasHalftone {
+		halftone, ok = interp.formWordsOf(halftoneForm)
+		if !ok {
+			return interp.copyBitsFailure(bitBlt, "invalid halftone form oop=0x%04X", halftoneForm)
+		}
+	}
+
+	intField := func(index int) (int, bool) {
+		return interp.smallIntegerValueOf(interp.fetchPointer(index, bitBlt))
+	}
+
+	combinationRule, ok := intField(BitBltCombinationRuleIndex)
+	if !ok || combinationRule < 0 || combinationRule > 15 {
+		return interp.copyBitsFailure(bitBlt, "invalid combination rule oop=0x%04X decodedOk=%v value=%d", interp.fetchPointer(BitBltCombinationRuleIndex, bitBlt), ok, combinationRule)
+	}
+	destX, ok := intField(BitBltDestXIndex)
+	if !ok {
+		return interp.copyBitsFailure(bitBlt, "invalid destX oop=0x%04X", interp.fetchPointer(BitBltDestXIndex, bitBlt))
+	}
+	destY, ok := intField(BitBltDestYIndex)
+	if !ok {
+		return interp.copyBitsFailure(bitBlt, "invalid destY oop=0x%04X", interp.fetchPointer(BitBltDestYIndex, bitBlt))
+	}
+	width, ok := intField(BitBltWidthIndex)
+	if !ok {
+		return interp.copyBitsFailure(bitBlt, "invalid width oop=0x%04X", interp.fetchPointer(BitBltWidthIndex, bitBlt))
+	}
+	height, ok := intField(BitBltHeightIndex)
+	if !ok {
+		return interp.copyBitsFailure(bitBlt, "invalid height oop=0x%04X", interp.fetchPointer(BitBltHeightIndex, bitBlt))
+	}
+	clipX, ok := intField(BitBltClipXIndex)
+	if !ok {
+		return interp.copyBitsFailure(bitBlt, "invalid clipX oop=0x%04X", interp.fetchPointer(BitBltClipXIndex, bitBlt))
+	}
+	clipY, ok := intField(BitBltClipYIndex)
+	if !ok {
+		return interp.copyBitsFailure(bitBlt, "invalid clipY oop=0x%04X", interp.fetchPointer(BitBltClipYIndex, bitBlt))
+	}
+	clipWidth, ok := intField(BitBltClipWidthIndex)
+	if !ok {
+		return interp.copyBitsFailure(bitBlt, "invalid clipWidth oop=0x%04X", interp.fetchPointer(BitBltClipWidthIndex, bitBlt))
+	}
+	clipHeight, ok := intField(BitBltClipHeightIndex)
+	if !ok {
+		return interp.copyBitsFailure(bitBlt, "invalid clipHeight oop=0x%04X", interp.fetchPointer(BitBltClipHeightIndex, bitBlt))
+	}
+	sourceX, ok := intField(BitBltSourceXIndex)
+	if !ok {
+		return interp.copyBitsFailure(bitBlt, "invalid sourceX oop=0x%04X", interp.fetchPointer(BitBltSourceXIndex, bitBlt))
+	}
+	sourceY, ok := intField(BitBltSourceYIndex)
+	if !ok {
+		return interp.copyBitsFailure(bitBlt, "invalid sourceY oop=0x%04X", interp.fetchPointer(BitBltSourceYIndex, bitBlt))
+	}
+
+	sx, sy := sourceX, sourceY
+	dx, dy := destX, destY
+	w, h := width, height
+	if dx < clipX {
+		sx += clipX - dx
+		w -= clipX - dx
+		dx = clipX
+	}
+	if dx+w > clipX+clipWidth {
+		w -= (dx + w) - (clipX + clipWidth)
+	}
+	if dy < clipY {
+		sy += clipY - dy
+		h -= clipY - dy
+		dy = clipY
+	}
+	if dy+h > clipY+clipHeight {
+		h -= (dy + h) - (clipY + clipHeight)
+	}
+	if hasSource {
+		if sx < 0 {
+			dx -= sx
+			w += sx
+			sx = 0
+		}
+		if sx+w > source.width {
+			w -= (sx + w) - source.width
+		}
+		if sy < 0 {
+			dy -= sy
+			h += sy
+			sy = 0
+		}
+		if sy+h > source.height {
+			h -= (sy + h) - source.height
+		}
+	}
+	if w <= 0 || h <= 0 {
+		return true
+	}
+
+	rightMasks := [...]uint16{0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F, 0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF, 0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF}
+	allOnes := uint16(0xFFFF)
+
+	destRaster := (dest.width-1)/16 + 1
+	sourceRaster := 0
+	if hasSource {
+		sourceRaster = (source.width-1)/16 + 1
+	}
+	skew := (sx - dx) & 15
+	startBits := 16 - (dx & 15)
+	mask1 := rightMasks[startBits]
+	endBits := 15 - ((dx + w - 1) & 15)
+	mask2 := ^rightMasks[endBits+1]
+	var skewMask uint16
+	if skew == 0 {
+		skewMask = 0
+	} else {
+		skewMask = rightMasks[16-skew]
+	}
+	nWords := 1
+	if w < startBits {
+		mask1 &= mask2
+		mask2 = 0
+	} else {
+		nWords = (w-startBits-1)/16 + 2
+	}
+
+	hDir, vDir := 1, 1
+	if hasSource && source.bits == dest.bits && dy >= sy {
+		if dy > sy {
+			vDir = -1
+			sy += h - 1
+			dy += h - 1
+		} else if dx > sx {
+			hDir = -1
+			sx += w - 1
+			dx += w - 1
+			skewMask = ^skewMask
+			mask1, mask2 = mask2, mask1
+		}
+	}
+
+	preload := hasSource && skew != 0 && skew <= (sx&15)
+	if hDir < 0 {
+		preload = !preload
+	}
+	sourceIndex := sy*sourceRaster + sx/16
+	destIndex := dy*destRaster + dx/16
+	preloadWords := 0
+	if preload {
+		preloadWords = 1
+	}
+	sourceDelta := sourceRaster*vDir - ((nWords + preloadWords) * hDir)
+	destDelta := destRaster*vDir - (nWords * hDir)
+	halftoneY := dy
+
+	for i := 0; i < h; i++ {
+		halftoneWord := allOnes
+		if hasHalftone {
+			row := halftoneY & 15
+			if row >= interp.fetchWordLengthOf(halftone.bits) {
+				return interp.copyBitsFailure(bitBlt, "halftone row out of range row=%d wordLen=%d halftoneBits=0x%04X", row, interp.fetchWordLengthOf(halftone.bits), halftone.bits)
+			}
+			halftoneWord = interp.fetchWord(row, halftone.bits)
+			halftoneY += vDir
+		}
+
+		skewWord := halftoneWord
+		prevWord := uint16(0)
+		lineSourceIndex := sourceIndex
+		lineDestIndex := destIndex
+		if preload {
+			if !hasSource || lineSourceIndex < 0 || lineSourceIndex >= interp.fetchWordLengthOf(source.bits) {
+				return interp.copyBitsFailure(bitBlt, "preload source index out of range index=%d wordLen=%d", lineSourceIndex, interp.fetchWordLengthOf(source.bits))
+			}
+			prevWord = interp.fetchWord(lineSourceIndex, source.bits)
+			lineSourceIndex += hDir
+		}
+
+		mergeMask := mask1
+		for word := 0; word < nWords; word++ {
+			if hasSource {
+				if lineSourceIndex < 0 || lineSourceIndex >= interp.fetchWordLengthOf(source.bits) {
+					return interp.copyBitsFailure(bitBlt, "source index out of range line=%d word=%d index=%d wordLen=%d sx=%d sy=%d dx=%d dy=%d w=%d h=%d nWords=%d preload=%v hDir=%d vDir=%d",
+						i, word, lineSourceIndex, interp.fetchWordLengthOf(source.bits), sx, sy, dx, dy, w, h, nWords, preload, hDir, vDir)
+				}
+				prevWord &= skewMask
+				thisWord := interp.fetchWord(lineSourceIndex, source.bits)
+				skewWord = prevWord | (thisWord &^ skewMask)
+				prevWord = thisWord
+				skewWord = rotate16(skewWord, skew)
+			}
+			if lineDestIndex < 0 || lineDestIndex >= interp.fetchWordLengthOf(dest.bits) {
+				return interp.copyBitsFailure(bitBlt, "dest index out of range line=%d word=%d index=%d wordLen=%d sx=%d sy=%d dx=%d dy=%d w=%d h=%d nWords=%d preload=%v hDir=%d vDir=%d",
+					i, word, lineDestIndex, interp.fetchWordLengthOf(dest.bits), sx, sy, dx, dy, w, h, nWords, preload, hDir, vDir)
+			}
+			destWord := interp.fetchWord(lineDestIndex, dest.bits)
+			merge := mergeWord(combinationRule, skewWord&halftoneWord, destWord)
+			out := (mergeMask & merge) | (^mergeMask & destWord)
+			interp.storeWord(lineDestIndex, dest.bits, out)
+			lineSourceIndex += hDir
+			lineDestIndex += hDir
+			if word == nWords-2 {
+				mergeMask = mask2
+			} else {
+				mergeMask = allOnes
+			}
+		}
+		sourceIndex += sourceDelta
+		destIndex += destDelta
+	}
+
+	return true
+}
+
 func (interp *Interpreter) primitiveCopyBits() {
-	// Temporary headless implementation: report success and return the BitBlt
-	// receiver so the image can continue past display/update paths while the
-	// real BitBlt engine is still pending.
-	rcvr := interp.popStack()
-	interp.push(rcvr)
+	rcvr := interp.stackTop()
+	if !interp.doPrimitiveCopyBits(rcvr) {
+		interp.primitiveFail()
+	}
 }
 
 // ---- Process scheduling (Blue Book p.641-647) ----

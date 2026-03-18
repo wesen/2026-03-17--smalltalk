@@ -568,6 +568,10 @@ func TestLogStateAtTwoMillionCycles(t *testing.T) {
 	myList := interp.fetchPointer(MyListIndex, activeProcess)
 	t.Logf("scheduler=0x%04X activeProcess=0x%04X suspendedContext=0x%04X priority=%d myList=0x%04X",
 		scheduler, activeProcess, suspendedContext, om.SmallIntegerValue(priority), myList)
+	if interp.lastCopyBitsFailure != "" {
+		t.Logf("lastCopyBitsFailure cycle=%d bitBlt=0x%04X detail=%s",
+			interp.lastCopyBitsCycle, interp.lastCopyBitsBitBlt, interp.lastCopyBitsFailure)
+	}
 
 	ctx := interp.activeContext
 	for depth := 0; depth < 20 && ctx != om.NilPointer; depth++ {
@@ -736,6 +740,116 @@ func TestDumpLargeIntegerFailureMethods(t *testing.T) {
 			t.Logf("  byte[%d]=%d", i, interp.fetchByte(i, method))
 		}
 	}
+}
+
+func TestDumpGraphicsClassLayouts(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	classNames := loadOopNames(t, "data/class.oops")
+	interp := loadTestInterpreter(t)
+
+	classes := []uint16{
+		om.ClassPointPointer,
+		0x0CB0, // Rectangle
+		0x0C52, // Form
+		0x1154, // BitBlt
+		0x0C54, // DisplayMedium
+		0x001E, // DisplayBitmap
+	}
+	for _, class := range classes {
+		t.Logf("class=0x%04X(%s) fixedFields=%d pointers=%v words=%v indexable=%v spec=0x%04X",
+			class, classNames[class], interp.fixedFieldsOf(class), interp.isPointers(class), interp.isWords(class),
+			interp.isIndexable(class), interp.instanceSpecificationOf(class))
+	}
+}
+
+func TestDumpGraphicsMethodHeaders(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	methods := []uint16{
+		0x1148, // Form>>bits
+		0x113E, // Form>>offset
+		0x170C, // Form>>extent:offset:bits:
+		0x137C, // BitBlt class>>destForm:sourceForm:halftoneForm:combinationRule:destOrigin:sourceOrigin:extent:clipRect:
+		0x13F0, // BitBlt>>setDestForm:sourceForm:halftoneForm:combinationRule:destOrigin:sourceOrigin:extent:clipRect:
+		0x13EC, // BitBlt>>copyBits
+		0x13BC, // BitBlt>>copyBitsAgain
+		0x13B8, // BitBlt>>clipRect
+		0x13BA, // BitBlt>>destForm:
+		0x13E6, // BitBlt>>sourceForm:
+	}
+	for _, method := range methods {
+		t.Logf("method=0x%04X(%s) flag=%d field=%d literals=%d temps=%d args=%d bytes=%d initialIP=%d",
+			method, methodNames[method], interp.flagValueOf(method), interp.fieldIndexOf(method),
+			interp.literalCountOf(method), interp.temporaryCountOf(method),
+			interp.argumentCountOf(method), interp.memory.FetchByteLengthOf(method), interp.initialInstructionPointerOfMethod(method))
+		for i := 0; i < 32 && i < interp.memory.FetchByteLengthOf(method); i++ {
+			t.Logf("  byte[%d]=%d", i, interp.fetchByte(i, method))
+		}
+	}
+}
+
+func TestDumpFirstCopyBitsFailureState(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	classNames := loadOopNames(t, "data/class.oops")
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	for interp.cycleCount = 0; interp.cycleCount < 2000000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+		if interp.lastCopyBitsFailure != "" {
+			break
+		}
+	}
+	if interp.lastCopyBitsFailure == "" {
+		t.Logf("no copyBits failure found by cycle %d", interp.cycleCount)
+		return
+	}
+
+	bitBlt := interp.lastCopyBitsBitBlt
+	destForm := interp.fetchPointer(BitBltDestFormIndex, bitBlt)
+	sourceForm := interp.fetchPointer(BitBltSourceFormIndex, bitBlt)
+	halftoneForm := interp.fetchPointer(BitBltHalftoneFormIndex, bitBlt)
+	t.Logf("failure cycle=%d activeMethod=0x%04X(%s) bitBlt=0x%04X detail=%s",
+		interp.lastCopyBitsCycle, interp.method, methodNames[interp.method], bitBlt, interp.lastCopyBitsFailure)
+	t.Logf("bitBlt class=0x%04X(%s) wordLen=%d", interp.fetchClassOf(bitBlt), classNames[interp.fetchClassOf(bitBlt)], interp.fetchWordLengthOf(bitBlt))
+	for i := 0; i < interp.fetchWordLengthOf(bitBlt); i++ {
+		t.Logf("bitBlt field[%d]=0x%04X", i, interp.fetchPointer(i, bitBlt))
+	}
+
+	logForm := func(label string, form uint16) {
+		if form == om.NilPointer {
+			t.Logf("%s=nil", label)
+			return
+		}
+		class := interp.fetchClassOf(form)
+		t.Logf("%s=0x%04X class=0x%04X(%s) wordLen=%d", label, form, class, classNames[class], interp.fetchWordLengthOf(form))
+		for i := 0; i < interp.fetchWordLengthOf(form); i++ {
+			t.Logf("%s field[%d]=0x%04X", label, i, interp.fetchPointer(i, form))
+		}
+		if interp.fetchWordLengthOf(form) > 0 {
+			bits := interp.fetchPointer(FormBitsIndex, form)
+			if bits != om.NilPointer && interp.memory.ValidOop(bits) {
+				bitsClass := interp.fetchClassOf(bits)
+				t.Logf("%s bits=0x%04X class=0x%04X(%s) wordLen=%d", label, bits, bitsClass, classNames[bitsClass], interp.fetchWordLengthOf(bits))
+			} else {
+				t.Logf("%s bits=0x%04X valid=%v", label, bits, interp.memory.ValidOop(bits))
+			}
+		}
+	}
+
+	logForm("destForm", destForm)
+	logForm("sourceForm", sourceForm)
+	logForm("halftoneForm", halftoneForm)
 }
 
 func TestDetectInvalidActiveContextAtScale(t *testing.T) {
