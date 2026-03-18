@@ -17,7 +17,7 @@ RelatedFiles:
       Note: Regression test for startup execution past the former context overflow (commit dd8e4ba)
 ExternalSources: []
 Summary: Continuation diary for finishing the Smalltalk-80 VM after the initial handoff ticket.
-LastUpdated: 2026-03-17T23:58:00-04:00
+LastUpdated: 2026-03-18T00:18:00-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
@@ -303,4 +303,135 @@ git commit -m "Fix method metadata and cache decoding"
 ```text
 Smalltalk: (((messageSelector bitAnd: class) bitAnd: 16rFF) bitShift: 2) + 1
 Go (0-based): ((int(messageSelector) & int(class)) & 0xFF) << 2
+```
+
+## Step 3: Implemented `become:`, Added Typed Allocation, and Exposed the LargePositiveInteger Frontier
+
+Once the cache bug was fixed, the VM stopped crashing and started running long enough to show a more honest sender chain. That chain was not a neutral scheduler loop: it was still buried in `Object>>primitiveFailed`, first for `Object>>become:` and then, after that was fixed, for `DisplayScreen>>beDisplay`. This was the first point in the session where missing primitives and incorrect object creation were clearly blocking forward progress more than message dispatch itself.
+
+The key observation in this step was that the next post-`beDisplay` failure involved a `LargePositiveInteger` that had previously been allocated with pointer-object metadata. That is a structural VM bug, not a Smalltalk-side arithmetic bug. I corrected `become:` according to the Blue Book object-table swap semantics, implemented a minimal `beDisplay`, and then changed storage-management allocation so `new` / `new:` respect pointer/word/byte class layout. That moved the system again and gave a tighter new target: a `LargePositiveInteger>>digitAt:put:` subscript mismatch during `DisplayScreen class>>displayExtent:`.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Keep pushing the runtime forward instead of stopping at “it runs longer now,” and keep documenting each newly exposed VM boundary as its own step.
+
+**Inferred user intent:** Eliminate blockers in dependency order, with enough written detail that later contributors can pick up the next primitive/object-memory slice directly from the diary.
+
+**Commit (code):** 6b32314 — "Implement become and typed object allocation"
+
+### What I did
+- Used a 2,000,000-cycle sender-chain snapshot to identify the next failing primitive after the cache fix:
+  - first `Object>>become:`
+  - then `DisplayScreen>>beDisplay`
+- Pulled the Blue Book definition of `primitiveBecome` and `swapPointersOf:and:`:
+  - receiver and argument must not be SmallIntegers
+  - object memory swaps segment, location, pointer-bit, and odd-bit
+  - identity-level metadata such as reference counts stays attached to the original OOPs
+- Implemented `ObjectMemory.SwapPointersOf(...)` to preserve count/free metadata while swapping the body/location-bearing parts of the OTE.
+- Implemented primitive 72 (`become:`) on top of that object-memory operation.
+- Implemented primitive 102 (`beDisplay`) as VM-side display designation plus self return.
+- Added a diagnostic to stop at the first `errorSubscriptBounds:` after the display path moved forward.
+- That diagnostic showed the next concrete problem:
+
+```text
+cycle=686 activeContext=0x62C4 method=0x78EA(<Object>errorSubscriptBounds:) receiver=0x502A ip=10 sp=6 bytecode=224
+at:put: receiver=0x502A class=0x001C indexArg=0x0009 valueArg=0x0047 wordLen=2 byteLen=3
+at:put: receiver pointerFields=false oddLength=true segment=3 location=64202
+```
+
+- Before the typed-allocation fix, that same `LargePositiveInteger` receiver had `pointerFields=true`, which was definitively wrong for a digit object.
+- Read the Blue Book storage-management primitive rules and object-creation routines:
+  - `instantiateClass:withPointers:`
+  - `instantiateClass:withWords:`
+  - `instantiateClass:withBytes:`
+- Added word and byte allocation paths to object memory and updated primitives 70/71 so:
+  - pointer classes use pointer allocation
+  - non-pointer word classes use word allocation
+  - byte-indexable classes use byte allocation with correct odd-length handling
+- Re-ran:
+  - `go test ./...`
+  - `go run ./cmd/st80 data/VirtualImage 2000000`
+
+### Why
+- `become:` and `beDisplay` were on the real sender chain, so implementing them was better than speculating about other missing primitives.
+- The `LargePositiveInteger` pointer-metadata mismatch was a strong sign that generic object allocation was still wrong for non-pointer classes.
+- The Blue Book is explicit that `new:` must branch to pointer/word/byte allocation based on the class instance specification, so the VM needed to match that before any byte-object-heavy subsystems (large integers, strings, bitmaps, display forms) could be trusted.
+
+### What worked
+- `become:` moved the sender chain forward exactly as hoped: once it existed, the next failed primitive became visible instead of being masked.
+- `beDisplay` removed the immediate primitive-failure loop around `DisplayScreen`.
+- Typed allocation fixed an objectively wrong state:
+  - the failing `LargePositiveInteger` is now allocated as `pointerFields=false`
+  - odd byte lengths are now represented with `oddLength=true`
+- The test suite still passes after the object-memory and interpreter allocation changes.
+
+### What didn't work
+- Typed allocation did not eliminate the next `LargePositiveInteger>>digitAt:put:` error by itself. It changed the failure from “wrong object kind” to a more precise size/index mismatch.
+- The current failing `LargePositiveInteger` has:
+  - `byteLen=3`
+  - attempted `indexArg=9`
+
+That means there is still deeper work to do in the LargePositiveInteger path. The runtime is healthier, but not done.
+
+### What I learned
+- Missing primitives and object-allocation mistakes can masquerade as generic “the image is looping” symptoms unless you capture a deep sender chain.
+- The VM had two separate problems in the same area:
+  - `become:` missing entirely
+  - byte/word objects being allocated as pointer objects
+- Large integers, strings, bitmaps, and display forms all depend on correct byte/word allocation, so fixing allocation is infrastructure, not a special-case workaround.
+
+### What was tricky to build
+- The subtle part of `swapPointersOf:` is that not every OT field should move. The Blue Book swap routine moves the fields that make an OOP refer to a different object body (segment, location, pointer bit, odd bit) but does not move identity-level bookkeeping such as reference counts. Swapping whole entries would have been easy to code and wrong.
+- The allocation bug was tricky because “everything is a pointer object” can keep the system limping along for quite a while. It does not always fail immediately; it fails later when byte- or word-specific behavior becomes important.
+
+### What warrants a second pair of eyes
+- The LargePositiveInteger path still needs focused review. The current mismatch suggests either:
+  - incorrect requested size during allocation
+  - a still-wrong interpretation of byte counts vs digit counts
+  - a LargePositiveInteger arithmetic path that now reaches deeper than before and exposes another VM bug
+- The new object-memory allocation methods should be reviewed for consistency with any future GC/reference-counting work.
+
+### What should be done in the future
+- Trace the allocation site of the failing `LargePositiveInteger` to determine why a 3-byte object is later indexed at 9.
+- Investigate whether the remaining blocker is in:
+  - `LargePositiveInteger` fallback arithmetic
+  - byte-object sizing semantics
+  - an unimplemented LargePositiveInteger primitive that the image expects for this path
+- After the integer/digit path is stable, continue down the display/input primitive chain.
+- Only once the runtime can move beyond the startup/quit/display path should the separate graphical UI ticket be created.
+
+### Code review instructions
+- Start with `pkg/objectmemory/objectmemory.go`:
+  - `SwapPointersOf`
+  - `InstantiateClassWithWords`
+  - `InstantiateClassWithBytes`
+- Then review `pkg/interpreter/interpreter.go`:
+  - primitive 72 (`become:`)
+  - primitive 102 (`beDisplay`)
+  - storage primitives 70/71 (`new` / `new:`)
+- Use the existing diagnostics in `pkg/interpreter/interpreter_test.go` to re-check the current LargePositiveInteger frontier if needed.
+- Validate with:
+  - `go test ./...`
+  - `go run ./cmd/st80 data/VirtualImage 2000000`
+  - `go test ./pkg/interpreter -run TestFindFirstSubscriptError -v`
+
+### Technical details
+- Blue Book references used in this step:
+  - `primitiveBecome` and `swapPointersOf:and:`
+  - `primitiveNew` / `primitiveNewWithArg`
+  - `instantiateClass:withPointers:`
+  - `instantiateClass:withWords:`
+  - `instantiateClass:withBytes:`
+- Commands used:
+
+```bash
+pdftotext smalltalk-Bluebook.pdf - | sed -n '36500,36530p'
+pdftotext smalltalk-Bluebook.pdf - | sed -n '39228,39250p'
+go test ./pkg/interpreter -run TestLogStateAtTwoMillionCycles -v
+go test ./pkg/interpreter -run TestFindFirstSubscriptError -v
+go test ./...
+go run ./cmd/st80 data/VirtualImage 2000000
+git commit -m "Implement become and typed object allocation"
 ```

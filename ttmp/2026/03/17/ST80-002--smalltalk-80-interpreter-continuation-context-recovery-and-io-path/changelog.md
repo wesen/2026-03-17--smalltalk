@@ -35,3 +35,14 @@ Step 2: Fixed the Blue-Book method cache hash translation so cached selector/cla
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Regression and retained diagnostics for cache corruption investigation
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/reference/03-method-cache-hash-collision-writeup.md — Intern-facing explanation of the cache bug and validation steps
 
+
+## 2026-03-17
+
+Step 3: Implemented become:, added typed pointer/word/byte allocation for new/new:, and moved the runtime frontier to a LargePositiveInteger digitAt:put: size/index mismatch during DisplayScreen setup (commit 6b32314).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — become:
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go — swapPointersOf plus typed allocation helpers
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/reference/01-diary.md — Step 3 investigation and outcomes
+
