@@ -5,6 +5,7 @@ package interpreter
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	om "github.com/wesen/st80/pkg/objectmemory"
 )
@@ -162,6 +163,12 @@ type Interpreter struct {
 	haveLastInputEventTick bool
 	haveLastMouseEventTick bool
 
+	timeNow           func() time.Time
+	tickStart         time.Time
+	timerSemaphore    uint16
+	timerTickDeadline uint32
+	timerActive       bool
+
 	// Cycle counter for tracing
 	cycleCount uint64
 
@@ -227,9 +234,12 @@ const (
 
 // New creates a new Interpreter with the given object memory.
 func New(memory *om.ObjectMemory) *Interpreter {
+	tickStart := time.Now()
 	return &Interpreter{
-		memory:  memory,
-		success: true,
+		memory:    memory,
+		success:   true,
+		timeNow:   time.Now,
+		tickStart: tickStart,
 	}
 }
 
@@ -1653,11 +1663,11 @@ func (interp *Interpreter) dispatchInputOutputPrimitives() {
 	case 102: // beDisplay
 		interp.primitiveBeDisplay()
 	case 98: // secondClockInto:
-		interp.primitiveFail()
+		interp.primitiveSecondClockInto()
 	case 99: // millisecondClockInto:
-		interp.primitiveFail()
+		interp.primitiveMillisecondClockInto()
 	case 100: // signal:atMilliseconds:
-		interp.primitiveFail()
+		interp.primitiveSignalAtMilliseconds()
 	default:
 		interp.primitiveFail()
 	}
@@ -1742,6 +1752,101 @@ func (interp *Interpreter) primitiveInputWord() {
 		return
 	}
 	interp.push(interp.positive16BitIntegerFor(int(word)))
+}
+
+func (interp *Interpreter) isByteIndexableWithLengthAtLeast(oop uint16, byteLength int) bool {
+	if om.IsSmallInteger(oop) || !interp.memory.ValidOop(oop) {
+		return false
+	}
+	class := interp.fetchClassOf(oop)
+	if interp.isPointers(class) {
+		return false
+	}
+	return interp.memory.FetchByteLengthOf(oop) >= byteLength
+}
+
+func (interp *Interpreter) storeUint32LE(oop uint16, value uint32) {
+	interp.memory.StoreByte(0, oop, byte(value))
+	interp.memory.StoreByte(1, oop, byte(value>>8))
+	interp.memory.StoreByte(2, oop, byte(value>>16))
+	interp.memory.StoreByte(3, oop, byte(value>>24))
+}
+
+func (interp *Interpreter) fetchUint32LE(oop uint16) (uint32, bool) {
+	if !interp.isByteIndexableWithLengthAtLeast(oop, 4) {
+		return 0, false
+	}
+	return uint32(interp.memory.FetchByte(0, oop)) |
+		uint32(interp.memory.FetchByte(1, oop))<<8 |
+		uint32(interp.memory.FetchByte(2, oop))<<16 |
+		uint32(interp.memory.FetchByte(3, oop))<<24, true
+}
+
+func (interp *Interpreter) currentMillisecondClock() uint32 {
+	now := interp.timeNow()
+	if now.Before(interp.tickStart) {
+		return 0
+	}
+	return uint32(now.Sub(interp.tickStart).Milliseconds())
+}
+
+func (interp *Interpreter) currentSecondClock() uint32 {
+	epoch1901 := time.Date(1901, 1, 1, 0, 0, 0, 0, time.UTC)
+	now := interp.timeNow().UTC()
+	if now.Before(epoch1901) {
+		return 0
+	}
+	return uint32(now.Unix() - epoch1901.Unix())
+}
+
+func (interp *Interpreter) primitiveSecondClockInto() {
+	target := interp.popStack()
+	_ = interp.popStack()
+	if !interp.isByteIndexableWithLengthAtLeast(target, 4) {
+		interp.unPop(2)
+		interp.primitiveFail()
+		return
+	}
+	interp.storeUint32LE(target, interp.currentSecondClock())
+	interp.push(target)
+}
+
+func (interp *Interpreter) primitiveMillisecondClockInto() {
+	target := interp.popStack()
+	_ = interp.popStack()
+	if !interp.isByteIndexableWithLengthAtLeast(target, 4) {
+		interp.unPop(2)
+		interp.primitiveFail()
+		return
+	}
+	interp.storeUint32LE(target, interp.currentMillisecondClock())
+	interp.push(target)
+}
+
+func (interp *Interpreter) primitiveSignalAtMilliseconds() {
+	tickObject := interp.popStack()
+	semaphore := interp.popStack()
+	rcvr := interp.popStack()
+	deadline, ok := interp.fetchUint32LE(tickObject)
+	if !ok {
+		interp.unPop(3)
+		interp.primitiveFail()
+		return
+	}
+	if semaphore == om.NilPointer || om.IsSmallInteger(semaphore) || !interp.memory.ValidOop(semaphore) || interp.fetchClassOf(semaphore) != om.ClassSemaphorePointer {
+		interp.timerActive = false
+		interp.timerSemaphore = om.NilPointer
+		interp.push(rcvr)
+		return
+	}
+	interp.timerSemaphore = semaphore
+	interp.timerTickDeadline = deadline
+	interp.timerActive = true
+	if interp.currentMillisecondClock() >= deadline {
+		interp.timerActive = false
+		interp.asynchronousSignal(semaphore)
+	}
+	interp.push(rcvr)
 }
 
 func (interp *Interpreter) primitiveBeCursor() {
@@ -2312,6 +2417,10 @@ func (interp *Interpreter) synchronousSignal(aSemaphore uint16) {
 }
 
 func (interp *Interpreter) checkProcessSwitch() {
+	if interp.timerActive && interp.currentMillisecondClock() >= interp.timerTickDeadline {
+		interp.timerActive = false
+		interp.asynchronousSignal(interp.timerSemaphore)
+	}
 	for interp.semaphoreIndex > 0 {
 		interp.semaphoreIndex--
 		interp.synchronousSignal(interp.semaphoreList[interp.semaphoreIndex])

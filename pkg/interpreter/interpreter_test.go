@@ -7,10 +7,13 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/wesen/st80/pkg/image"
 	om "github.com/wesen/st80/pkg/objectmemory"
 )
+
+const classByteArrayPointer uint16 = 0x1B4C
 
 func loadOopNames(t *testing.T, relativePath string) map[uint16]string {
 	t.Helper()
@@ -155,6 +158,14 @@ func loadTestInterpreter(t *testing.T) *Interpreter {
 	interp.activeContext = suspendedContext
 	interp.fetchContextRegisters()
 	return interp
+}
+
+func newTestSemaphore(interp *Interpreter) uint16 {
+	semaphore := interp.instantiateClassWithPointers(om.ClassSemaphorePointer, 3)
+	interp.storePointer(FirstLinkIndex, semaphore, om.NilPointer)
+	interp.storePointer(LastLinkIndex, semaphore, om.NilPointer)
+	interp.storePointer(ExcessSignalsIndex, semaphore, om.ZeroPointer)
+	return semaphore
 }
 
 func runInterpreterCycles(t *testing.T, interp *Interpreter, cycles uint64) {
@@ -376,7 +387,7 @@ func TestPrimitiveCursorLocPutUpdatesMouseWhenLinked(t *testing.T) {
 
 func TestPrimitiveInputSemaphoreStoresSemaphoreAndReturnsReceiver(t *testing.T) {
 	interp := loadTestInterpreter(t)
-	semaphore := interp.instantiateClassWithPointers(om.ClassSemaphorePointer, 3)
+	semaphore := newTestSemaphore(interp)
 
 	interp.push(om.NilPointer)
 	interp.push(semaphore)
@@ -429,7 +440,7 @@ func TestPrimitiveInputWordReturnsQueuedWord(t *testing.T) {
 
 func TestRecordMouseMotionQueuesTimedCoordinatesAndSignalsSemaphore(t *testing.T) {
 	interp := loadTestInterpreter(t)
-	semaphore := interp.instantiateClassWithPointers(om.ClassSemaphorePointer, 3)
+	semaphore := newTestSemaphore(interp)
 	interp.inputSemaphore = semaphore
 
 	interp.RecordMouseMotion(12, 34, 100)
@@ -507,6 +518,107 @@ func TestRecordDecodedKeyQueuesOnAndOffWords(t *testing.T) {
 		if got != expected {
 			t.Fatalf("expected queued word[%d]=0x%04X, got 0x%04X", i, expected, got)
 		}
+	}
+}
+
+func TestPrimitiveSecondClockIntoStoresLittleEndianSeconds(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	epoch1901 := time.Date(1901, 1, 1, 0, 0, 0, 0, time.UTC)
+	interp.timeNow = func() time.Time { return epoch1901.Add(123 * time.Second) }
+	target := interp.instantiateClassWithBytes(classByteArrayPointer, 4)
+
+	interp.push(om.NilPointer)
+	interp.push(target)
+	interp.primitiveSecondClockInto()
+
+	if interp.stackTop() != target {
+		t.Fatalf("expected primitiveSecondClockInto to return target, got 0x%04X", interp.stackTop())
+	}
+	got, ok := interp.fetchUint32LE(target)
+	if !ok {
+		t.Fatalf("expected to read back written second-clock bytes")
+	}
+	if got != 123 {
+		t.Fatalf("expected second clock 123, got %d", got)
+	}
+}
+
+func TestPrimitiveMillisecondClockIntoStoresLittleEndianTicks(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	base := time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC)
+	interp.tickStart = base
+	interp.timeNow = func() time.Time { return base.Add(1500 * time.Millisecond) }
+	target := interp.instantiateClassWithBytes(classByteArrayPointer, 4)
+
+	interp.push(om.NilPointer)
+	interp.push(target)
+	interp.primitiveMillisecondClockInto()
+
+	if interp.stackTop() != target {
+		t.Fatalf("expected primitiveMillisecondClockInto to return target, got 0x%04X", interp.stackTop())
+	}
+	got, ok := interp.fetchUint32LE(target)
+	if !ok {
+		t.Fatalf("expected to read back written millisecond-clock bytes")
+	}
+	if got != 1500 {
+		t.Fatalf("expected millisecond clock 1500, got %d", got)
+	}
+}
+
+func TestPrimitiveSignalAtMillisecondsSignalsImmediatelyWhenPastDue(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	base := time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC)
+	interp.tickStart = base
+	interp.timeNow = func() time.Time { return base.Add(200 * time.Millisecond) }
+	semaphore := newTestSemaphore(interp)
+	ticks := interp.instantiateClassWithBytes(classByteArrayPointer, 4)
+	interp.storeUint32LE(ticks, 100)
+
+	interp.push(om.NilPointer)
+	interp.push(semaphore)
+	interp.push(ticks)
+	interp.primitiveSignalAtMilliseconds()
+
+	if interp.stackTop() != om.NilPointer {
+		t.Fatalf("expected primitiveSignalAtMilliseconds to return receiver, got 0x%04X", interp.stackTop())
+	}
+	if interp.semaphoreIndex != 1 {
+		t.Fatalf("expected immediate deferred signal, got %d queued semaphore signals", interp.semaphoreIndex)
+	}
+	if interp.timerActive {
+		t.Fatalf("expected immediate past-due timer to clear active timer state")
+	}
+}
+
+func TestPrimitiveSignalAtMillisecondsSchedulesFutureSignal(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	base := time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC)
+	now := base.Add(50 * time.Millisecond)
+	interp.tickStart = base
+	interp.timeNow = func() time.Time { return now }
+	semaphore := newTestSemaphore(interp)
+	ticks := interp.instantiateClassWithBytes(classByteArrayPointer, 4)
+	interp.storeUint32LE(ticks, 100)
+
+	interp.push(om.NilPointer)
+	interp.push(semaphore)
+	interp.push(ticks)
+	interp.primitiveSignalAtMilliseconds()
+
+	if !interp.timerActive {
+		t.Fatalf("expected future timer to remain armed")
+	}
+	if interp.semaphoreIndex != 0 {
+		t.Fatalf("expected no immediate signal for future timer, got %d", interp.semaphoreIndex)
+	}
+
+	now = base.Add(100 * time.Millisecond)
+	interp.checkProcessSwitch()
+
+	excessSignals := int(om.SmallIntegerValue(interp.fetchPointer(ExcessSignalsIndex, semaphore)))
+	if excessSignals != 1 {
+		t.Fatalf("expected scheduled timer to signal semaphore once, got excessSignals=%d", excessSignals)
 	}
 }
 
