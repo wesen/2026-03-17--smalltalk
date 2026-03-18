@@ -154,17 +154,10 @@ The image format reverse-engineering was the main challenge. The symptoms: all w
 - The `count` field values (reference counts) — some are very high (128, 136, 213) which may need investigation
 
 ### What should be done in the future
-- Read Blue Book Chapter 28 (Formal Specification of the Interpreter) to implement bytecode dispatch
-- Read Blue Book Chapter 30 (Formal Specification of the Object Memory) for the exact OT spec
-- Implement the bytecode interpreter
-- Implement primitive methods
-- Implement SDL display
-
-### Code review instructions
-- Start at `pkg/image/loader.go` — verify the file layout assumptions
-- Check `pkg/objectmemory/objectmemory.go` OT bit constants (lines ~67-78) against the Blue Book
-- Run `./st80` and verify all guaranteed pointers resolve to valid objects with sensible classes
-- `cmd/st80/main.go` is a test harness, not the final entry point
+- Implement process scheduling (primitives 85-88)
+- Implement remaining storage management primitives
+- Implement SDL display and I/O primitives
+- Boot the full Smalltalk-80 environment
 
 ### Technical details
 - Image: 596,128 bytes, 258,880 words OS, 38,736 words OT (19,368 entries)
@@ -172,3 +165,51 @@ The image format reverse-engineering was the main challenge. The symptoms: all w
 - SpecialSelectors: Array of 64 elements (32 selector/argcount pairs)
 - CharacterTable: Array of 256 Character instances
 - SchedulerAssociation: key=0x6536 (Symbol #Processor), value=0x87BE (ProcessorScheduler)
+
+## Step 3: Interpreter Skeleton and Segment Fix
+
+Built the full bytecode interpreter skeleton and fixed two critical addressing bugs that prevented startup.
+
+### Prompt Context
+
+**User prompt (verbatim):** "continue. don't stop until the interpreter is done and successfully runs programs and all"
+
+**Assistant interpretation:** Implement the complete interpreter and keep going until it runs.
+
+**Inferred user intent:** Get a working Smalltalk-80 VM that can execute the image.
+
+**Commit (code):** a3136a0 — "Add interpreter skeleton and object allocation"
+**Commit (code):** 85dfccc — "Fix segment addressing: use bits 3-0"
+
+### What I did
+- Implemented full bytecode dispatch (stack, jump, send, return bytecodes)
+- Implemented arithmetic primitives 1-18, subscript primitives 60-67
+- Implemented storage management primitives 68-79 (stubs for become, someInstance, nextInstance)
+- Implemented control primitive stubs (80-89)
+- Implemented system primitives 110-116
+- Added object allocation (InstantiateClass)
+- Fixed segment addressing: the Blue Book uses MSB-first bit numbering, so segmentBitsOf reads bits 12-15 which are bits 3-0 in standard LSB numbering
+- Fixed Process field layout: suspendedContext is at index 1 (not 2)
+- Extracted comprehensive Blue Book spec notes to data/bluebook-spec-notes.md
+
+### What didn't work
+- **Segment addressing wrong twice**: First used bits 4-1 (otSegmentShift=1, mask=0x001E), then bits 4-0 (mask=0x001F), finally correct with bits 3-0 (mask=0x000F). The Blue Book p.662 says "bits 12 to 15" which maps to standard bits 3-0.
+- **Process field order wrong**: Assumed Link(0:nextLink) → Process(1:myList, 2:suspendedContext, 3:priority). Actual: Link(0:nextLink) → Process(1:suspendedContext, 2:priority, 3:myList). Found from Blue Book p.642 initializeSchedulerIndices.
+
+### What I learned
+- Blue Book uses MSB-first bit numbering throughout (bit 0 = most significant). Must always convert.
+- The wolczko.com image uses 4 segments (0-3) with 65536 words each covering 258,880 words.
+- Interpreter successfully runs 100 cycles with context switching, message sends, and returns.
+
+### What was tricky to build
+The segment addressing required three attempts. The confusion came from the Blue Book's MSB-first bit numbering convention. "bits 12 to 15" means the 4 LEAST significant bits in standard notation, not what you'd expect from reading "12 to 15". The empirical verification method (trying different formulas against known objects) was the key to finding the correct interpretation.
+
+### What warrants a second pair of eyes
+- The method cache hash function — using `(selector & class) & 0xFF + 1` which might not match the Blue Book exactly
+- Block copy primitive — the initialIP calculation may be off
+
+### What should be done in the future
+- Run for more cycles and fix crashes as they arise
+- Implement process scheduling primitives (85-88)
+- Implement I/O primitives for SDL display
+- Add the trace2/trace3 validation (compare execution trace against wolczko.com reference traces)
