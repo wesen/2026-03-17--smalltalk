@@ -144,6 +144,24 @@ func (om *ObjectMemory) setOtEntryWord1(oop uint16, value uint16) {
 	om.objectTable[otIndex(oop)+1] = value
 }
 
+// SwapPointersOf implements the Blue Book pointer swap used by become:.
+// It swaps the object body location and shape bits while preserving each OOP's
+// reference count and free-state metadata.
+func (om *ObjectMemory) SwapPointersOf(firstPointer uint16, secondPointer uint16) {
+	firstW0 := om.otEntryWord0(firstPointer)
+	secondW0 := om.otEntryWord0(secondPointer)
+	firstW1 := om.otEntryWord1(firstPointer)
+	secondW1 := om.otEntryWord1(secondPointer)
+
+	swapMask := uint16(otOddLengthBit | otPointerBit | otSegmentMask)
+	keepMask := ^swapMask
+
+	om.setOtEntryWord0(firstPointer, (firstW0&keepMask)|(secondW0&swapMask))
+	om.setOtEntryWord1(firstPointer, secondW1)
+	om.setOtEntryWord0(secondPointer, (secondW0&keepMask)|(firstW0&swapMask))
+	om.setOtEntryWord1(secondPointer, firstW1)
+}
+
 // IsFree returns true if the object table entry for oop is marked free.
 func (om *ObjectMemory) IsFree(oop uint16) bool {
 	return om.otEntryWord0(oop)&otFreeBit != 0
@@ -277,11 +295,7 @@ func (om *ObjectMemory) ObjectTableEntryCount() int {
 	return om.otEntryCount
 }
 
-// InstantiateClass creates a new instance of the given class with the given size.
-// This is a simplified allocator that appends to the object space and finds a free OT entry.
-func (om *ObjectMemory) InstantiateClass(classPointer uint16, instanceSize int, isPointers bool) uint16 {
-	// Object body: [size, class, field0, field1, ...]
-	bodySize := instanceSize + 2
+func (om *ObjectMemory) instantiate(classPointer uint16, bodySize int, pointerFields bool, oddLength bool) uint16 {
 	fullLocation := len(om.objectSpace)
 	// Compute segment and location within segment
 	segment := fullLocation / 65536
@@ -291,7 +305,7 @@ func (om *ObjectMemory) InstantiateClass(classPointer uint16, instanceSize int, 
 	body[0] = uint16(bodySize)
 	body[1] = classPointer
 	// Fields default to NilPointer for pointer objects, 0 for word objects
-	if isPointers {
+	if pointerFields {
 		for i := 2; i < bodySize; i++ {
 			body[i] = NilPointer
 		}
@@ -299,8 +313,11 @@ func (om *ObjectMemory) InstantiateClass(classPointer uint16, instanceSize int, 
 	om.objectSpace = append(om.objectSpace, body...)
 
 	var flags uint16
-	if isPointers {
+	if pointerFields {
 		flags = otPointerBit
+	}
+	if oddLength {
+		flags |= otOddLengthBit
 	}
 	flags |= uint16(segment<<otSegmentShift) & otSegmentMask
 
@@ -318,6 +335,26 @@ func (om *ObjectMemory) InstantiateClass(classPointer uint16, instanceSize int, 
 	om.otEntryCount++
 	om.objectTable = append(om.objectTable, flags, uint16(locationInSegment))
 	return newOop
+}
+
+// InstantiateClass creates a new pointer or word object with the given word length.
+func (om *ObjectMemory) InstantiateClass(classPointer uint16, instanceSize int, isPointers bool) uint16 {
+	return om.instantiate(classPointer, instanceSize+2, isPointers, false)
+}
+
+// InstantiateClassWithWords creates a non-pointer object addressed in words.
+func (om *ObjectMemory) InstantiateClassWithWords(classPointer uint16, wordLength int) uint16 {
+	return om.instantiate(classPointer, wordLength+2, false, false)
+}
+
+// InstantiateClassWithBytes creates a non-pointer object addressed in bytes.
+func (om *ObjectMemory) InstantiateClassWithBytes(classPointer uint16, byteLength int) uint16 {
+	wordLength := byteLength / 2
+	oddLength := byteLength%2 == 1
+	if oddLength {
+		wordLength++
+	}
+	return om.instantiate(classPointer, wordLength+2, false, oddLength)
 }
 
 // ObjectSpaceSize returns the size of the object space in words.

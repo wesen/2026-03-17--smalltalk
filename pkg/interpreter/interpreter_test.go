@@ -391,3 +391,77 @@ func TestMethodCorruptionWithoutCache(t *testing.T) {
 		t.Fatalf("expected Point>>y after cycle 129 without cache, got 0x%04X", interp.method)
 	}
 }
+
+func TestLogStateAtTwoMillionCycles(t *testing.T) {
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	for interp.cycleCount = 0; interp.cycleCount < 2000000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+	}
+
+	t.Logf("cycle=%d activeContext=0x%04X method=0x%04X(%s) receiver=0x%04X ip=%d sp=%d bytecode=%d",
+		interp.cycleCount, interp.activeContext, interp.method, methodNames[interp.method],
+		interp.receiver, interp.instructionPointer, interp.stackPointer, interp.currentBytecode)
+
+	ctx := interp.activeContext
+	for depth := 0; depth < 20 && ctx != om.NilPointer; depth++ {
+		home := ctx
+		if interp.isBlockContext(ctx) {
+			home = interp.fetchPointer(HomeIndex, ctx)
+		}
+		method := interp.fetchPointer(MethodIndex, home)
+		sender := interp.fetchPointer(SenderIndex, home)
+		t.Logf("senderChain[%d]: ctx=0x%04X home=0x%04X method=0x%04X(%s) sender=0x%04X",
+			depth, ctx, home, method, methodNames[method], sender)
+		ctx = sender
+	}
+}
+
+func TestFindFirstSubscriptError(t *testing.T) {
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	for interp.cycleCount = 0; interp.cycleCount < 500000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+
+		if interp.method == 0x78EA || interp.method == 0x7916 {
+			t.Logf("cycle=%d activeContext=0x%04X method=0x%04X(%s) receiver=0x%04X ip=%d sp=%d bytecode=%d",
+				interp.cycleCount, interp.activeContext, interp.method, methodNames[interp.method],
+				interp.receiver, interp.instructionPointer, interp.stackPointer, interp.currentBytecode)
+
+			atPutContext := interp.fetchPointer(SenderIndex, interp.activeContext)
+			if atPutContext != om.NilPointer {
+				atPutReceiver := interp.fetchPointer(ReceiverIndex, atPutContext)
+				atPutIndex := interp.fetchPointer(TempFrameStart, atPutContext)
+				atPutValue := interp.fetchPointer(TempFrameStart+1, atPutContext)
+				t.Logf("at:put: receiver=0x%04X class=0x%04X indexArg=0x%04X valueArg=0x%04X wordLen=%d byteLen=%d",
+					atPutReceiver, interp.fetchClassOf(atPutReceiver), atPutIndex, atPutValue,
+					interp.fetchWordLengthOf(atPutReceiver), interp.memory.FetchByteLengthOf(atPutReceiver))
+				t.Logf("at:put: receiver pointerFields=%v oddLength=%v segment=%d location=%d",
+					interp.memory.HasPointerFields(atPutReceiver), interp.memory.HasOddLength(atPutReceiver),
+					interp.memory.Segment(atPutReceiver), interp.memory.Location(atPutReceiver))
+			}
+
+			ctx := interp.activeContext
+			for depth := 0; depth < 12 && ctx != om.NilPointer; depth++ {
+				home := ctx
+				if interp.isBlockContext(ctx) {
+					home = interp.fetchPointer(HomeIndex, ctx)
+				}
+				method := interp.fetchPointer(MethodIndex, home)
+				sender := interp.fetchPointer(SenderIndex, home)
+				t.Logf("senderChain[%d]: ctx=0x%04X home=0x%04X method=0x%04X(%s) sender=0x%04X",
+					depth, ctx, home, method, methodNames[method], sender)
+				ctx = sender
+			}
+			return
+		}
+	}
+
+	t.Fatalf("did not encounter subscript error in first 500000 cycles")
+}

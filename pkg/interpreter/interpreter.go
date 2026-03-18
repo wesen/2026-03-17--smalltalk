@@ -92,6 +92,9 @@ type Interpreter struct {
 	semaphoreList     [256]uint16
 	semaphoreIndex    int
 
+	// Minimal VM-side display/input bookkeeping used by I/O primitives.
+	displayScreen uint16
+
 	// Cycle counter for tracing
 	cycleCount uint64
 }
@@ -159,6 +162,14 @@ func (interp *Interpreter) fetchByte(byteIndex int, ofObject uint16) byte {
 
 func (interp *Interpreter) instantiateClassWithPointers(classPointer uint16, instanceSize int) uint16 {
 	return interp.memory.InstantiateClass(classPointer, instanceSize, true)
+}
+
+func (interp *Interpreter) instantiateClassWithWords(classPointer uint16, instanceSize int) uint16 {
+	return interp.memory.InstantiateClassWithWords(classPointer, instanceSize)
+}
+
+func (interp *Interpreter) instantiateClassWithBytes(classPointer uint16, instanceSize int) uint16 {
+	return interp.memory.InstantiateClassWithBytes(classPointer, instanceSize)
 }
 
 // ---- Context management (Blue Book p.582-585) ----
@@ -1086,20 +1097,40 @@ func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 		if interp.isIndexable(class) {
 			size = 0
 		}
-		result := interp.instantiateClassWithPointers(class, size)
+		var result uint16
+		if interp.isPointers(class) {
+			result = interp.instantiateClassWithPointers(class, size)
+		} else {
+			result = interp.instantiateClassWithWords(class, size)
+		}
 		interp.push(result)
 	case 71: // basicNew:, new:
 		sz := interp.popInteger()
 		class := interp.popStack()
 		if interp.success {
 			size := sz + interp.fixedFieldsOf(class)
-			result := interp.instantiateClassWithPointers(class, size)
+			var result uint16
+			if interp.isPointers(class) {
+				result = interp.instantiateClassWithPointers(class, size)
+			} else if interp.isWords(class) {
+				result = interp.instantiateClassWithWords(class, size)
+			} else {
+				result = interp.instantiateClassWithBytes(class, size)
+			}
 			interp.push(result)
 		} else {
 			interp.unPop(2)
 		}
 	case 72: // become:
-		interp.primitiveFail() // Complex
+		otherPointer := interp.popStack()
+		thisReceiver := interp.popStack()
+		if om.IsSmallInteger(otherPointer) || om.IsSmallInteger(thisReceiver) {
+			interp.unPop(2)
+			interp.primitiveFail()
+			return
+		}
+		interp.memory.SwapPointersOf(thisReceiver, otherPointer)
+		interp.push(thisReceiver)
 	case 73: // instVarAt:
 		index := interp.popInteger()
 		rcvr := interp.popStack()
@@ -1219,6 +1250,8 @@ func (interp *Interpreter) primitivePerformWithArgs() {
 
 func (interp *Interpreter) dispatchInputOutputPrimitives() {
 	switch interp.primitiveIndex {
+	case 102: // beDisplay
+		interp.primitiveBeDisplay()
 	case 98: // secondClockInto:
 		interp.primitiveFail()
 	case 99: // millisecondClockInto:
@@ -1228,6 +1261,12 @@ func (interp *Interpreter) dispatchInputOutputPrimitives() {
 	default:
 		interp.primitiveFail()
 	}
+}
+
+func (interp *Interpreter) primitiveBeDisplay() {
+	screen := interp.popStack()
+	interp.displayScreen = screen
+	interp.push(screen)
 }
 
 // ---- Process scheduling (Blue Book p.641-647) ----
