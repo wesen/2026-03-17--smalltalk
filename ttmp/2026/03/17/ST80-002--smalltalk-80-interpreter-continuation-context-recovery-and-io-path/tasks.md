@@ -13,4 +13,4 @@
 - [ ] Decide whether the current context-only body reuse should remain a tactical stopgap or grow into broader object-memory reclamation
 - [x] Replace the temporary headless `primitiveCopyBits` success path with real BitBlt/display semantics
 - [x] Implement the missing runtime pieces needed to reach a stable idle loop again (remaining primitives, I/O, display path)
-- [ ] Create a separate UI ticket only after the interpreter/runtime is stable enough to support display work
+- [x] Create a separate UI ticket only after the interpreter/runtime is stable enough to support display work

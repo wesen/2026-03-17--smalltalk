@@ -115,3 +115,13 @@ Step 10: Replaced the temporary headless `primitiveCopyBits` stub with a real in
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Real BitBlt copy loop, merge rules, source/destination clipping, and WordArray-backed form acceptance (commit ea9ea41)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Graphics diagnostics plus long-run regression coverage for the new BitBlt path (commit ea9ea41)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/reference/07-real-bitblt-wordarray-source-form-bug-writeup.md — Detailed bug/fix writeup for later review
+
+
+## 2026-03-18
+
+Interpreter/UI boundary update: after the real BitBlt milestone, task 12 was closed and the dedicated graphical host-window follow-up moved to ticket `ST80-003`.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/tasks.md — Marks the interpreter ticket's UI handoff as complete
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/index.md — New UI ticket created for host-window work
