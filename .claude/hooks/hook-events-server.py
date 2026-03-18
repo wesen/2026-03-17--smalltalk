@@ -394,6 +394,81 @@ pre.code-block {
   border: none;
 }
 .copy-source { display: none; }
+
+/* ── Conversation View ── */
+.conv-timeline { margin: 8px 0; }
+.conv-entry {
+  border: 2px solid var(--border);
+  margin: 4px 0;
+}
+.conv-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+}
+.conv-entry-header:hover { background: #e0e0e0; }
+.conv-entry-header .arrow { font-size: 10px; width: 12px; flex-shrink: 0; }
+.conv-entry[open] > .conv-entry-header .arrow { transform: rotate(90deg); }
+.conv-entry-body {
+  padding: 6px 8px;
+  border-top: 1px solid #999;
+  font-size: 11px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+.conv-user > .conv-entry-header { background: #e8e8e8; }
+.conv-assistant > .conv-entry-header { background: #d0d0d0; }
+.conv-system > .conv-entry-header { background: #f0f0f0; font-style: italic; }
+.conv-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 4px 0;
+}
+.conv-tool-block {
+  border: 1px solid #999;
+  margin: 4px 0;
+  background: #f8f8f8;
+}
+.conv-tool-header {
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid #ccc;
+}
+.conv-tool-body {
+  padding: 4px 6px;
+  font-family: 'Monaco', monospace;
+  font-size: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.conv-usage {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  color: #666;
+  padding: 2px 0;
+  flex-wrap: wrap;
+}
+.conv-thinking {
+  color: #888;
+  font-style: italic;
+  border-left: 2px solid #ccc;
+  padding-left: 6px;
+  margin: 4px 0;
+}
 """
 
 # ── HTML helpers ─────────────────────────────────────────────────────────────
@@ -683,16 +758,20 @@ def list_transcripts():
         proj = os.path.basename(os.path.dirname(path))
         sid = os.path.splitext(os.path.basename(path))[0]
         try:
-            size = os.path.getsize(path)
+            stat = os.stat(path)
+            size = stat.st_size
+            mtime = stat.st_mtime
         except OSError:
             size = 0
+            mtime = 0
         results.append({
             "path": path,
             "project": proj,
             "session_id": sid,
             "size": size,
+            "mtime": mtime,
         })
-    return sorted(results, key=lambda r: r["path"], reverse=True)
+    return sorted(results, key=lambda r: r["mtime"], reverse=True)
 
 
 def parse_transcript(path, summary_only=False):
@@ -1149,14 +1228,18 @@ class HookEventsHandler(BaseHTTPRequestHandler):
         raw_yaml = format_yaml(row["raw_json"])
         sections += render_code_block("Raw Event (YAML)", highlight_yaml(raw_yaml), raw_yaml)
 
-        # Prev / Next navigation
+        # Prev / Next / Transcript navigation
         prev_row = query_one(conn, "SELECT id FROM hook_events WHERE id < ? ORDER BY id DESC LIMIT 1", (eid,))
         next_row = query_one(conn, "SELECT id FROM hook_events WHERE id > ? ORDER BY id ASC LIMIT 1", (eid,))
-        nav = '<div style="margin-top:8px;display:flex;gap:8px">'
+        nav = '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'
         if prev_row:
             nav += f'<a href="/events/detail?id={prev_row["id"]}" style="border:2px outset #ccc;padding:2px 10px">&larr; Prev</a>'
         if next_row:
             nav += f'<a href="/events/detail?id={next_row["id"]}" style="border:2px outset #ccc;padding:2px 10px">Next &rarr;</a>'
+        # Link to transcript if it exists
+        tp = row["transcript_path"]
+        if tp and os.path.exists(tp):
+            nav += f'<a href="/transcripts/detail?path={esc(tp)}" style="border:2px outset #ccc;padding:2px 10px">View Transcript &rarr;</a>'
         nav += "</div>"
 
         body = f"{dl}{ctx_html}{sections}{nav}"
@@ -1768,6 +1851,366 @@ class HookEventsHandler(BaseHTTPRequestHandler):
         </table>
         """
         return page_shell("Token Usage", body, "Tokens")
+
+    # ── Transcripts ──────────────────────────────────────────────────────
+
+    def page_transcripts(self, conn, params):
+        project_filter = params.get("project", "")
+        page = int(params.get("page", 1))
+        transcripts = list_transcripts()
+
+        # Collect unique projects
+        projects = sorted(set(t["project"] for t in transcripts))
+
+        if project_filter:
+            transcripts = [t for t in transcripts if t["project"] == project_filter]
+
+        proj_opts = "".join(
+            f'<option value="{esc(p)}" {"selected" if p == project_filter else ""}>'
+            f"{esc(p)}</option>"
+            for p in projects
+        )
+
+        filters = f"""
+        <form class="filter-bar" method="get" action="/transcripts">
+          <label>Project:</label>
+          <select name="project"><option value="">All ({len(projects)} projects)</option>{proj_opts}</select>
+          <button type="submit">Filter</button>
+        </form>
+        """
+
+        def fmtk(n):
+            if not n: return "0"
+            if n < 1000: return str(n)
+            if n < 1_000_000: return f"{n/1000:.1f}k"
+            return f"{n/1_000_000:.1f}M"
+
+        per_page = 30
+        total_pages = max(1, (len(transcripts) + per_page - 1) // per_page)
+        page = max(1, min(page, total_pages))
+        page_slice = transcripts[(page - 1) * per_page : page * per_page]
+
+        trs = ""
+        for t in page_slice:
+            meta = parse_transcript(t["path"], summary_only=True)
+            # Check if we have hook_events for this session
+            he_count = query_one(
+                conn,
+                "SELECT COUNT(*) c FROM hook_events WHERE session_id = ?",
+                (t["session_id"],),
+            )
+            hook_count = he_count["c"] if he_count else 0
+
+            # Check token_snapshots
+            ts_count = 0
+            try:
+                ts_row = query_one(
+                    conn,
+                    "SELECT COUNT(*) c FROM token_snapshots WHERE session_id = ?",
+                    (t["session_id"],),
+                )
+                ts_count = ts_row["c"] if ts_row else 0
+            except Exception:
+                pass
+
+            prompt_preview = esc(truncate(meta["first_user_msg"] or "", 50))
+            started = (meta["first_ts"] or "")[:19]
+
+            hook_badge = f'<span class="badge badge-tool">{hook_count} hooks</span>' if hook_count else ""
+            tok_badge = f'<span class="badge badge-event">{ts_count} snaps</span>' if ts_count else ""
+
+            trs += f"""<tr>
+              <td><a href="/transcripts/detail?path={esc(t['path'])}">{esc(t['session_id'][:16])}...</a></td>
+              <td>{esc(t['project'][:40])}</td>
+              <td>{started}</td>
+              <td>{meta['user_msgs']}</td>
+              <td>{meta['asst_msgs']}</td>
+              <td>{fmtk(meta['total_input'])}</td>
+              <td>{fmtk(meta['total_output'])}</td>
+              <td>{fmtk(meta['total_tokens'])}</td>
+              <td>{hook_badge} {tok_badge}</td>
+              <td>{prompt_preview}</td>
+            </tr>"""
+
+        stats = f"""
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-value">{len(transcripts)}</div><div class="stat-label">Transcripts{' (filtered)' if project_filter else ''}</div></div>
+          <div class="stat-box"><div class="stat-value">{len(projects)}</div><div class="stat-label">Projects</div></div>
+        </div>
+        """
+
+        pag_params = {}
+        if project_filter:
+            pag_params["project"] = project_filter
+        pag = pagination_html(page, total_pages, "/transcripts", pag_params)
+
+        body = f"""
+        {filters}
+        {stats}
+        <p style="font-size:11px;margin-bottom:4px">{len(transcripts)} transcripts — page {page}/{total_pages}</p>
+        <table>
+        <tr><th>Session</th><th>Project</th><th>Started</th><th>User</th><th>Asst</th><th>In</th><th>Out</th><th>Total</th><th>Hook Data</th><th>First Prompt</th></tr>
+        {trs}
+        </table>
+        {pag}
+        """
+        return page_shell("Transcripts", body, "Transcripts")
+
+    def page_transcript_detail(self, conn, params):
+        path = params.get("path", "")
+        if not path or not os.path.exists(path):
+            return page_shell("Transcript", f"<p>Transcript not found: {esc(path)}</p>")
+
+        sid = os.path.splitext(os.path.basename(path))[0]
+        proj = os.path.basename(os.path.dirname(path))
+        meta = parse_transcript(path, summary_only=False)
+
+        def fmtk(n):
+            if not n: return "0"
+            if n < 1000: return str(n)
+            if n < 1_000_000: return f"{n/1000:.1f}k"
+            return f"{n/1_000_000:.1f}M"
+
+        stats = f"""
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-value">{meta['user_msgs']}</div><div class="stat-label">User Msgs</div></div>
+          <div class="stat-box"><div class="stat-value">{meta['asst_msgs']}</div><div class="stat-label">Asst Msgs</div></div>
+          <div class="stat-box"><div class="stat-value">{fmtk(meta['total_input'])}</div><div class="stat-label">Input Tokens</div></div>
+          <div class="stat-box"><div class="stat-value">{fmtk(meta['total_output'])}</div><div class="stat-label">Output Tokens</div></div>
+          <div class="stat-box"><div class="stat-value">{fmtk(meta['total_tokens'])}</div><div class="stat-label">Total Tokens</div></div>
+          <div class="stat-box"><div class="stat-value">{fmtk(meta['total_cache_create'])}</div><div class="stat-label">Cache Created</div></div>
+          <div class="stat-box"><div class="stat-value">{fmtk(meta['total_cache_read'])}</div><div class="stat-label">Cache Read</div></div>
+        </div>
+        """
+
+        dl = f"""
+        <dl class="detail-grid">
+          <dt>Session ID</dt><dd><a href="/sessions/detail?id={esc(sid)}">{esc(sid)}</a></dd>
+          <dt>Project</dt><dd>{esc(proj)}</dd>
+          <dt>Model</dt><dd>{esc(meta['model'] or '?')}</dd>
+          <dt>Started</dt><dd>{esc(meta['first_ts'] or '?')}</dd>
+          <dt>Ended</dt><dd>{esc(meta['last_ts'] or '?')}</dd>
+          <dt>File</dt><dd style="font-size:10px">{esc(path)}</dd>
+        </dl>
+        """
+
+        # Hook events for this session, indexed by tool_use_id
+        hook_events_by_tuid = {}
+        try:
+            he_rows = query(
+                conn,
+                "SELECT id, tool_use_id, tool_name, hook_event_name FROM hook_events WHERE session_id = ? AND tool_use_id IS NOT NULL",
+                (sid,),
+            )
+            for r in he_rows:
+                tuid = r["tool_use_id"]
+                if tuid not in hook_events_by_tuid:
+                    hook_events_by_tuid[tuid] = []
+                hook_events_by_tuid[tuid].append(r)
+        except Exception:
+            pass
+
+        he_count = query_one(
+            conn, "SELECT COUNT(*) c FROM hook_events WHERE session_id = ?", (sid,),
+        )
+        hook_link = ""
+        if he_count and he_count["c"] > 0:
+            hook_link = f'<p><a href="/events?session={esc(sid)}" style="border:2px outset #ccc;padding:2px 10px;display:inline-block;margin-bottom:8px">{he_count["c"]} hook events for this session &rarr;</a></p>'
+
+        # ── Build conversation timeline ──────────────────────────────
+        conv_html = '<div class="conv-timeline">'
+        turn_num = 0
+        cumulative_in = 0
+        cumulative_out = 0
+
+        # Also build tool_result map: tool_use_id -> result content
+        tool_results = {}
+        for entry in meta["entries"]:
+            if entry.get("type") == "user":
+                content = entry.get("message", {}).get("content", "")
+                if isinstance(content, list):
+                    for c in content:
+                        if isinstance(c, dict) and c.get("type") == "tool_result":
+                            tuid = c.get("tool_use_id", "")
+                            result_content = c.get("content", "")
+                            if isinstance(result_content, list):
+                                parts = []
+                                for rc in result_content:
+                                    if isinstance(rc, dict) and rc.get("type") == "text":
+                                        parts.append(rc.get("text", ""))
+                                result_content = "\n".join(parts)
+                            tool_results[tuid] = str(result_content)
+
+        for entry in meta["entries"]:
+            etype = entry.get("type")
+            ts = (entry.get("timestamp") or "")[:19]
+
+            if etype == "user":
+                content = entry.get("message", {}).get("content", "")
+                if isinstance(content, str) and content.strip():
+                    turn_num += 1
+                    preview = esc(truncate(content, 80))
+                    conv_html += f"""
+                    <details class="conv-entry conv-user">
+                      <summary class="conv-entry-header">
+                        <span class="arrow">&#9654;</span>
+                        <span class="badge badge-session">#{turn_num}</span>
+                        <b>User</b>
+                        <span style="color:#666">{ts}</span>
+                        <span style="flex:1"></span>
+                        <span style="color:#888;font-size:10px">{preview}</span>
+                      </summary>
+                      <div class="conv-entry-body">
+                        <div class="conv-text">{esc(content)}</div>
+                      </div>
+                    </details>"""
+
+            elif etype == "assistant":
+                msg = entry.get("message", {})
+                usage = msg.get("usage", {})
+                inp = usage.get("input_tokens", 0)
+                out = usage.get("output_tokens", 0)
+                cache_cr = usage.get("cache_creation_input_tokens", 0)
+                cache_rd = usage.get("cache_read_input_tokens", 0)
+                cumulative_in += inp
+                cumulative_out += out
+
+                content = msg.get("content", [])
+                # Build preview from content
+                preview_parts = []
+                for c in content:
+                    if isinstance(c, dict):
+                        if c.get("type") == "text" and c.get("text", "").strip():
+                            preview_parts.append("text")
+                        elif c.get("type") == "tool_use":
+                            preview_parts.append(c.get("name", "tool"))
+                        elif c.get("type") == "thinking":
+                            preview_parts.append("thinking")
+                preview = ", ".join(preview_parts) or "..."
+
+                # Build inner content blocks
+                inner = ""
+                inner += f"""<div class="conv-usage">
+                  <span>in:{fmtk(inp)}</span>
+                  <span>out:{fmtk(out)}</span>
+                  <span>cache_cr:{fmtk(cache_cr)}</span>
+                  <span>cache_rd:{fmtk(cache_rd)}</span>
+                  <span>cumul:{fmtk(cumulative_in + cumulative_out)}</span>
+                </div>"""
+
+                for c in content:
+                    if not isinstance(c, dict):
+                        continue
+                    ctype = c.get("type")
+
+                    if ctype == "thinking":
+                        thinking_text = c.get("thinking", "")
+                        if thinking_text.strip():
+                            inner += f"""<details class="conv-tool-block">
+                              <summary class="conv-tool-header">thinking ({len(thinking_text)} chars)</summary>
+                              <div class="conv-tool-body conv-thinking">{esc(thinking_text)}</div>
+                            </details>"""
+
+                    elif ctype == "text":
+                        text = c.get("text", "")
+                        if text.strip():
+                            inner += f'<div class="conv-text">{esc(text)}</div>'
+
+                    elif ctype == "tool_use":
+                        tool_name = c.get("name", "?")
+                        tool_id = c.get("id", "")
+                        tool_input = c.get("input", {})
+                        input_yaml = _yaml_val(tool_input)
+                        input_hl = highlight_yaml(input_yaml)
+
+                        # Cross-link to hook events
+                        hook_links = ""
+                        hevts = hook_events_by_tuid.get(tool_id, [])
+                        if hevts:
+                            links = []
+                            for he in hevts:
+                                evt_label = he["hook_event_name"].replace("ToolUse", "")
+                                links.append(
+                                    f'<a href="/events/detail?id={he["id"]}" '
+                                    f'style="font-size:10px">{evt_label} #{he["id"]}</a>'
+                                )
+                            hook_links = f' <span style="font-size:10px;color:#666">[{" | ".join(links)}]</span>'
+
+                        # Tool result
+                        result_html = ""
+                        result_text = tool_results.get(tool_id)
+                        if result_text:
+                            result_preview = truncate(result_text, 200)
+                            result_html = f"""<details style="margin-top:2px">
+                              <summary style="font-size:10px;cursor:pointer;color:#666">Result ({len(result_text)} chars)</summary>
+                              <div class="conv-tool-body">{esc(result_text)}</div>
+                            </details>"""
+
+                        inner += f"""<div class="conv-tool-block">
+                          <div class="conv-tool-header">
+                            <span class="badge badge-tool">{esc(tool_name)}</span>
+                            {hook_links}
+                            <span style="flex:1"></span>
+                            <span style="font-size:9px;color:#999">{esc(tool_id[:20])}</span>
+                          </div>
+                          <details>
+                            <summary style="padding:2px 6px;font-size:10px;cursor:pointer">Input ({len(input_yaml)} chars)</summary>
+                            <div class="conv-tool-body">{input_hl}</div>
+                          </details>
+                          {result_html}
+                        </div>"""
+
+                turn_num += 1
+                conv_html += f"""
+                <details class="conv-entry conv-assistant" open>
+                  <summary class="conv-entry-header">
+                    <span class="arrow">&#9654;</span>
+                    <span class="badge badge-session">#{turn_num}</span>
+                    <b>Assistant</b>
+                    <span style="color:#666">{ts}</span>
+                    <span style="font-size:10px;color:#888">{esc(preview)}</span>
+                    <span style="flex:1"></span>
+                    <span style="font-size:10px">{fmtk(inp)}+{fmtk(out)}</span>
+                  </summary>
+                  <div class="conv-entry-body">{inner}</div>
+                </details>"""
+
+            elif etype == "system":
+                subtype = entry.get("subtype", "")
+                dur = entry.get("durationMs")
+                dur_str = ""
+                if dur:
+                    s = dur // 1000
+                    dur_str = f" ({s // 60}m{s % 60:02d}s)" if s >= 60 else f" ({s}s)"
+                conv_html += f"""
+                <div class="conv-entry conv-system" style="border-style:dashed">
+                  <div class="conv-entry-header">
+                    <span style="font-style:italic;color:#888">system: {esc(subtype)}{dur_str}</span>
+                  </div>
+                </div>"""
+
+        conv_html += "</div>"
+
+        # Tool usage summary chart
+        tool_counts = {}
+        for tu in meta["tool_uses"]:
+            name = tu["name"]
+            tool_counts[name] = tool_counts.get(name, 0) + 1
+        tool_chart = bar_chart(
+            sorted(tool_counts.items(), key=lambda x: -x[1])
+        ) if tool_counts else ""
+
+        body = f"""
+        {dl}
+        {stats}
+        {hook_link}
+
+        {f'<table><tr><th>Tool Usage</th><th></th></tr></table>{tool_chart}<br>' if tool_chart else ''}
+
+        <table><tr><th>Conversation</th></tr></table>
+        {conv_html}
+        """
+        return page_shell(f"Transcript {esc(sid[:16])}...", body, "Transcripts")
 
     # ── SQL Console ──────────────────────────────────────────────────────
 
