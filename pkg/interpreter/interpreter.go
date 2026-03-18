@@ -118,9 +118,13 @@ func New(memory *om.ObjectMemory) *Interpreter {
 }
 
 // ---- Bit extraction (Blue Book p.575) ----
+//
+// Method headers, header extensions, and class instance specifications are
+// stored in SmallInteger payloads, so Blue Book bit indices refer to the 15-bit
+// decoded integer value, not a raw 16-bit word.
 
 func extractBits(firstBitIndex, lastBitIndex int, ofValue uint16) int {
-	return int((ofValue >> (15 - lastBitIndex)) & ((1 << (lastBitIndex - firstBitIndex + 1)) - 1))
+	return int((ofValue >> (14 - lastBitIndex)) & ((1 << (lastBitIndex - firstBitIndex + 1)) - 1))
 }
 
 func highByteOf(val uint16) int {
@@ -422,7 +426,10 @@ func (interp *Interpreter) transfer(count, firstFrom int, fromOop uint16, firstT
 // ---- Method cache ----
 
 func (interp *Interpreter) findNewMethodInClass(class uint16) {
-	h := ((int(interp.messageSelector) & int(class)) & 0xFF) + 1
+	// Blue Book hash is (((selector bitAnd: class) bitAnd: 16rFF) bitShift: 2)
+	// + 1 for 1-based Smalltalk Arrays. This Go array is 0-based, so omit the
+	// final +1 but keep the << 2 to allocate 4 consecutive words per entry.
+	h := ((int(interp.messageSelector) & int(class)) & 0xFF) << 2
 	if h >= 0 && h+3 < methodCacheSize &&
 		interp.methodCache[h] == interp.messageSelector &&
 		interp.methodCache[h+1] == class {
