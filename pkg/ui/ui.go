@@ -190,7 +190,7 @@ func processEventsAndPresent(renderer *sdl.Renderer, texture *sdl.Texture, pixel
 	return quit, err
 }
 
-func copyDisplayBits(dst []uint32, snapshot interpreter.DisplaySnapshot) {
+func copyDisplayBits(dst []uint32, snapshot interpreter.DisplaySnapshot) (blackPixels int, whitePixels int) {
 	white := uint32(0xFFFFFFFF)
 	black := uint32(0xFF000000)
 	for y := 0; y < snapshot.Height; y++ {
@@ -201,11 +201,14 @@ func copyDisplayBits(dst []uint32, snapshot interpreter.DisplaySnapshot) {
 			mask := uint(15 - (x & 15))
 			if (word>>mask)&1 != 0 {
 				dst[pixelBase+x] = black
+				blackPixels++
 			} else {
 				dst[pixelBase+x] = white
+				whitePixels++
 			}
 		}
 	}
+	return blackPixels, whitePixels
 }
 
 func doSDL(fn func() error) error {
