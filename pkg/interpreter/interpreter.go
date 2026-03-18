@@ -144,6 +144,16 @@ type Interpreter struct {
 	lastCopyBitsCycle   uint64
 }
 
+// DisplaySnapshot captures the current designated display form in host-friendly
+// terms for the UI layer.
+type DisplaySnapshot struct {
+	FormPointer uint16
+	Width       int
+	Height      int
+	Raster      int
+	Words       []uint16
+}
+
 // Scheduling constants
 const (
 	ProcessListsIndex     = 0
@@ -2392,6 +2402,65 @@ func (interp *Interpreter) returnBytecode() {
 
 // ---- Main interpreter loop ----
 
+func (interp *Interpreter) initializeActiveContext() {
+	if interp.activeContext != 0 {
+		return
+	}
+	scheduler := interp.fetchPointer(ValueIndex, om.SchedulerAssociationPointer)
+	activeProcess := interp.fetchPointer(ActiveProcessIndex, scheduler)
+	suspendedContext := interp.fetchPointer(SuspendedContextIndex, activeProcess)
+	interp.activeContext = suspendedContext
+	interp.fetchContextRegisters()
+}
+
+func (interp *Interpreter) stepCycle() {
+	interp.checkProcessSwitch()
+	interp.currentBytecode = interp.fetchBytecode()
+	interp.dispatchOnThisBytecode()
+	interp.cycleCount++
+}
+
+// RunSteps executes a bounded number of interpreter cycles without any CLI
+// logging. It is intended for host/UI loops that want to interleave execution
+// with rendering and event polling.
+func (interp *Interpreter) RunSteps(steps uint64) error {
+	interp.initializeActiveContext()
+	for i := uint64(0); i < steps; i++ {
+		interp.stepCycle()
+	}
+	return nil
+}
+
+// DisplaySnapshot returns a copy of the current designated display form, if
+// the image has registered one via beDisplay.
+func (interp *Interpreter) DisplaySnapshot() (DisplaySnapshot, bool) {
+	interp.initializeActiveContext()
+	if interp.displayScreen == 0 || interp.displayScreen == om.NilPointer || !interp.memory.ValidOop(interp.displayScreen) {
+		return DisplaySnapshot{}, false
+	}
+	form, ok := interp.formWordsOf(interp.displayScreen)
+	if !ok || form.width <= 0 || form.height <= 0 {
+		return DisplaySnapshot{}, false
+	}
+	wordLen := interp.fetchWordLengthOf(form.bits)
+	words := make([]uint16, wordLen)
+	for i := 0; i < wordLen; i++ {
+		words[i] = interp.fetchWord(i, form.bits)
+	}
+	return DisplaySnapshot{
+		FormPointer: interp.displayScreen,
+		Width:       form.width,
+		Height:      form.height,
+		Raster:      (form.width-1)/16 + 1,
+		Words:       words,
+	}, true
+}
+
+// CycleCount returns how many cycles have been executed through RunSteps/Run.
+func (interp *Interpreter) CycleCount() uint64 {
+	return interp.cycleCount
+}
+
 // Run starts the interpreter from the active process in the image.
 func (interp *Interpreter) Run(maxCycles uint64) error {
 	// Find the active process from the scheduler
@@ -2417,23 +2486,20 @@ func (interp *Interpreter) Run(maxCycles uint64) error {
 	suspendedContext := interp.fetchPointer(1, activeProcess)
 	fmt.Printf("SuspendedContext (oop 0x%04X): valid=%v\n",
 		suspendedContext, interp.memory.ValidOop(suspendedContext))
-	interp.activeContext = suspendedContext
-	interp.fetchContextRegisters()
+	interp.initializeActiveContext()
 
 	fmt.Printf("Starting interpreter: activeContext=0x%04X, method=0x%04X, receiver=0x%04X\n",
 		interp.activeContext, interp.method, interp.receiver)
 
-	for interp.cycleCount = 0; maxCycles == 0 || interp.cycleCount < maxCycles; interp.cycleCount++ {
-		interp.checkProcessSwitch()
-		interp.currentBytecode = interp.fetchBytecode()
-
+	interp.cycleCount = 0
+	for maxCycles == 0 || interp.cycleCount < maxCycles {
 		if interp.cycleCount < 20 {
 			fmt.Printf("[cycle %d] ctx=0x%04X ip=%d sp=%d bc=%d method=0x%04X rcvr=0x%04X\n",
 				interp.cycleCount, interp.activeContext, interp.instructionPointer,
-				interp.stackPointer, interp.currentBytecode, interp.method, interp.receiver)
+				interp.stackPointer, interp.fetchByte(interp.instructionPointer, interp.method), interp.method, interp.receiver)
 		}
 
-		interp.dispatchOnThisBytecode()
+		interp.stepCycle()
 
 		if interp.cycleCount%500000 == 0 && interp.cycleCount > 0 {
 			fmt.Printf("[cycle %d] ctx=0x%04X ip=%d sp=%d bc=%d method=0x%04X rcvr=0x%04X\n",
