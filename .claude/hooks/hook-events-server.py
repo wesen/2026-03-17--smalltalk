@@ -414,6 +414,7 @@ def page_shell(title, body, active_tab=""):
         ("Files", "/files"),
         ("Commands", "/commands"),
         ("Searches", "/searches"),
+        ("Tokens", "/tokens"),
         ("SQL", "/sql"),
     ]
     menu_items = []
@@ -689,6 +690,7 @@ class HookEventsHandler(BaseHTTPRequestHandler):
             "/files": self.page_files,
             "/commands": self.page_commands,
             "/searches": self.page_searches,
+            "/tokens": self.page_tokens,
             "/sql": self.page_sql,
         }
 
@@ -813,19 +815,19 @@ class HookEventsHandler(BaseHTTPRequestHandler):
         where_clauses = []
         where_params = []
         if event_filter:
-            where_clauses.append("hook_event_name = ?")
+            where_clauses.append("he.hook_event_name = ?")
             where_params.append(event_filter)
         if tool_filter:
-            where_clauses.append("tool_name = ?")
+            where_clauses.append("he.tool_name = ?")
             where_params.append(tool_filter)
         if session_filter:
-            where_clauses.append("session_id = ?")
+            where_clauses.append("he.session_id = ?")
             where_params.append(session_filter)
 
         where = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
         total = query_one(
-            conn, f"SELECT COUNT(*) c FROM hook_events {where}", where_params
+            conn, f"SELECT COUNT(*) c FROM hook_events he {where}", where_params
         )["c"]
         total_pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
         page = max(1, min(page, total_pages))
@@ -833,7 +835,25 @@ class HookEventsHandler(BaseHTTPRequestHandler):
 
         rows = query(
             conn,
-            f"SELECT id, timestamp, hook_event_name, tool_name, session_id, tool_input FROM hook_events {where} ORDER BY id DESC LIMIT ? OFFSET ?",
+            f"""SELECT he.id, he.timestamp, he.hook_event_name, he.tool_name,
+                he.session_id, he.tool_input,
+                COALESCE(
+                  (SELECT ts.used_percentage FROM token_snapshots ts
+                   WHERE ts.session_id = he.session_id AND ts.timestamp <= he.timestamp
+                   ORDER BY ts.id DESC LIMIT 1),
+                  (SELECT ts.used_percentage FROM token_snapshots ts
+                   WHERE ts.session_id = he.session_id AND ts.timestamp > he.timestamp
+                   ORDER BY ts.id ASC LIMIT 1)
+                ) AS ctx_pct,
+                COALESCE(
+                  (SELECT ts.total_input_tokens + ts.total_output_tokens FROM token_snapshots ts
+                   WHERE ts.session_id = he.session_id AND ts.timestamp <= he.timestamp
+                   ORDER BY ts.id DESC LIMIT 1),
+                  (SELECT ts.total_input_tokens + ts.total_output_tokens FROM token_snapshots ts
+                   WHERE ts.session_id = he.session_id AND ts.timestamp > he.timestamp
+                   ORDER BY ts.id ASC LIMIT 1)
+                ) AS ctx_tokens
+            FROM hook_events he {where} ORDER BY he.id DESC LIMIT ? OFFSET ?""",
             where_params + [PAGE_SIZE, offset],
         )
 
@@ -872,12 +892,24 @@ class HookEventsHandler(BaseHTTPRequestHandler):
             evt_cls = "badge-fail" if r["hook_event_name"] == "PostToolUseFailure" else "badge-event"
             tool_badge = f'<span class="badge badge-tool">{esc(r["tool_name"])}</span>' if r["tool_name"] else ""
             input_preview = esc(truncate(r["tool_input"], 60)) if r["tool_input"] else ""
+            ctx_pct = r["ctx_pct"]
+            ctx_tok = r["ctx_tokens"]
+            if ctx_pct is not None:
+                ctx_str = f'{ctx_pct}%'
+                if ctx_tok is not None:
+                    if ctx_tok >= 1_000_000:
+                        ctx_str += f' ({ctx_tok/1_000_000:.1f}M)'
+                    elif ctx_tok >= 1000:
+                        ctx_str += f' ({ctx_tok/1000:.0f}k)'
+            else:
+                ctx_str = ""
             trs += f"""<tr>
               <td><a href="/events/detail?id={r['id']}">{r['id']}</a></td>
               <td>{esc(r['timestamp'][:19])}</td>
               <td><span class="badge {evt_cls}">{esc(r['hook_event_name'])}</span></td>
               <td>{tool_badge}</td>
               <td><a href="/sessions/detail?id={esc(r['session_id'])}"><span class="badge badge-session">{esc(truncate(r['session_id'], 16))}</span></a></td>
+              <td>{ctx_str}</td>
               <td>{input_preview}</td>
             </tr>"""
 
@@ -894,7 +926,7 @@ class HookEventsHandler(BaseHTTPRequestHandler):
         {filters}
         <p style="font-size:11px;margin-bottom:4px">{total} events — page {page}/{total_pages}</p>
         <table>
-        <tr><th>#</th><th>Time</th><th>Event</th><th>Tool</th><th>Session</th><th>Input</th></tr>
+        <tr><th>#</th><th>Time</th><th>Event</th><th>Tool</th><th>Session</th><th>Context</th><th>Input</th></tr>
         {trs}
         </table>
         {pag}
@@ -910,6 +942,35 @@ class HookEventsHandler(BaseHTTPRequestHandler):
         row = query_one(conn, "SELECT * FROM hook_events WHERE id = ?", (eid,))
         if not row:
             return page_shell("Event", f"<p>Event {esc(eid)} not found.</p>")
+
+        # Find nearest context window snapshot (before, or failing that, after)
+        ctx_snap = query_one(
+            conn,
+            """SELECT total_input_tokens, total_output_tokens,
+                total_input_tokens + total_output_tokens AS total_tokens,
+                used_percentage, remaining_percentage, context_window_size,
+                total_cost_usd,
+                current_input_tokens, current_output_tokens,
+                cache_creation_tokens, cache_read_tokens
+            FROM token_snapshots
+            WHERE session_id = ? AND timestamp <= ?
+            ORDER BY id DESC LIMIT 1""",
+            (row["session_id"], row["timestamp"]),
+        )
+        if not ctx_snap:
+            ctx_snap = query_one(
+                conn,
+                """SELECT total_input_tokens, total_output_tokens,
+                    total_input_tokens + total_output_tokens AS total_tokens,
+                    used_percentage, remaining_percentage, context_window_size,
+                    total_cost_usd,
+                    current_input_tokens, current_output_tokens,
+                    cache_creation_tokens, cache_read_tokens
+                FROM token_snapshots
+                WHERE session_id = ? AND timestamp > ?
+                ORDER BY id ASC LIMIT 1""",
+                (row["session_id"], row["timestamp"]),
+            )
 
         fields = [
             ("ID", str(row["id"])),
@@ -930,6 +991,42 @@ class HookEventsHandler(BaseHTTPRequestHandler):
             if val:
                 dl += f"<dt>{label}</dt><dd>{val}</dd>"
         dl += "</dl>"
+
+        # Context window info box
+        ctx_html = ""
+        if ctx_snap:
+            def _fmtk(n):
+                if not n: return "0"
+                if n < 1000: return str(n)
+                if n < 1_000_000: return f"{n/1000:.1f}k"
+                return f"{n/1_000_000:.1f}M"
+            pct = ctx_snap["used_percentage"] or 0
+            win = ctx_snap["context_window_size"] or 0
+            total_tok = ctx_snap["total_tokens"] or 0
+            cost = ctx_snap["total_cost_usd"] or 0
+            bar_w = 200
+            fill_w = max(2, int(pct / 100 * bar_w))
+            cache_cr = ctx_snap["cache_creation_tokens"] or 0
+            cache_rd = ctx_snap["cache_read_tokens"] or 0
+            ctx_html = f"""
+            <div style="border:2px solid #000;padding:8px;margin-bottom:12px">
+              <b>Context Window at this event</b>
+              <div style="margin-top:6px;display:flex;gap:16px;flex-wrap:wrap;font-size:11px">
+                <span><b>{_fmtk(ctx_snap['total_input_tokens'])}</b> in</span>
+                <span><b>{_fmtk(ctx_snap['total_output_tokens'])}</b> out</span>
+                <span><b>{_fmtk(total_tok)}</b> total</span>
+                <span>${cost:.3f}</span>
+                <span>window: {_fmtk(win)}</span>
+                <span>cache: {_fmtk(cache_cr)} created, {_fmtk(cache_rd)} read</span>
+              </div>
+              <div style="margin-top:4px;display:flex;align-items:center;gap:6px;font-size:11px">
+                <div style="width:{bar_w}px;height:14px;border:1px solid #000;background:#fff">
+                  <div style="width:{fill_w}px;height:100%;background:#000"></div>
+                </div>
+                <span><b>{pct}%</b> used</span>
+              </div>
+            </div>
+            """
 
         sections = ""
         if row["tool_input"]:
@@ -957,7 +1054,7 @@ class HookEventsHandler(BaseHTTPRequestHandler):
             nav += f'<a href="/events/detail?id={next_row["id"]}" style="border:2px outset #ccc;padding:2px 10px">Next &rarr;</a>'
         nav += "</div>"
 
-        body = f"{dl}{sections}{nav}"
+        body = f"{dl}{ctx_html}{sections}{nav}"
         return page_shell(f"Event #{esc(eid)}", body, "Events")
 
     # ── Sessions ─────────────────────────────────────────────────────────
@@ -1266,6 +1363,306 @@ class HookEventsHandler(BaseHTTPRequestHandler):
         </table>
         """
         return page_shell("Search Patterns", body, "Searches")
+
+    # ── Tokens ───────────────────────────────────────────────────────
+
+    def page_tokens(self, conn, params):
+        # Check if token_snapshots table exists
+        has_table = query_one(
+            conn,
+            "SELECT COUNT(*) c FROM sqlite_master WHERE type='table' AND name='token_snapshots'",
+        )
+        if not has_table or has_table["c"] == 0:
+            return page_shell(
+                "Tokens",
+                "<p>No token data yet. The status line logger creates the "
+                "<code>token_snapshots</code> table after the first assistant turn.</p>",
+                "Tokens",
+            )
+
+        # ── Summary stats ────────────────────────────────────────────
+        latest = query_one(
+            conn,
+            """SELECT *, total_input_tokens + total_output_tokens AS total_tokens
+            FROM token_snapshots ORDER BY id DESC LIMIT 1""",
+        )
+
+        totals = query_one(
+            conn,
+            """SELECT
+                COUNT(DISTINCT session_id) AS sessions,
+                COUNT(*) AS snapshots,
+                MAX(total_cost_usd) AS max_cost,
+                SUM(total_cost_usd) AS sum_cost
+            FROM (
+                SELECT session_id, MAX(total_cost_usd) AS total_cost_usd
+                FROM token_snapshots GROUP BY session_id
+            )""",
+        )
+
+        all_time_tokens = query_one(
+            conn,
+            """SELECT
+                SUM(final_in) AS total_in,
+                SUM(final_out) AS total_out,
+                SUM(final_in + final_out) AS total
+            FROM (
+                SELECT session_id,
+                    MAX(total_input_tokens) AS final_in,
+                    MAX(total_output_tokens) AS final_out
+                FROM token_snapshots GROUP BY session_id
+            )""",
+        )
+
+        def fmtk(n):
+            if not n:
+                return "0"
+            if n < 1000:
+                return str(n)
+            if n < 1_000_000:
+                return f"{n/1000:.1f}k"
+            return f"{n/1_000_000:.1f}M"
+
+        stats = ""
+        if latest:
+            stats = f"""
+            <div class="stats-grid">
+              <div class="stat-box"><div class="stat-value">{fmtk(all_time_tokens['total_in'])}</div><div class="stat-label">All-Time Input</div></div>
+              <div class="stat-box"><div class="stat-value">{fmtk(all_time_tokens['total_out'])}</div><div class="stat-label">All-Time Output</div></div>
+              <div class="stat-box"><div class="stat-value">{fmtk(all_time_tokens['total'])}</div><div class="stat-label">All-Time Total</div></div>
+              <div class="stat-box"><div class="stat-value">${totals['sum_cost']:.2f}</div><div class="stat-label">All-Time Cost</div></div>
+              <div class="stat-box"><div class="stat-value">{totals['sessions']}</div><div class="stat-label">Sessions</div></div>
+            </div>
+            """
+
+        # ── Per-session summary ──────────────────────────────────────
+        session_rows = query(
+            conn,
+            """SELECT
+                session_id,
+                model_id,
+                MIN(timestamp) AS started,
+                MAX(total_input_tokens) AS final_in,
+                MAX(total_output_tokens) AS final_out,
+                MAX(total_input_tokens) + MAX(total_output_tokens) AS final_total,
+                MAX(total_cost_usd) AS cost,
+                MAX(used_percentage) AS peak_ctx,
+                MAX(context_window_size) AS ctx_window,
+                MAX(total_lines_added) AS lines_add,
+                MAX(total_lines_removed) AS lines_rm,
+                ROUND(MAX(total_duration_ms) / 1000.0) AS dur_s
+            FROM token_snapshots
+            GROUP BY session_id
+            ORDER BY started DESC""",
+        )
+
+        session_trs = ""
+        for r in session_rows:
+            dur = int(r["dur_s"] or 0)
+            dur_str = f"{dur // 60}m{dur % 60:02d}s" if dur >= 60 else f"{dur}s"
+            win = fmtk(r["ctx_window"]) if r["ctx_window"] else "?"
+            session_trs += f"""<tr>
+              <td><a href="/sessions/detail?id={esc(r['session_id'])}">{esc(truncate(r['session_id'], 16))}</a></td>
+              <td>{esc(r['started'][:19])}</td>
+              <td>{fmtk(r['final_in'])}</td>
+              <td>{fmtk(r['final_out'])}</td>
+              <td><b>{fmtk(r['final_total'])}</b></td>
+              <td>${r['cost']:.3f}</td>
+              <td>{r['peak_ctx']}% of {win}</td>
+              <td>+{r['lines_add'] or 0}/-{r['lines_rm'] or 0}</td>
+              <td>{dur_str}</td>
+            </tr>"""
+
+        # ── Token-to-tool correlation ────────────────────────────────
+        # For each session, compute tokens-per-tool-use
+        correlation_rows = query(
+            conn,
+            """SELECT
+                ts.session_id,
+                MAX(ts.total_input_tokens) + MAX(ts.total_output_tokens) AS total_tokens,
+                MAX(ts.total_cost_usd) AS cost,
+                COUNT(DISTINCT he.id) AS tool_uses,
+                CASE WHEN COUNT(DISTINCT he.id) > 0
+                    THEN ROUND((MAX(ts.total_input_tokens) + MAX(ts.total_output_tokens)) * 1.0 / COUNT(DISTINCT he.id))
+                    ELSE 0
+                END AS tokens_per_tool,
+                CASE WHEN COUNT(DISTINCT he.id) > 0
+                    THEN ROUND(MAX(ts.total_cost_usd) * 1.0 / COUNT(DISTINCT he.id), 4)
+                    ELSE 0
+                END AS cost_per_tool
+            FROM token_snapshots ts
+            LEFT JOIN hook_events he
+                ON he.session_id = ts.session_id
+                AND he.hook_event_name = 'PostToolUse'
+            GROUP BY ts.session_id
+            ORDER BY total_tokens DESC""",
+        )
+
+        corr_trs = ""
+        for r in correlation_rows:
+            corr_trs += f"""<tr>
+              <td><a href="/sessions/detail?id={esc(r['session_id'])}">{esc(truncate(r['session_id'], 16))}</a></td>
+              <td>{fmtk(r['total_tokens'])}</td>
+              <td>{r['tool_uses']}</td>
+              <td>{fmtk(r['tokens_per_tool'])}</td>
+              <td>${r['cost']:.3f}</td>
+              <td>${r['cost_per_tool']:.4f}</td>
+            </tr>"""
+
+        # ── Per-tool token cost (which tools consume the most context?) ──
+        tool_cost_rows = query(
+            conn,
+            """SELECT
+                he.tool_name,
+                COUNT(*) AS uses,
+                COUNT(DISTINCT he.session_id) AS sessions,
+                ROUND(AVG(length(COALESCE(he.tool_input, '')) + length(COALESCE(he.tool_response, '')))) AS avg_payload_bytes
+            FROM hook_events he
+            WHERE he.hook_event_name = 'PostToolUse'
+              AND he.tool_name IS NOT NULL
+            GROUP BY he.tool_name
+            ORDER BY avg_payload_bytes DESC""",
+        )
+
+        tool_cost_trs = ""
+        for r in tool_cost_rows:
+            tool_cost_trs += f"""<tr>
+              <td><span class="badge badge-tool">{esc(r['tool_name'])}</span></td>
+              <td>{r['uses']}</td>
+              <td>{r['sessions']}</td>
+              <td>{fmtk(r['avg_payload_bytes'])}</td>
+            </tr>"""
+
+        tool_chart = bar_chart(
+            [(r["tool_name"], r["avg_payload_bytes"]) for r in tool_cost_rows],
+            max_width=300,
+        )
+
+        # ── Context growth per tool type ─────────────────────────────
+        # For each tool, show average context size at time of use and
+        # the average payload size as a proxy for context cost
+        ctx_growth_rows = query(
+            conn,
+            """SELECT
+                he.tool_name,
+                COUNT(*) AS uses,
+                ROUND(AVG(COALESCE(
+                    (SELECT ts.total_input_tokens + ts.total_output_tokens
+                     FROM token_snapshots ts WHERE ts.session_id = he.session_id
+                     AND ts.timestamp <= he.timestamp ORDER BY ts.id DESC LIMIT 1),
+                    (SELECT ts.total_input_tokens + ts.total_output_tokens
+                     FROM token_snapshots ts WHERE ts.session_id = he.session_id
+                     AND ts.timestamp > he.timestamp ORDER BY ts.id ASC LIMIT 1)
+                ))) AS avg_ctx_at_use,
+                MAX(COALESCE(
+                    (SELECT ts.total_input_tokens + ts.total_output_tokens
+                     FROM token_snapshots ts WHERE ts.session_id = he.session_id
+                     AND ts.timestamp <= he.timestamp ORDER BY ts.id DESC LIMIT 1),
+                    (SELECT ts.total_input_tokens + ts.total_output_tokens
+                     FROM token_snapshots ts WHERE ts.session_id = he.session_id
+                     AND ts.timestamp > he.timestamp ORDER BY ts.id ASC LIMIT 1)
+                )) AS max_ctx_at_use,
+                ROUND(AVG(COALESCE(
+                    (SELECT ts.used_percentage FROM token_snapshots ts
+                     WHERE ts.session_id = he.session_id AND ts.timestamp <= he.timestamp
+                     ORDER BY ts.id DESC LIMIT 1),
+                    (SELECT ts.used_percentage FROM token_snapshots ts
+                     WHERE ts.session_id = he.session_id AND ts.timestamp > he.timestamp
+                     ORDER BY ts.id ASC LIMIT 1)
+                ))) AS avg_ctx_pct
+            FROM hook_events he
+            WHERE he.hook_event_name = 'PostToolUse'
+              AND he.tool_name IS NOT NULL
+            GROUP BY he.tool_name
+            HAVING avg_ctx_at_use IS NOT NULL
+            ORDER BY avg_ctx_at_use DESC""",
+        )
+
+        ctx_growth_trs = ""
+        ctx_growth_chart_data = []
+        for r in ctx_growth_rows:
+            avg_ctx = int(r["avg_ctx_at_use"] or 0)
+            max_ctx = int(r["max_ctx_at_use"] or 0)
+            avg_pct = int(r["avg_ctx_pct"] or 0)
+            ctx_growth_trs += f"""<tr>
+              <td><span class="badge badge-tool">{esc(r['tool_name'])}</span></td>
+              <td>{r['uses']}</td>
+              <td>{fmtk(avg_ctx)}</td>
+              <td>{fmtk(max_ctx)}</td>
+              <td>{avg_pct}%</td>
+            </tr>"""
+            if avg_ctx > 0:
+                ctx_growth_chart_data.append((r["tool_name"], avg_ctx))
+
+        ctx_growth_chart = bar_chart(ctx_growth_chart_data, max_width=300) if ctx_growth_chart_data else ""
+
+        # ── Token timeline (last 30 snapshots) ──────────────────────
+        timeline = query(
+            conn,
+            """SELECT timestamp, session_id,
+                total_input_tokens, total_output_tokens,
+                total_input_tokens + total_output_tokens AS total,
+                total_cost_usd, used_percentage
+            FROM token_snapshots
+            ORDER BY id DESC LIMIT 30""",
+        )
+
+        timeline_trs = ""
+        for r in timeline:
+            timeline_trs += f"""<tr>
+              <td>{esc(r['timestamp'][:19])}</td>
+              <td><a href="/sessions/detail?id={esc(r['session_id'])}">{esc(truncate(r['session_id'], 12))}</a></td>
+              <td>{fmtk(r['total_input_tokens'])}</td>
+              <td>{fmtk(r['total_output_tokens'])}</td>
+              <td><b>{fmtk(r['total'])}</b></td>
+              <td>${r['total_cost_usd']:.3f}</td>
+              <td>{r['used_percentage']}%</td>
+            </tr>"""
+
+        body = f"""
+        {stats}
+
+        <table>
+        <tr><th colspan="9">Sessions — Token Usage</th></tr>
+        <tr><th>Session</th><th>Started</th><th>In</th><th>Out</th><th>Total</th><th>Cost</th><th>Peak Ctx</th><th>Lines</th><th>Duration</th></tr>
+        {session_trs}
+        </table>
+        <br>
+
+        <table>
+        <tr><th colspan="6">Token-Tool Correlation (per session)</th></tr>
+        <tr><th>Session</th><th>Tokens</th><th>Tool Uses</th><th>Tokens/Tool</th><th>Cost</th><th>Cost/Tool</th></tr>
+        {corr_trs}
+        </table>
+        <br>
+
+        <table><tr><th>Avg Context Size at Tool Call (tokens)</th><th></th></tr></table>
+        {ctx_growth_chart}
+        <br>
+        <table>
+        <tr><th colspan="5">Context Window at Tool Use</th></tr>
+        <tr><th>Tool</th><th>Uses</th><th>Avg Context</th><th>Max Context</th><th>Avg Ctx %</th></tr>
+        {ctx_growth_trs}
+        </table>
+        <br>
+
+        <table><tr><th>Avg Payload Size by Tool (bytes)</th><th></th></tr></table>
+        {tool_chart}
+        <br>
+        <table>
+        <tr><th colspan="4">Tool Payload Weight</th></tr>
+        <tr><th>Tool</th><th>Uses</th><th>Sessions</th><th>Avg Payload</th></tr>
+        {tool_cost_trs}
+        </table>
+        <br>
+
+        <table>
+        <tr><th colspan="7">Recent Token Snapshots</th></tr>
+        <tr><th>Time</th><th>Session</th><th>In</th><th>Out</th><th>Total</th><th>Cost</th><th>Ctx %</th></tr>
+        {timeline_trs}
+        </table>
+        """
+        return page_shell("Token Usage", body, "Tokens")
 
     # ── SQL Console ──────────────────────────────────────────────────────
 
