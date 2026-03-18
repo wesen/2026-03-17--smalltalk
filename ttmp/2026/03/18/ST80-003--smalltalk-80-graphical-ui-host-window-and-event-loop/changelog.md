@@ -239,3 +239,13 @@ Step 20: replaced the SDL host backend with Ebiten (`github.com/hajimehoshi/ebit
 - /home/manuel/code/wesen/2026-03-17--smalltalk/go.mod — Swapped the host-window dependency from `go-sdl2` to `ebiten/v2`
 - /home/manuel/code/wesen/2026-03-17--smalltalk/go.sum — Module graph updated after `go mod tidy`
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Detailed migration diary entry
+
+
+## 2026-03-18
+
+Step 21: after the first successful live Ebiten input run exposed a VM-side crash instead of a backend-input blackout, hardened the recursive `doesNotUnderstand:` panic path with detailed selector/receiver/class/context diagnostics so the next failing manual run will identify the actual bad send state instead of only reporting the recursion symptom.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added recursive-DNU diagnostic formatting with selector, receiver, class, context, IP/SP, and bytecode detail
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Recorded the crash report and why the next patch is diagnostic-first

@@ -630,11 +630,64 @@ func (interp *Interpreter) lookupMethodInClass(class uint16) {
 		currentClass = interp.superclassOf(currentClass)
 	}
 	if interp.messageSelector == om.DoesNotUnderstandSelector {
-		panic("Recursive not understood error encountered")
+		panic(interp.recursiveNotUnderstoodDiagnostic(class))
 	}
 	interp.createActualMessage()
 	interp.messageSelector = om.DoesNotUnderstandSelector
 	interp.lookupMethodInClass(class)
+}
+
+func (interp *Interpreter) recursiveNotUnderstoodDiagnostic(class uint16) string {
+	method := interp.method
+	receiver := interp.receiver
+	receiverClass := uint16(0)
+	if receiver != 0 {
+		receiverClass = interp.fetchClassOf(receiver)
+	}
+	sendReceiver := uint16(0)
+	sendReceiverClass := uint16(0)
+	if interp.stackPointer >= interp.argumentCount && interp.argumentCount >= 0 {
+		sendReceiver = interp.stackValue(interp.argumentCount)
+		if sendReceiver != 0 {
+			sendReceiverClass = interp.fetchClassOf(sendReceiver)
+		}
+	}
+	return fmt.Sprintf(
+		"Recursive not understood error encountered: selector=0x%04X(%q) lookupClass=0x%04X receiver=0x%04X class=0x%04X(%q) sendReceiver=0x%04X sendClass=0x%04X(%q) activeContext=0x%04X homeContext=0x%04X method=0x%04X ip=%d sp=%d bytecode=%d argCount=%d",
+		interp.messageSelector,
+		interp.debugStringOf(interp.messageSelector),
+		class,
+		receiver,
+		receiverClass,
+		interp.debugStringOf(receiverClass),
+		sendReceiver,
+		sendReceiverClass,
+		interp.debugStringOf(sendReceiverClass),
+		interp.activeContext,
+		interp.homeContext,
+		method,
+		interp.instructionPointer,
+		interp.stackPointer,
+		interp.currentBytecode,
+		interp.argumentCount,
+	)
+}
+
+func (interp *Interpreter) debugStringOf(oop uint16) string {
+	if om.IsSmallInteger(oop) {
+		return strconv.Itoa(int(om.SmallIntegerValue(oop)))
+	}
+	if oop == om.NilPointer {
+		return "nil"
+	}
+	if !interp.memory.ValidOop(oop) {
+		return ""
+	}
+	class := interp.fetchClassOf(oop)
+	if class == om.ClassSymbolPointer || class == om.ClassStringPointer {
+		return interp.memory.FetchStringOf(oop)
+	}
+	return ""
 }
 
 func (interp *Interpreter) createActualMessage() {

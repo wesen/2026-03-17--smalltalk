@@ -2266,3 +2266,138 @@ go run ./cmd/st80-ui -event-debug -input-debug
 - SDL-only commands removed:
   - `cmd/sdl-hello`
   - `cmd/sdl-hello-raw`
+
+## Step 21: Diagnose the first live Ebiten VM crash
+
+### Prompt / goal
+After the user confirmed that the Ebiten backend is "much better" and that live mouse input now reaches the app, investigate the new crash:
+
+```text
+panic: Recursive not understood error encountered
+...
+github.com/wesen/st80/pkg/interpreter.(*Interpreter).lookupMethodInClass
+...
+github.com/wesen/st80/pkg/interpreter.(*Interpreter).sendSpecialSelectorBytecode
+```
+
+### Inferred user intent
+The backend migration was successful enough to surface a real VM/image bug. The next priority is to turn that crash from a vague panic into a debuggable failing send state.
+
+### What I observed from the user report
+- The Ebiten UI was receiving real motion:
+
+```text
+[event-debug cycle=1625000] mouse-motion x=90 y=182
+[input-debug cycle=1630000] motions=49 buttons=4 keys=0 enqueued=8 dequeued=0 queue=8
+[event-debug cycle=1635000] mouse-motion x=223 y=382
+[input-debug cycle=1640000] motions=50 buttons=4 keys=0 enqueued=8 dequeued=0 queue=8
+```
+
+- Then the interpreter panicked inside `lookupMethodInClass`.
+- The stack showed `lookupMethodInClass` recursing through `doesNotUnderstand:`.
+- The user-visible class in the stack trace was `0x38`, which is suspicious because `0x0038` is `ClassSymbolPointer` in our object-memory constants.
+
+### What I checked first
+- Reviewed the panic path in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `lookupMethodInClass`
+  - `findNewMethodInClass`
+  - `sendSelector`
+  - `sendSpecialSelectorBytecode`
+- Reviewed the live input primitives again:
+  - `primitiveMousePoint`
+  - `primitiveCursorLocPut`
+  - `primitiveInputSemaphore`
+  - `primitiveSampleInterval`
+  - `primitiveInputWord`
+- Rechecked the existing primitive/input tests in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go), especially:
+  - `TestPrimitiveMousePointReturnsConfiguredPoint`
+  - `TestPrimitiveCursorLocPutUpdatesCursorAndReturnsReceiver`
+  - `TestPrimitiveInputWordReturnsQueuedWord`
+  - the direct event-queue tests for mouse motion and decoded keys
+
+### Why I did not jump straight to a speculative fix
+- The primitive implementations still looked plausible on inspection.
+- The queue counters were a useful clue:
+  - `enqueued=8`
+  - `dequeued=0`
+- That means the image crashed before draining the active input-word queue. So the immediate failure is less obviously "input buffer consumer broke" and more likely "some object returned to the image during mouse handling is not what the image expects."
+- The stack also implicated a special-selector send, which could easily be something like `x`, `y`, `class`, or another fixed selector applied to a wrong-shape receiver.
+
+### What I changed
+- I replaced the bare recursive panic text in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+
+```go
+panic("Recursive not understood error encountered")
+```
+
+- with a detailed interpreter-side diagnostic that records:
+  - current `messageSelector`
+  - string form of the selector if available
+  - class being searched
+  - current receiver and receiver class
+  - would-be send receiver and its class
+  - active and home contexts
+  - current method
+  - instruction pointer
+  - stack pointer
+  - current bytecode
+  - current argument count
+
+- Added helper methods:
+  - `recursiveNotUnderstoodDiagnostic`
+  - `debugStringOf`
+
+### Why
+- The previous panic told us only that `doesNotUnderstand:` recursion happened.
+- That is not enough to decide whether the real bug is:
+  - a wrong receiver object
+  - a wrong selector
+  - a corrupted stack layout
+  - a Point/cursor/mouse primitive returning the wrong object shape
+  - a later send path unrelated to the queue itself
+- The new panic should turn the next manual crash into a concrete failing state.
+
+### Validation
+- Reformatted the file with:
+
+```bash
+gofmt -w pkg/interpreter/interpreter.go
+```
+
+- Started a targeted validation run:
+
+```bash
+go test ./pkg/interpreter ./pkg/ui ./cmd/st80-ui ./cmd/ebiten-hello
+```
+
+- At the time of this diary entry, the heavy interpreter package was still in the known long-running test path, so the concrete fast validation result remains the earlier backend-targeted pass rather than a fully completed `pkg/interpreter` run.
+
+### What I learned
+- The backend migration did its job. The problem is now inside the VM/image interaction again.
+- The queue counters matter: the image had not yet consumed the queued input words, so this is probably not the same bug as a malformed `primInputWord` dequeue.
+- A diagnostic-first patch is the right move here because the next failure will likely tell us whether we are dealing with:
+  - a bad `Point`
+  - a bad receiver on a special selector like `x` / `y`
+  - or a broader send-stack corruption
+
+### What should happen next
+- Re-run:
+
+```bash
+go run ./cmd/st80-ui -event-debug -input-debug
+```
+
+- Move the mouse until the crash happens again.
+- Use the new expanded panic message to identify the selector/receiver/class combination that actually failed.
+- Then fix the VM bug, not the symptom.
+
+### Code review instructions
+- Review [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) around:
+  - `lookupMethodInClass`
+  - `recursiveNotUnderstoodDiagnostic`
+  - `debugStringOf`
+- Confirm that the extra diagnostic information is side-effect free except when the panic path is hit.
+
+### Technical details
+- The user-triggered crash happened after live Ebiten mouse motion, around cycle `1,640,000`.
+- The report strongly suggests the next bug is reachable only once real input is flowing into the image.
