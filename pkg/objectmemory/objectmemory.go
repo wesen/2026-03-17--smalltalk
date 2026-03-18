@@ -259,9 +259,93 @@ func (om *ObjectMemory) ObjectTableEntryCount() int {
 	return om.otEntryCount
 }
 
+// InstantiateClass creates a new instance of the given class with the given size.
+// This is a simplified allocator that appends to the object space and finds a free OT entry.
+func (om *ObjectMemory) InstantiateClass(classPointer uint16, instanceSize int, isPointers bool) uint16 {
+	// Object body: [size, class, field0, field1, ...]
+	bodySize := instanceSize + 2
+	location := uint16(len(om.objectSpace))
+	// Extend object space
+	body := make([]uint16, bodySize)
+	body[0] = uint16(bodySize)
+	body[1] = classPointer
+	// Fields default to NilPointer for pointer objects, 0 for word objects
+	if isPointers {
+		for i := 2; i < bodySize; i++ {
+			body[i] = NilPointer
+		}
+	}
+	om.objectSpace = append(om.objectSpace, body...)
+
+	// Find a free OT entry
+	for i := 0; i < om.otEntryCount; i++ {
+		oop := uint16(i * 2)
+		if om.IsFree(oop) {
+			var flags uint16
+			if isPointers {
+				flags = otPointerBit
+			}
+			om.objectTable[otIndex(oop)] = flags
+			om.objectTable[otIndex(oop)+1] = location
+			return oop
+		}
+	}
+	// No free entry — extend the OT
+	newOop := uint16(om.otEntryCount * 2)
+	om.otEntryCount++
+	var flags uint16
+	if isPointers {
+		flags = otPointerBit
+	}
+	om.objectTable = append(om.objectTable, flags, location)
+	return newOop
+}
+
 // ObjectSpaceSize returns the size of the object space in words.
 func (om *ObjectMemory) ObjectSpaceSize() int {
 	return len(om.objectSpace)
+}
+
+// DumpObject prints detailed information about an object for debugging.
+func (om *ObjectMemory) DumpObject(oop uint16) {
+	if IsSmallInteger(oop) {
+		fmt.Printf("  SmallInteger: value=%d\n", SmallIntegerValue(oop))
+		return
+	}
+	idx := otIndex(oop)
+	if idx+1 >= len(om.objectTable) {
+		fmt.Printf("  OOP 0x%04X: OUT OF BOUNDS (idx=%d, otLen=%d)\n", oop, idx, len(om.objectTable))
+		return
+	}
+	w0 := om.objectTable[idx]
+	w1 := om.objectTable[idx+1]
+	free := w0&otFreeBit != 0
+	ptr := w0&otPointerBit != 0
+	odd := w0&otOddLengthBit != 0
+	seg := (w0 & otSegmentMask) >> otSegmentShift
+	count := w0 >> otCountShift
+	fmt.Printf("  OT[%d]: w0=0x%04X w1=0x%04X | count=%d odd=%v ptr=%v free=%v seg=%d loc=%d\n",
+		idx/2, w0, w1, count, odd, ptr, free, seg, w1)
+	if free {
+		fmt.Printf("  (FREE entry)\n")
+		return
+	}
+	loc := int(w1)
+	if loc+1 >= len(om.objectSpace) {
+		fmt.Printf("  Location %d OUT OF BOUNDS (osLen=%d)\n", loc, len(om.objectSpace))
+		return
+	}
+	size := om.objectSpace[loc]
+	class := om.objectSpace[loc+1]
+	fmt.Printf("  OS[%d]: size=%d class=0x%04X\n", loc, size, class)
+	limit := int(size) - 2
+	if limit > 8 {
+		limit = 8
+	}
+	for i := 0; i < limit; i++ {
+		f := om.objectSpace[loc+2+i]
+		fmt.Printf("    field[%d] = 0x%04X\n", i, f)
+	}
 }
 
 // FetchStringOf extracts a string value from a String or Symbol object.

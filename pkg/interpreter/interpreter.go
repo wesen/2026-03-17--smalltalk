@@ -10,26 +10,26 @@ import (
 
 // Context field indices (Blue Book p.581)
 const (
-	SenderIndex           = 0
+	SenderIndex             = 0
 	InstructionPointerIndex = 1
-	StackPointerIndex     = 2
-	MethodIndex           = 3
+	StackPointerIndex       = 2
+	MethodIndex             = 3
 	// MethodContext field 4 is unused
-	ReceiverIndex         = 5
-	TempFrameStart        = 6
+	ReceiverIndex  = 5
+	TempFrameStart = 6
 
 	// BlockContext fields
-	CallerIndex              = 0
-	BlockArgumentCountIndex  = 3
-	InitialIPIndex           = 4
-	HomeIndex                = 5
+	CallerIndex             = 0
+	BlockArgumentCountIndex = 3
+	InitialIPIndex          = 4
+	HomeIndex               = 5
 )
 
 // Class field indices (Blue Book p.587)
 const (
-	SuperclassIndex              = 0
-	MessageDictionaryIndex       = 1
-	InstanceSpecificationIndex   = 2
+	SuperclassIndex            = 0
+	MessageDictionaryIndex     = 1
+	InstanceSpecificationIndex = 2
 )
 
 // MethodDictionary field indices
@@ -46,9 +46,9 @@ const (
 
 // Message field indices
 const (
-	MessageSelectorIndex   = 0
-	MessageArgumentsIndex  = 1
-	MessageSize            = 2
+	MessageSelectorIndex  = 0
+	MessageArgumentsIndex = 1
+	MessageSize           = 2
 )
 
 // Association field index
@@ -64,12 +64,12 @@ type Interpreter struct {
 	memory *om.ObjectMemory
 
 	// Context registers (Blue Book p.583)
-	activeContext    uint16
-	homeContext      uint16
-	method          uint16
-	receiver        uint16
+	activeContext      uint16
+	homeContext        uint16
+	method             uint16
+	receiver           uint16
 	instructionPointer int
-	stackPointer    int
+	stackPointer       int
 
 	// Message sending registers (Blue Book p.587)
 	messageSelector uint16
@@ -246,7 +246,7 @@ func (interp *Interpreter) objectPointerCountOf(methodPointer uint16) int {
 }
 
 func (interp *Interpreter) initialInstructionPointerOfMethod(methodPointer uint16) int {
-	return (interp.literalCountOf(methodPointer) + LiteralStart) * 2 + 1
+	return (interp.literalCountOf(methodPointer)+LiteralStart)*2 + 1
 }
 
 func (interp *Interpreter) flagValueOf(methodPointer uint16) int {
@@ -708,7 +708,7 @@ func (interp *Interpreter) primitiveDiv() {
 	if interp.success && arg != 0 {
 		result := rcvr / arg
 		// Smalltalk div rounds toward negative infinity
-		if (rcvr ^ arg) < 0 && rcvr%arg != 0 {
+		if (rcvr^arg) < 0 && rcvr%arg != 0 {
 			result--
 		}
 		interp.pushInteger(result)
@@ -1572,11 +1572,19 @@ func (interp *Interpreter) returnBytecode() {
 func (interp *Interpreter) Run(maxCycles uint64) error {
 	// Find the active process from the scheduler
 	schedulerAssoc := om.SchedulerAssociationPointer
+	fmt.Printf("SchedulerAssoc (oop %d): valid=%v\n", schedulerAssoc, interp.memory.ValidOop(schedulerAssoc))
 	scheduler := interp.fetchPointer(ValueIndex, schedulerAssoc)
+	fmt.Printf("Scheduler (oop 0x%04X):\n", scheduler)
+	interp.memory.DumpObject(scheduler)
 	// ProcessorScheduler has: quiescentProcessLists (0), activeProcess (1)
 	activeProcess := interp.fetchPointer(1, scheduler)
+	fmt.Printf("ActiveProcess (oop 0x%04X):\n", activeProcess)
+	interp.memory.DumpObject(activeProcess)
 	// Process has: nextLink (0), myList (1), suspendedContext (2), priority (3)
-	interp.activeContext = interp.fetchPointer(2, activeProcess)
+	suspendedContext := interp.fetchPointer(2, activeProcess)
+	fmt.Printf("SuspendedContext (oop 0x%04X): valid=%v\n",
+		suspendedContext, interp.memory.ValidOop(suspendedContext))
+	interp.activeContext = suspendedContext
 	interp.fetchContextRegisters()
 
 	fmt.Printf("Starting interpreter: activeContext=0x%04X, method=0x%04X, receiver=0x%04X\n",
@@ -1584,13 +1592,18 @@ func (interp *Interpreter) Run(maxCycles uint64) error {
 
 	for interp.cycleCount = 0; maxCycles == 0 || interp.cycleCount < maxCycles; interp.cycleCount++ {
 		interp.currentBytecode = interp.fetchBytecode()
+
+		if interp.cycleCount < 20 {
+			fmt.Printf("[cycle %d] ctx=0x%04X ip=%d sp=%d bc=%d method=0x%04X rcvr=0x%04X\n",
+				interp.cycleCount, interp.activeContext, interp.instructionPointer,
+				interp.stackPointer, interp.currentBytecode, interp.method, interp.receiver)
+		}
+
 		interp.dispatchOnThisBytecode()
 
-		if interp.cycleCount < 100 || interp.cycleCount%100000 == 0 {
-			if interp.cycleCount%100000 == 0 && interp.cycleCount > 0 {
-				fmt.Printf("[cycle %d] ip=%d, sp=%d, bc=%d\n",
-					interp.cycleCount, interp.instructionPointer, interp.stackPointer, interp.currentBytecode)
-			}
+		if interp.cycleCount%100000 == 0 && interp.cycleCount > 0 {
+			fmt.Printf("[cycle %d] ip=%d, sp=%d, bc=%d\n",
+				interp.cycleCount, interp.instructionPointer, interp.stackPointer, interp.currentBytecode)
 		}
 	}
 
