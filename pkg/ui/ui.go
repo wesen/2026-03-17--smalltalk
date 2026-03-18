@@ -15,6 +15,7 @@ type Options struct {
 	MaxCycles      uint64
 	Scale          int32
 	WindowTitle    string
+	InputDebug     bool
 }
 
 // Run boots the image, advances the interpreter in chunks, and displays the
@@ -73,6 +74,7 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 	var textureWidth int
 	var textureHeight int
 	var pixels []uint32
+	var lastInputStats interpreter.InputStats
 	defer func() {
 		_ = doSDL(func() error {
 			if texture != nil {
@@ -167,6 +169,21 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 		}
 		if quit {
 			return nil
+		}
+		if opts.InputDebug {
+			stats := interp.InputStats()
+			if stats != lastInputStats {
+				fmt.Printf("[input-debug cycle=%d] motions=%d buttons=%d keys=%d enqueued=%d dequeued=%d queue=%d\n",
+					interp.CycleCount(),
+					stats.MouseMotionsRecorded,
+					stats.MouseButtonsRecorded,
+					stats.DecodedKeysRecorded,
+					stats.WordsEnqueued,
+					stats.WordsDequeued,
+					stats.QueueDepth,
+				)
+				lastInputStats = stats
+			}
 		}
 	}
 }

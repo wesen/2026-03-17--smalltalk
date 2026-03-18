@@ -169,6 +169,12 @@ type Interpreter struct {
 	timerTickDeadline uint32
 	timerActive       bool
 
+	inputWordsEnqueued   uint64
+	inputWordsDequeued   uint64
+	mouseMotionsRecorded uint64
+	mouseButtonsRecorded uint64
+	decodedKeysRecorded  uint64
+
 	// Cycle counter for tracing
 	cycleCount uint64
 
@@ -229,6 +235,16 @@ type CursorSnapshot struct {
 	Height      int
 	Raster      int
 	Words       []uint16
+}
+
+// InputStats exposes coarse-grained counters for live input debugging.
+type InputStats struct {
+	QueueDepth           int
+	WordsEnqueued        uint64
+	WordsDequeued        uint64
+	MouseMotionsRecorded uint64
+	MouseButtonsRecorded uint64
+	DecodedKeysRecorded  uint64
 }
 
 // Scheduling constants
@@ -1894,6 +1910,7 @@ func (interp *Interpreter) enqueueInputWords(words ...uint16) bool {
 		interp.inputWords[interp.inputWriteIndex] = word
 		interp.inputWriteIndex = (interp.inputWriteIndex + 1) % len(interp.inputWords)
 		interp.inputWordCount++
+		interp.inputWordsEnqueued++
 		if interp.inputSemaphore != om.NilPointer {
 			interp.asynchronousSignal(interp.inputSemaphore)
 		}
@@ -1908,6 +1925,7 @@ func (interp *Interpreter) dequeueInputWord() (uint16, bool) {
 	word := interp.inputWords[interp.inputReadIndex]
 	interp.inputReadIndex = (interp.inputReadIndex + 1) % len(interp.inputWords)
 	interp.inputWordCount--
+	interp.inputWordsDequeued++
 	return word, true
 }
 
@@ -2966,6 +2984,7 @@ func (interp *Interpreter) SetMousePoint(x int, y int) {
 // input buffer is configured, queues a movement event respecting the current
 // sample interval.
 func (interp *Interpreter) RecordMouseMotion(x int, y int, timestamp uint32) {
+	interp.mouseMotionsRecorded++
 	if !interp.updateMousePointState(x, y) {
 		return
 	}
@@ -2984,6 +3003,7 @@ func (interp *Interpreter) RecordMouseMotion(x int, y int, timestamp uint32) {
 // RecordMouseButton updates the pointing-device location and queues a button
 // transition in the active input buffer.
 func (interp *Interpreter) RecordMouseButton(buttonParameter uint16, down bool, x int, y int, timestamp uint32) {
+	interp.mouseButtonsRecorded++
 	interp.updateMousePointState(x, y)
 	typeCode := uint16(inputWordTypeDeviceOff)
 	if down {
@@ -2996,10 +3016,23 @@ func (interp *Interpreter) RecordMouseButton(buttonParameter uint16, down bool, 
 // convention from the Blue Book: a type-3 on word immediately followed by a
 // type-4 off word.
 func (interp *Interpreter) RecordDecodedKey(parameter uint16, timestamp uint32) {
+	interp.decodedKeysRecorded++
 	_ = interp.queueInputEvent(timestamp,
 		inputEventWord(inputWordTypeDeviceOn, parameter),
 		inputEventWord(inputWordTypeDeviceOff, parameter),
 	)
+}
+
+// InputStats returns coarse-grained host/input counters for live debugging.
+func (interp *Interpreter) InputStats() InputStats {
+	return InputStats{
+		QueueDepth:           interp.inputWordCount,
+		WordsEnqueued:        interp.inputWordsEnqueued,
+		WordsDequeued:        interp.inputWordsDequeued,
+		MouseMotionsRecorded: interp.mouseMotionsRecorded,
+		MouseButtonsRecorded: interp.mouseButtonsRecorded,
+		DecodedKeysRecorded:  interp.decodedKeysRecorded,
+	}
 }
 
 // Run starts the interpreter from the active process in the image.
