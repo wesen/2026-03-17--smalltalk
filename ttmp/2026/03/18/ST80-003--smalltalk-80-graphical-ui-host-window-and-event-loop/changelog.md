@@ -105,3 +105,15 @@ Step 9: added passive mouse-point and cursor-location support so the SDL host ca
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Added direct primitive tests for passive mouse-point and cursor-location behavior
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — SDL event loop now maps host mouse coordinates into interpreter state
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/tasks.md — Split the broad input task into passive mouse support vs buffered keyboard/button follow-up
+
+
+## 2026-03-18
+
+Step 10: implemented the active input-event buffer primitives (`93`, `94`, `95`), wired SDL mouse/keyboard events into the Blue Book event-word stream, and fixed an OOP-0 sentinel mistake that initially suppressed deferred input semaphore signaling.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added buffered input state, 16-bit integer boxing, primitives `93`/`94`/`95`, and host input-event recording helpers
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Added regressions for input semaphore registration, sample interval handling, buffered word return, mouse-motion event words, and decoded-keypress encoding
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — SDL loop now feeds mouse motion, mouse buttons, text input, and editing keys into the interpreter input queue
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/06-input-event-buffer-oop-zero-sentinel-bug-writeup.md — Intern-facing writeup of the first-pass input semaphore signaling bug

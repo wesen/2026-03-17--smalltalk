@@ -981,3 +981,147 @@ SDL_VIDEODRIVER=dummy go run ./cmd/st80-ui -max-cycles 50000 -cycles-per-frame 5
   - event-buffer primitives (`93`, `94`, `95`)
   - time/timer primitives (`98`, `99`, `100`)
 - Doing the passive slice first reduces the number of moving parts in the next input pass.
+
+## Step 10: Active Input Event Buffer, SDL Keyboard/Button Wiring, and the OOP-0 Sentinel Fix
+
+With passive mouse-point support in place, the next honest gap was no longer “some input exists.” It was that the actual Blue Book event-buffer path still did not exist. The image could poll the pointing-device location, but it still could not consume the event-initiated stream behind `primInputSemaphore:`, `primSampleInterval:`, and `primInputWord`. That meant no buffered mouse movement, no mouse buttons, and no keyboard stream for the Smalltalk side to wait on and drain.
+
+I implemented that path in the order the Blue Book describes it: first the interpreter-side buffer and primitives, then the host-side SDL translation. The first pass immediately exposed a real bug in my own code: I treated OOP `0` as an “unset” sentinel for the registered input semaphore, but newly allocated objects can legitimately land at OOP `0` in this image. That silently suppressed `asynchronousSignal:` even though input words were being queued correctly. The focused regression caught it immediately.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, in the meantime, let's continue"
+
+**Assistant interpretation:** Keep pushing the UI/runtime work forward without pausing, taking the next technically correct slice after passive pointer support.
+
+**Inferred user intent:** Turn the visible but still mostly host-shell UI into a more faithful Smalltalk environment by filling in the remaining runtime plumbing, while keeping the diary and bug writeups detailed enough for later review.
+
+### What I did
+- Extended [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) with active input-buffer state:
+  - registered input semaphore
+  - sample interval in milliseconds
+  - ring buffer for queued 16-bit event words
+  - last-event and last-mouse-event timestamps
+- Added Blue Book-style 16-bit boxing helper:
+  - `positive16BitIntegerFor`
+  - returns either `SmallInteger` or `LargePositiveInteger`
+- Implemented primitive `93` (`primitiveInputSemaphore`)
+- Implemented primitive `94` (`primitiveSampleInterval`)
+- Implemented primitive `95` (`primitiveInputWord`)
+- Added host-facing interpreter helpers:
+  - `RecordMouseMotion`
+  - `RecordMouseButton`
+  - `RecordDecodedKey`
+- Updated [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go):
+  - start/stop SDL text input
+  - feed mouse motion into the active movement stream
+  - feed left/middle/right mouse buttons as parameter codes `128`, `129`, `130`
+  - feed text input as decoded-keyboard ASCII keypresses
+  - feed editing keys (`Backspace`, `Tab`, `Return`, `Escape`, `Delete`) on `KEYDOWN`
+- Added focused regressions in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestPrimitiveInputSemaphoreStoresSemaphoreAndReturnsReceiver`
+  - `TestPrimitiveSampleIntervalStoresMillisecondsAndReturnsReceiver`
+  - `TestPrimitiveInputWordReturnsQueuedWord`
+  - `TestRecordMouseMotionQueuesTimedCoordinatesAndSignalsSemaphore`
+  - `TestRecordMouseMotionRespectsSampleInterval`
+  - `TestRecordDecodedKeyQueuesOnAndOffWords`
+- Ran formatting:
+
+```bash
+gofmt -w pkg/interpreter/interpreter.go pkg/interpreter/interpreter_test.go pkg/ui/ui.go
+```
+
+- Ran focused validation:
+
+```bash
+go test ./pkg/interpreter -run 'TestPrimitive(InputSemaphoreStoresSemaphoreAndReturnsReceiver|SampleIntervalStoresMillisecondsAndReturnsReceiver|InputWordReturnsQueuedWord|MousePointReturnsConfiguredPoint|CursorLocPutUpdatesCursorAndReturnsReceiver|CursorLocPutUpdatesMouseWhenLinked)|TestRecord(MouseMotionQueuesTimedCoordinatesAndSignalsSemaphore|MouseMotionRespectsSampleInterval|DecodedKeyQueuesOnAndOffWords)|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles'
+SDL_VIDEODRIVER=dummy go test ./pkg/ui ./cmd/st80-ui
+```
+
+### Why
+- The Blue Book splits passive pointer polling from the event-initiated input buffer. I had already done the passive half, so the next real missing semantics were `93`, `94`, and `95`.
+- `primInputWord` needed the correct 16-bit boxing path, otherwise high-bit event words would have failed as soon as button/type codes crossed the `SmallInteger` range.
+- Wiring SDL text input and editing keys separately matches the real host event model better than trying to synthesize everything out of raw keycodes alone.
+
+### What worked
+- The interpreter now has a real buffered event-word stream with per-word deferred semaphore signaling.
+- Mouse motion now queues:
+  - a time word
+  - X location
+  - Y location
+- Mouse buttons now queue type-3 / type-4 words using the Blue Book button parameters.
+- Text input now produces decoded-keyboard style on/off pairs.
+- The sample interval now suppresses overly-frequent movement events.
+- Focused regressions are green.
+- SDL-side package builds/tests remain green under the dummy driver.
+
+### What didn't work
+- My first version of the queue-signaling path assumed `inputSemaphore != 0` meant “a real semaphore is present.” That was wrong in this object memory: a freshly allocated Semaphore can legitimately have OOP `0`.
+- The initial focused run failed with:
+
+```text
+--- FAIL: TestRecordMouseMotionQueuesTimedCoordinatesAndSignalsSemaphore (0.00s)
+    interpreter_test.go:441: expected 3 deferred semaphore signals, got 0
+```
+
+- That failure was entirely my own bug, not a spec ambiguity.
+- This slice still does not implement:
+  - clock/timer primitives `98`, `99`, `100`
+  - full control/meta-key coverage beyond ASCII text and the main editing keys
+  - visible host-side cursor overlay
+
+### What I learned
+- The Blue Book’s “buffered stream of 16-bit words” is straightforward once the queue and boxing helpers are explicit.
+- OOP `0` is not a safe generic sentinel in this VM. The only reliable “no object” sentinel is `nil` (`2`), plus explicit validity/class checks where needed.
+- SDL text input is the right path for decoded-keyboard semantics because it already incorporates shift/layout translation.
+
+### What was tricky to build
+- The tricky part was not the queue itself. It was respecting all the small semantic edges at once:
+  - time words are per event group
+  - `primitiveInputWord` must return unsigned 16-bit values via either `SmallInteger` or `LargePositiveInteger`
+  - movement throttling applies to pointer movement, not all event kinds
+  - decoded keyboard input is not the same as raw key up/down input
+- The first-pass semaphore bug was subtle because the queue contents were correct. Only the deferred-signal side effect was wrong. Without the focused regression on `semaphoreIndex`, it would have been easy to miss.
+
+### What warrants a second pair of eyes
+- Review the decoded-keyboard host mapping in [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go), especially where printable text comes from `TextInputEvent` but editing keys come from `KeyboardEvent`.
+- Review the choice to drop whole events when the ring buffer lacks capacity rather than partially enqueueing them. That is intentional, but worth confirming.
+- Review the use of SDL event timestamps as the active-input clock source for buffered words.
+
+### What should be done in the future
+- Implement the remaining clock/timer primitives so the same host event/tick story is complete.
+- Expand decoded-keyboard coverage for control/meta-key edge cases if the image expects more than text-plus-editing keys.
+- Exercise the live UI on a real desktop session and confirm the image actually consumes the new buffered events as intended.
+
+### Code review instructions
+- Start in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `positive16BitIntegerFor`
+  - `primitiveInputSemaphore`
+  - `primitiveSampleInterval`
+  - `primitiveInputWord`
+  - `queueInputEvent`
+  - `RecordMouseMotion`
+  - `RecordMouseButton`
+  - `RecordDecodedKey`
+- Then review [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go):
+  - `processEventsAndPresent`
+  - `mapWindowToLogicalPoint`
+  - `mouseButtonParameter`
+  - `specialKeyParameter`
+- Then read [06-input-event-buffer-oop-zero-sentinel-bug-writeup.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/06-input-event-buffer-oop-zero-sentinel-bug-writeup.md) for the first-pass regression and fix.
+- Validate with:
+  - `go test ./pkg/interpreter -run 'TestPrimitive(InputSemaphoreStoresSemaphoreAndReturnsReceiver|SampleIntervalStoresMillisecondsAndReturnsReceiver|InputWordReturnsQueuedWord|MousePointReturnsConfiguredPoint|CursorLocPutUpdatesCursorAndReturnsReceiver|CursorLocPutUpdatesMouseWhenLinked)|TestRecord(MouseMotionQueuesTimedCoordinatesAndSignalsSemaphore|MouseMotionRespectsSampleInterval|DecodedKeyQueuesOnAndOffWords)|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles'`
+  - `SDL_VIDEODRIVER=dummy go test ./pkg/ui ./cmd/st80-ui`
+
+### Technical details
+- Blue Book reference used in this step:
+  - input/output primitives on pages `648` to `652`
+  - 16-bit positive integer boxing on pages `617` to `618`
+- The event-word encoding implemented here is:
+  - type `0`: delta-time
+  - type `1`: mouse X
+  - type `2`: mouse Y
+  - type `3`: device on
+  - type `4`: device off
+  - type `5`: absolute time + two trailing words
+- The specific first-pass bug fix was changing the input-semaphore signal guard from “non-zero and non-nil” to “non-nil”, because OOP `0` can still be a valid allocated object.
