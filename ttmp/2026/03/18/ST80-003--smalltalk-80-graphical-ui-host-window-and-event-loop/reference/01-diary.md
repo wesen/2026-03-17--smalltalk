@@ -21,6 +21,9 @@ RelatedFiles:
       Note: |-
         Stepped execution API plus display snapshot export for the SDL host loop (commit 8e85254)
         Stepped interpreter API and display snapshot export (commit 8e85254)
+        Primitive 71 LargePositiveInteger size fix and positive integer decoder (commit acaa659)
+    - Path: pkg/interpreter/interpreter_test.go
+      Note: Trace3 startup regression and startup diagnostics for the display allocation bug (commit acaa659)
     - Path: pkg/ui/snapshot.go
       Note: Direct framebuffer snapshot capture and PNG output (commit ee69a09)
     - Path: pkg/ui/ui.go
@@ -31,16 +34,23 @@ RelatedFiles:
       Note: Reusable off-screen screenshot helper for the SDL UI
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh
       Note: Ticket-local wrapper for direct framebuffer snapshot iteration
+    - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-1000.png
+      Note: Post-fix snapshot showing the corrected 640x480 display surface
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-1000000.png
       Note: Direct framebuffer PNG at one million cycles showing the current white 640x16 surface
+    - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-2000000.png
+      Note: Long-run snapshot showing the corrected 640x480 display surface remains all white
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png
-      Note: First captured UI image showing the current visible state
+      Note: |-
+        First captured UI image showing the current visible state
+        Updated off-screen UI capture after the display allocation fix
 ExternalSources: []
 Summary: Diary for the graphical host-window ticket that begins after the interpreter reaches a stable idle loop with a real BitBlt path.
 LastUpdated: 2026-03-18T09:33:46.413235314-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 
 
@@ -412,3 +422,160 @@ X Error of failed request:  BadWindow (invalid Window parameter)
 ```bash
 bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh
 ```
+
+## Step 4: Fixed `DisplayBitmap new:` for LargePositiveInteger Sizes and Restored the Full Display Surface
+
+The blank UI investigation stopped being a renderer problem once the snapshot tool proved that the designated display surface itself was only `640x16`. The next useful step was not more SDL work. It was to explain why the startup image never replaced that temporary `640x16` display with the real full-height one that `DisplayScreen class>>displayExtent:` is supposed to build later in the boot sequence.
+
+I used the trace, method-bytecode dumps, and targeted startup diagnostics to narrow that down. `currentDisplay:` and `become:` were behaving correctly. The real defect was earlier: primitive `71` (`basicNew:` / `new:`) only accepted SmallInteger sizes, so `DisplayBitmap new: 19200` failed during the second full-screen allocation path. That pushed the image into `Behavior>>new:` bytecodes, broke the trace at cycle `721`, and left the temporary `640x16` display designated indefinitely.
+
+### Prompt Context
+
+**User prompt (verbatim):** "go ahead."
+
+**Assistant interpretation:** Continue the investigation aggressively from the blank-UI/display frontier without pausing for more planning, and keep the result heavily documented.
+
+**Inferred user intent:** Push the UI ticket forward by turning the latest diagnostics into a real VM fix, and store the root-cause analysis in a form that can be reviewed later by someone else.
+
+**Commit (code):** acaa659 — "Fix new: for LargePositiveInteger sizes"
+
+### What I did
+- Kept and expanded the startup diagnostics in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go) so I could answer three questions with traceable evidence:
+  - what `DisplayScreen class>>currentDisplay:` actually sends
+  - what `DisplayScreen class>>displayExtent:` actually builds
+  - where our runtime first diverges from [trace3](/home/manuel/code/wesen/2026-03-17--smalltalk/data/trace3)
+- Decoded `currentDisplay:` and confirmed it does:
+  - class check on the passed screen
+  - bitmap-class check on `aDisplayScreen bits`
+  - `Display become: aDisplayScreen`
+  - `Display beDisplay`
+- Decoded `displayExtent:` and confirmed it intentionally builds two displays:
+  - temporary `width x 16`
+  - real `width x fullHeight`
+- Added a targeted trace mismatch diagnostic and ran:
+
+```bash
+RUN_ST80_DIAGNOSTIC=1 go test ./pkg/interpreter -run TestDumpTrace3FirstMismatchUpTo750 -v
+```
+
+- That showed the first real divergence before the fix:
+
+```text
+trace3 cycle 721 expected send "[cycle=721]  aDisplayScreen extent:offset:bits: aPoint aPoint aDisplayBitmap" but bytecode=112 method=0x4514(<Behavior>new:) was not a send
+```
+
+- Read primitive `71` in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) and confirmed it used `popInteger()`, which rejects any non-SmallInteger.
+- Implemented `positiveIntegerValueOf` so primitive `71` can accept:
+  - non-negative SmallIntegers
+  - `LargePositiveInteger` byte objects
+- Rewired primitive `71` to decode its size argument with `positiveIntegerValueOf`.
+- Added a real regression test:
+  - `TestTrace3DisplayStartupSendSelectorsMatch`
+  - validates the startup selector flow through cycle `757`
+- Re-ran validation:
+
+```bash
+RUN_ST80_DIAGNOSTIC=1 go test ./pkg/interpreter -run TestDumpDisplayStartupSendCycles -v
+go test ./pkg/interpreter
+go test ./...
+go run ./cmd/st80-snapshot -cycles 1000 -output /tmp/st80-1000.png
+go run ./cmd/st80-snapshot -cycles 2000000 -output /tmp/st80-2000000.png
+bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh
+```
+
+### Why
+- The white `640x16` framebuffer was already proven to originate inside the VM, so SDL work would have been a distraction.
+- The first startup trace mismatch is the highest-value bug locator available here because it turns “UI blank” into a precise control-flow failure.
+- Primitive `71` sits exactly on the path for `DisplayBitmap new: 19200`, so once the trace showed a fallback into `Behavior>>new:`, it became the correct place to look.
+
+### What worked
+- The trace mismatch disappeared after the primitive fix:
+
+```bash
+RUN_ST80_DIAGNOSTIC=1 go test ./pkg/interpreter -run TestDumpTrace3FirstMismatchUpTo750 -v
+```
+
+now passes.
+
+- The startup selector probe now shows the expected second full-screen handoff:
+
+```text
+cycle=137 ... selector=currentDisplay:
+cycle=733 ... selector=currentDisplay:
+cycle=757 ... selector=restore
+```
+
+- The designated display surface is now structurally correct:
+
+```text
+cycles=1000 width=640 height=480 raster=40 blackPixels=0 whitePixels=307200
+cycles=2000000 width=640 height=480 raster=40 blackPixels=0 whitePixels=307200
+```
+
+- The repository test suite remains green with:
+
+```bash
+go test ./...
+```
+
+### What didn't work
+- The first compile after implementing `positiveIntegerValueOf` failed because I forgot to import `strconv`:
+
+```text
+pkg/interpreter/interpreter.go:709:17: undefined: strconv
+```
+
+- Fixing the display-allocation bug did not make the UI visually non-white. The designated framebuffer is now `640x480`, but it is still all white at both `1000` and `2000000` cycles.
+
+### What I learned
+- The `640x16` surface was not a generic `become:` or `beDisplay` bug.
+- `displayExtent:` always intended to replace the temporary display later; our VM simply never executed that path correctly because `new:` rejected the large size.
+- A startup trace mismatch around a single send was enough to isolate a primitive bug that directly affected the UI.
+- The UI frontier has moved forward: the structural display surface bug is fixed, so the next problem is actual drawing into a now-correct framebuffer.
+
+### What was tricky to build
+- The tricky part was resisting the obvious but wrong target. The early evidence made `currentDisplay:` and `become:` look suspicious because the first designated display really was `640x16`. But method decoding showed that this temporary display is intentional. The real problem was that the later full-screen replacement never completed.
+- The second subtlety was integer representation. `19200` looks like an ordinary size from the host side, but in this image it is a `LargePositiveInteger`. Any primitive that handles object sizes by only accepting SmallIntegers will silently fail on legitimate startup allocations.
+
+### What warrants a second pair of eyes
+- Review `positiveIntegerValueOf` in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) for integer-overflow handling and for whether other storage-management primitives should share the same decoder later.
+- Review the new regression in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go) to make sure `trace3` up to cycle `757` is the right stability boundary for this startup behavior.
+- Review whether any other primitives besides `71` are still incorrectly limited to SmallInteger arguments in code paths that the image expects to feed with `LargePositiveInteger`s.
+
+### What should be done in the future
+- Investigate why the corrected `640x480` designated display still remains all white.
+- Compare later drawing-related sends and framebuffer hashes against the current UI capture path.
+- Feed input/time primitives once the draw path is understood, rather than assuming interactivity alone will populate the screen.
+
+### Code review instructions
+- Start in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `positiveIntegerValueOf`
+  - primitive `71` in `dispatchStorageManagementPrimitives`
+- Then review [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestTrace3DisplayStartupSendSelectorsMatch`
+  - `TestDumpTrace3FirstMismatchUpTo750`
+  - `TestDumpDisplayStartupSendCycles`
+- Then confirm the new direct-snapshot state with:
+  - [display-1000.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-1000.png)
+  - [display-2000000.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-2000000.png)
+- Validate with:
+  - `go test ./pkg/interpreter`
+  - `go test ./...`
+  - `RUN_ST80_DIAGNOSTIC=1 go test ./pkg/interpreter -run TestDumpDisplayStartupSendCycles -v`
+  - `CYCLES=1000 bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh`
+  - `CYCLES=2000000 bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh`
+
+### Technical details
+- Primitive `71` bug condition:
+  - old code path used `popInteger()`
+  - `popInteger()` accepts only SmallIntegers
+  - `DisplayBitmap new: 19200` therefore failed
+- Trace landmarks after the fix:
+  - cycle `137` first `currentDisplay:`
+  - cycle `733` second `currentDisplay:`
+  - cycle `757` `restore`
+- Snapshot metrics after the fix:
+  - `display-1000.png`: `640x480`, all white
+  - `display-2000000.png`: `640x480`, all white, same hash
+- Updated UI capture artifact:
+  - [st80-ui.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png)

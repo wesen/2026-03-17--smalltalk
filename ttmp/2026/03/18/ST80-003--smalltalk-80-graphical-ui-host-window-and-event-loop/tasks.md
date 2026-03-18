@@ -8,8 +8,9 @@
 - [x] Add an SDL host-window command that renders the display bitmap
 - [x] Validate the new UI path under SDL's dummy video driver
 - [x] Add a direct non-SDL framebuffer snapshot path for fast UI diagnostics
-- [ ] Investigate why the designated display framebuffer is `640x16` and all white
+- [x] Investigate why the designated display framebuffer is `640x16` and all white
 - [ ] Feed keyboard and mouse events into the Smalltalk input primitives
 - [ ] Implement host-side time/timer support for the remaining clock primitives
 - [ ] Decide how to render or synthesize the Smalltalk cursor on the host side
 - [ ] Verify the UI command visually in a real desktop session and record the result in this ticket
+- [ ] Investigate why the corrected 640x480 designated display remains all white and never receives visible drawing

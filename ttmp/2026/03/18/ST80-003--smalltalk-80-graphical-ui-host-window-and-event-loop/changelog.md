@@ -36,3 +36,14 @@ Step 3: Added a direct non-SDL framebuffer snapshot command and ticket-local wra
 - /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-snapshot/main.go — Command-line entrypoint for direct framebuffer snapshots (commit ee69a09)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh — Fast ticket-local snapshot wrapper
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-1000000.png — First direct framebuffer PNG
+
+## 2026-03-18
+
+Step 4: fixed primitive 71 to accept LargePositiveInteger sizes, restored the full 640x480 designated display allocation path, and added a trace3 startup regression (commit acaa659).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Primitive 71 now accepts LargePositiveInteger size arguments for startup display allocation (commit acaa659)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Trace3 startup regression and detailed diagnostics for the display allocation bug (commit acaa659)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-1000.png — Post-fix direct framebuffer snapshot showing the corrected 640x480 surface
+
