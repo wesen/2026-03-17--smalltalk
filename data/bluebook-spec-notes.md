@@ -253,16 +253,264 @@ Check for nil sender/IP (cannotReturn error), then:
 - 110: Character = / ==
 - 111: class
 
-## Object Table Entry Format (Chapter 30)
+## Process Scheduling (Chapter 29, p.641-647)
 
-Each entry is 2 words (4 bytes):
-- Word 0 bits 15-8: reference count (8 bits)
-- Word 0 bit 7: odd length flag
-- Word 0 bit 6: pointer fields flag
-- Word 0 bit 5: free entry flag
-- Word 0 bits 4-1: segment number (4 bits)
-- Word 0 bit 0: unused
-- Word 1: location within segment
+### Class Field Indices for Scheduling
+
+```
+"Class ProcessorScheduler"
+ProcessListsIndex = 0      (Array of LinkedLists, one per priority)
+ActiveProcessIndex = 1
+
+"Class LinkedList"
+FirstLinkIndex = 0
+LastLinkIndex = 1
+
+"Class Semaphore" (subclass of LinkedList)
+ExcessSignalsIndex = 2
+
+"Class Link"
+NextLinkIndex = 0
+
+"Class Process" (subclass of Link)
+SuspendedContextIndex = 1
+PriorityIndex = 2
+MyListIndex = 3
+```
+
+### Process-Related Interpreter Registers
+- newProcessWaiting: true if a process switch is pending
+- newProcess: the Process to switch to
+- semaphoreList: Array buffer of Semaphores to signal (interpreter-internal, not in object memory)
+- semaphoreIndex: index of last Semaphore in buffer (0 = empty)
+
+### Key Routines
+
+**schedulerPointer**: `memory fetchPointer: ValueIndex ofObject: SchedulerAssociationPointer`
+
+**firstContext** (startup):
+```
+newProcessWaiting = false
+activeContext = memory fetchPointer: SuspendedContextIndex
+                       ofObject: self activeProcess
+```
+
+**activeProcess**:
+```
+newProcessWaiting
+  ifTrue: [newProcess]
+  ifFalse: [memory fetchPointer: ActiveProcessIndex
+                   ofObject: self schedulerPointer]
+```
+
+**checkProcessSwitch** (called before each bytecode):
+```
+1. Signal all buffered semaphores (synchronousSignal: for each)
+2. If newProcessWaiting:
+   - Store activeContext into old process's SuspendedContextIndex
+   - Store newProcess into scheduler's ActiveProcessIndex
+   - Load newProcess's SuspendedContextIndex as new active context
+   - newProcessWaiting = false
+```
+
+**transferTo: aProcess**: `newProcessWaiting = true; newProcess = aProcess`
+
+**synchronousSignal: aSemaphore**:
+```
+If semaphore's waiting list is empty:
+  increment excessSignals
+Else:
+  resume first waiting process (removeFirstLinkOfList:)
+```
+
+**primitiveSignal** (85): `self synchronousSignal: self stackTop`
+
+**primitiveWait** (86):
+```
+If excessSignals > 0: decrement excessSignals
+Else: add active process to semaphore's list, suspendActive
+```
+
+**primitiveResume** (87): `self resume: self stackTop`
+
+**primitiveSuspend** (88):
+```
+If receiver == activeProcess: pop, push nil, suspendActive
+Else: primitiveFail
+```
+
+**resume: aProcess**:
+```
+If aProcess priority > activeProcess priority:
+  sleep activeProcess, transferTo aProcess
+Else:
+  sleep aProcess
+```
+
+**sleep: aProcess**: add to its priority's process list
+
+**suspendActive**: `transferTo: wakeHighestPriority`
+
+**wakeHighestPriority**: find highest non-empty priority list, remove first process
+
+### LinkedList Operations
+- **removeFirstLinkOfList:** remove and return first link
+- **addLastLink:toList:** append link to end of list
+- **isEmptyList:** `firstLink == NilPointer`
+
+## Storage Management Primitives (Chapter 29, p.633-637)
+
+| Index | Routine | Description |
+|-------|---------|-------------|
+| 68 | primitiveObjectAt | objectAt: — access pointer fields of CompiledMethod |
+| 69 | primitiveObjectAtPut | objectAt:put: |
+| 70 | primitiveNew | basicNew — create instance (fails if class is indexable) |
+| 71 | primitiveNewWithArg | basicNew: — create indexable instance |
+| 72 | primitiveBecome | become: — swap object pointers |
+| 73 | primitiveInstVarAt | instVarAt: — access numbered instance variable |
+| 74 | primitiveInstVarAtPut | instVarAt:put: |
+| 75 | primitiveAsOop | asOop/hash — return OOP >> 1 (or OOP | 1 for non-integers) |
+| 76 | primitiveAsObject | asObject — return OOP from SmallInteger (OOP & 0xFFFE) |
+| 77 | primitiveSomeInstance | someInstance — first instance of a class |
+| 78 | primitiveNextInstance | nextInstance — next instance after given object |
+| 79 | primitiveNewMethod | newMethod:header: — create CompiledMethod |
+
+### primitiveNew (70)
+```
+class = popStack
+size = fixedFieldsOf(class)
+success: isIndexable(class) == false
+success ifTrue:
+  isPointers(class)
+    ifTrue: [push: instantiateClass:withPointers: size]
+    ifFalse: [push: instantiateClass:withWords: size]
+```
+
+### primitiveNewWithArg (71)
+```
+size = positive16BitValueOf: popStack
+class = popStack
+success: isIndexable(class)
+success ifTrue:
+  size += fixedFieldsOf(class)
+  isPointers(class)
+    ifTrue: [push: instantiateClass:withPointers: size]
+    ifFalse: isWords(class)
+      ifTrue: [push: instantiateClass:withWords: size]
+      ifFalse: [push: instantiateClass:withBytes: size]
+```
+
+## Control Primitives (Chapter 29, p.637-647)
+
+### primitiveBlockCopy (80)
+```
+blockArgumentCount = popStack
+context = popStack
+methodContext = isBlockContext(context)
+  ifTrue: [fetchPointer: HomeIndex ofObject: context]
+  ifFalse: [context]
+contextSize = fetchWordLengthOf: methodContext
+newContext = instantiateClass: ClassBlockContextPointer
+                              withPointers: contextSize
+initialIP = integerObjectOf: instructionPointer + 3
+storePointer: InitialIPIndex ofObject: newContext withValue: initialIP
+storePointer: InstructionPointerIndex ofObject: newContext withValue: initialIP
+storeStackPointerValue: 0 inContext: newContext
+storePointer: BlockArgumentCountIndex ofObject: newContext
+              withValue: blockArgumentCount
+storePointer: HomeIndex ofObject: newContext withValue: methodContext
+push: newContext
+```
+
+### primitiveValue (81)
+```
+blockContext = stackValue: argumentCount
+blockArgumentCount = argumentCountOfBlock: blockContext
+success: argumentCount == blockArgumentCount
+success ifTrue:
+  transfer arguments from activeContext to blockContext (TempFrameStart)
+  pop: argumentCount + 1
+  initialIP = fetchPointer: InitialIPIndex ofObject: blockContext
+  storePointer: InstructionPointerIndex ofObject: blockContext withValue: initialIP
+  storeStackPointerValue: argumentCount inContext: blockContext
+  storePointer: CallerIndex ofObject: blockContext withValue: activeContext
+  newActiveContext: blockContext
+```
+
+### primitivePerform (83)
+```
+performSelector = messageSelector
+messageSelector = stackValue: argumentCount - 1
+newReceiver = stackValue: argumentCount
+lookupMethodInClass: (fetchClassOf: newReceiver)
+success: argumentCountOf(newMethod) == argumentCount - 1
+success ifTrue:
+  Remove selector from stack (shift arguments down)
+  pop: 1
+  argumentCount -= 1
+  executeNewMethod
+ifFalse: [messageSelector = performSelector]
+```
+
+## Input/Output Primitives (Chapter 29, p.647-650)
+
+| Index | Routine | Description |
+|-------|---------|-------------|
+| 90 | primitiveMousePoint | Return Point with mouse x,y |
+| 91 | primitiveCursorLocPut | Set cursor position |
+| 92 | primitiveCursorLink | Link/unlink cursor to mouse |
+| 93 | primitiveInputSemaphore | Set input event semaphore |
+| 94 | primitiveSampleInterval | Set input sampling interval |
+| 95 | primitiveInputWord | Return next input event word |
+| 96 | primitiveCopyBits | BitBlt copyBits |
+| 97 | primitiveSnapshot | Save image to disk |
+| 98 | primitiveTimeWordsInto | secondClockInto: |
+| 99 | primitiveTickWordsInto | millisecondClockInto: |
+| 100 | primitiveSignalAtTick | signal:atMilliseconds: |
+| 101 | primitiveBeCursor | Cursor beCursor |
+| 102 | primitiveBeDisplay | DisplayScreen beDisplay |
+| 103 | primitiveScanCharacters | CharacterScanner scanCharactersFrom:to:in:rightX:stopConditions:displaying: |
+| 104 | primitiveDrawLoop | BitBlt drawLoopX:Y: |
+| 105 | primitiveStringReplace | replaceFrom:to:with:startingAt: |
+
+### Input Event Word Format
+16-bit word with type in high 4 bits, parameter in low 12 bits:
+- Type 0: time stamp (parameter = low 12 bits of millisecond clock)
+- Type 1: x delta of pointing device
+- Type 2: y delta of pointing device
+- Type 3: button/key down (parameter = button/key code)
+- Type 4: button/key up (parameter = button/key code)
+- Type 5: x position of pointing device
+- Type 6: y position of pointing device
+
+## System Primitives (Chapter 29, p.650)
+
+| Index | Routine | Description |
+|-------|---------|-------------|
+| 110 | primitiveEquivalent | Character =, Object == |
+| 111 | primitiveClass | Object class |
+| 112 | primitiveCoreLeft | SystemDictionary coreLeft (return 0) |
+| 113 | primitiveQuit | SystemDictionary quit |
+| 114 | primitiveExitToDebugger | SystemDictionary exitToDebugger |
+| 115 | primitiveOopsLeft | SystemDictionary oopsLeft (return 0) |
+| 116 | primitiveSignalAtOopsLeftWordsLeft | signal:atOopsLeft:wordsLeft: |
+
+## Object Table Entry Format (Chapter 30, p.661-662)
+
+Each entry is 2 words (4 bytes). Blue Book uses MSB-first bit numbering.
+
+Figure 30.5: `| COUNT | O | P | F | SEGMENT |` + `| LOCATION |`
+
+Accessor routines (p.662):
+- countBitsOf: bits 0 to 7 (standard: bits 15-8)
+- oddBitOf: bit 8 (standard: bit 7)
+- pointerBitOf: bit 9 (standard: bit 6)
+- freeBitOf: bit 10 (standard: bit 5)
+- segmentBitsOf: bits 12 to 15 (standard: bits 3-0)
+- locationBitsOf: word 1 (full 16-bit value)
+
+**IMPORTANT**: Bit 11 (standard bit 4) is unused/gap. Segment is 4 bits in bits 12-15
+(standard bits 3-0), NOT bits 4-1 as might be assumed from a naive reading.
 
 Full heap address = segment * 65536 + location
 
