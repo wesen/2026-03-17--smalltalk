@@ -23,12 +23,17 @@ RelatedFiles:
       Note: |-
         SDL host window, render loop, and bitmap conversion (commit 8e85254)
         SDL host window and display bitmap presentation loop (commit 8e85254)
+    - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh
+      Note: Reusable off-screen screenshot helper for the SDL UI
+    - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png
+      Note: First captured UI image showing the current visible state
 ExternalSources: []
 Summary: Diary for the graphical host-window ticket that begins after the interpreter reaches a stable idle loop with a real BitBlt path.
 LastUpdated: 2026-03-18T09:33:46.413235314-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 
 # Diary
@@ -203,4 +208,94 @@ go get github.com/veandco/go-sdl2/sdl@master
 go test ./...
 SDL_VIDEODRIVER=dummy go run ./cmd/st80-ui -max-cycles 500000 -cycles-per-frame 50000 -scale 1
 git commit -m "Add SDL host window for display bitmap"
+```
+
+## Step 2: Ticket-Local Screenshot Script and First Real UI Capture
+
+After wiring the SDL host window, the next practical question was not architectural. It was simply: what does the current UI actually show? Since the user explicitly asked for the script to live in the ticket workspace, I moved the capture flow out of `/tmp` and into the ST80-003 `scripts/` directory, then used `Xvfb` plus `xwd`/ImageMagick to grab an actual off-screen window image.
+
+That capture answered the current-state question cleanly. The UI window exists and renders, but the visible content at this point is a blank white framebuffer rather than a recognizable Smalltalk desktop. So the project has crossed from “no UI” to “host window showing the display surface,” but it has not yet reached “fully drawn interactive Smalltalk environment.”
+
+### Prompt Context
+
+**User prompt (verbatim):** "store all scripts in the scripts/ ticket. then run it"
+
+**Assistant interpretation:** Move the ad hoc UI screenshot helper into the active UI ticket workspace, execute it from there, and report the actual visible result.
+
+**Inferred user intent:** Keep auxiliary tooling tracked with the ticket instead of scattering one-off shell scripts in `/tmp`, and verify the current UI visually rather than talking about it abstractly.
+
+### What I did
+- Added ticket-local script [capture-ui-screenshot.sh](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh).
+- Made the script write all outputs under:
+  - [various/ui-capture](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture)
+- The script now:
+  - starts `Xvfb`
+  - runs `st80-ui`
+  - waits for a `Smalltalk-80` window
+  - captures it with `xwd`
+  - converts it to PNG
+- The first run failed because the UI exited before the screenshot was taken when `-max-cycles` elapsed too early.
+- Updated the script so `MAX_CYCLES` defaults to `0` for capture runs and so it explicitly detects if the UI process dies before the window is found.
+- Re-ran successfully with:
+
+```bash
+bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh
+```
+
+- Saved the resulting screenshot at:
+  - [st80-ui.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png)
+
+### Why
+- The user asked specifically that scripts live in the ticket workspace.
+- An off-screen screenshot is the fastest way to answer “what does the UI currently show?” without depending on a live desktop session during the turn.
+- Keeping the capture path in the ticket makes future UI regressions easier to reproduce and compare.
+
+### What worked
+- `Xvfb` capture works for the new SDL UI command.
+- The script successfully produces a PNG artifact inside the ticket.
+- The captured UI is currently a blank white window, which is a real and useful milestone: the host window exists and is rendering the display surface, but the content is not yet visually rich.
+
+### What didn't work
+- The first capture attempt failed with:
+
+```text
+X Error of failed request:  BadWindow (invalid Window parameter)
+```
+
+- That happened because the UI process had already exited before `xwd` captured the window.
+- Directly executing the script path also hit a shell-level permission/noexec issue in this environment, so invoking it via `bash .../capture-ui-screenshot.sh` is the reliable path.
+
+### What I learned
+- The current visible UI state is simpler than the runtime milestone might suggest: it is a real window, but it is visually blank white at the captured point.
+- A tracked screenshot script is worth keeping because it turns “what does it show?” into a repeatable artifact rather than a memory question.
+
+### What was tricky to build
+- The only tricky part was timing. Screenshot capture needs the UI window to still exist when `xwd` runs, which means a finite `-max-cycles` default is actually wrong for a reusable capture helper. Letting the script keep the UI alive until after capture is more reliable.
+
+### What warrants a second pair of eyes
+- Review whether the all-white image is expected from the current display state or whether a missing host/input/time primitive is still preventing visible drawing.
+- Review whether the capture script should also store the UI run log and window tree as first-class ticket artifacts for future debugging.
+
+### What should be done in the future
+- Run the same script again after input/timer work to compare visual progress.
+- Add a second script or mode that captures multiple frames over time if the UI starts animating or repainting dynamically.
+- Investigate why the current rendered surface is visually blank.
+
+### Code review instructions
+- Start with [capture-ui-screenshot.sh](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh).
+- Then inspect the captured artifact [st80-ui.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png).
+- Validate with:
+  - `bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh`
+
+### Technical details
+- Output files produced by the script:
+  - `st80-ui.png`
+  - `st80-ui.xwd`
+  - `xwininfo-tree.txt`
+  - `st80-ui-run.log`
+  - `xvfb.log`
+- Commands used:
+
+```bash
+bash ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh
 ```
