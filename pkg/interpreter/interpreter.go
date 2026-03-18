@@ -135,6 +135,10 @@ type Interpreter struct {
 	displayScreen uint16
 	cursorForm    uint16
 	cursorLinked  bool
+	mouseX        int
+	mouseY        int
+	cursorX       int
+	cursorY       int
 
 	// Cycle counter for tracing
 	cycleCount uint64
@@ -1594,6 +1598,10 @@ func (interp *Interpreter) primitivePerformWithArgs() {
 
 func (interp *Interpreter) dispatchInputOutputPrimitives() {
 	switch interp.primitiveIndex {
+	case 90: // mousePoint
+		interp.primitiveMousePoint()
+	case 91: // cursorLocPut:
+		interp.primitiveCursorLocPut()
 	case 92: // cursorLink:
 		interp.primitiveCursorLink()
 	case 96: // copyBits
@@ -1617,6 +1625,36 @@ func (interp *Interpreter) primitiveBeDisplay() {
 	screen := interp.popStack()
 	interp.displayScreen = screen
 	interp.push(screen)
+}
+
+func (interp *Interpreter) newPointWith(x int, y int) uint16 {
+	point := interp.instantiateClassWithPointers(om.ClassPointPointer, 2)
+	interp.storePointer(PointXIndex, point, om.SmallIntegerOop(int16(x)))
+	interp.storePointer(PointYIndex, point, om.SmallIntegerOop(int16(y)))
+	return point
+}
+
+func (interp *Interpreter) primitiveMousePoint() {
+	_ = interp.popStack()
+	interp.push(interp.newPointWith(interp.mouseX, interp.mouseY))
+}
+
+func (interp *Interpreter) primitiveCursorLocPut() {
+	point := interp.popStack()
+	rcvr := interp.popStack()
+	x, y, ok := interp.pointValue(point)
+	if !ok {
+		interp.unPop(2)
+		interp.primitiveFail()
+		return
+	}
+	interp.cursorX = x
+	interp.cursorY = y
+	if interp.cursorLinked {
+		interp.mouseX = x
+		interp.mouseY = y
+	}
+	interp.push(rcvr)
 }
 
 func (interp *Interpreter) primitiveBeCursor() {
@@ -2612,6 +2650,22 @@ func (interp *Interpreter) DisplaySnapshot() (DisplaySnapshot, bool) {
 // CycleCount returns how many cycles have been executed through RunSteps/Run.
 func (interp *Interpreter) CycleCount() uint64 {
 	return interp.cycleCount
+}
+
+// SetMousePoint updates the current host pointing-device location.
+func (interp *Interpreter) SetMousePoint(x int, y int) {
+	if x < 0 {
+		x = 0
+	}
+	if y < 0 {
+		y = 0
+	}
+	interp.mouseX = x
+	interp.mouseY = y
+	if interp.cursorLinked {
+		interp.cursorX = x
+		interp.cursorY = y
+	}
 }
 
 // Run starts the interpreter from the active process in the image.

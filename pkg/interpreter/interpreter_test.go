@@ -323,6 +323,57 @@ func TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles(t *testing.T) {
 	}
 }
 
+func TestPrimitiveMousePointReturnsConfiguredPoint(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	interp.SetMousePoint(123, 45)
+
+	interp.push(om.NilPointer)
+	interp.primitiveMousePoint()
+
+	point := interp.stackTop()
+	x, y, ok := interp.pointValue(point)
+	if !ok {
+		t.Fatalf("expected Point result from primitiveMousePoint, got 0x%04X", point)
+	}
+	if x != 123 || y != 45 {
+		t.Fatalf("expected mouse point 123@45, got %d@%d", x, y)
+	}
+}
+
+func TestPrimitiveCursorLocPutUpdatesCursorAndReturnsReceiver(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	point := interp.instantiateClassWithPointers(om.ClassPointPointer, 2)
+	interp.storePointer(PointXIndex, point, om.SmallIntegerOop(12))
+	interp.storePointer(PointYIndex, point, om.SmallIntegerOop(34))
+
+	interp.push(om.NilPointer)
+	interp.push(point)
+	interp.primitiveCursorLocPut()
+
+	if interp.cursorX != 12 || interp.cursorY != 34 {
+		t.Fatalf("expected cursor point 12@34, got %d@%d", interp.cursorX, interp.cursorY)
+	}
+	if interp.stackTop() != om.NilPointer {
+		t.Fatalf("expected primitiveCursorLocPut to return receiver, got 0x%04X", interp.stackTop())
+	}
+}
+
+func TestPrimitiveCursorLocPutUpdatesMouseWhenLinked(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	interp.cursorLinked = true
+	point := interp.instantiateClassWithPointers(om.ClassPointPointer, 2)
+	interp.storePointer(PointXIndex, point, om.SmallIntegerOop(56))
+	interp.storePointer(PointYIndex, point, om.SmallIntegerOop(78))
+
+	interp.push(om.NilPointer)
+	interp.push(point)
+	interp.primitiveCursorLocPut()
+
+	if interp.mouseX != 56 || interp.mouseY != 78 {
+		t.Fatalf("expected linked mouse point 56@78, got %d@%d", interp.mouseX, interp.mouseY)
+	}
+}
+
 func TestDiagnoseRecursiveNotUnderstood(t *testing.T) {
 	t.Skip("diagnostic test retained for manual investigation")
 	classNames := loadOopNames(t, "data/class.oops")
@@ -842,6 +893,12 @@ func TestDumpGraphicsMethodHeaders(t *testing.T) {
 		0x8B8E, // Point>>setX:setY:
 		0x8BBA, // Point>>corner:
 		0x73A2, // DisplayScreen>>beDisplay
+		0x0790, // InputState>>primCursorLocPut:
+		0x0792, // InputState>>primMousePt
+		0x091A, // InputState>>primCursorLocPutAgain:
+		0x091C, // InputState>>primSampleInterval:
+		0x091E, // InputState>>primInputWord
+		0x0922, // InputState>>primInputSemaphore:
 		0x1148, // Form>>bits
 		0x113E, // Form>>offset
 		0x142C, // CharacterScanner>>scanCharactersFrom:to:in:rightX:stopConditions:displaying:

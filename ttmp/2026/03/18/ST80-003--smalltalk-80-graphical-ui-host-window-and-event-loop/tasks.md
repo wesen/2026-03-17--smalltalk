@@ -10,6 +10,8 @@
 - [x] Add a direct non-SDL framebuffer snapshot path for fast UI diagnostics
 - [x] Investigate why the designated display framebuffer is `640x16` and all white
 - [ ] Feed keyboard and mouse events into the Smalltalk input primitives
+- [x] Feed host mouse position into passive mouse-point / cursor-location primitives
+- [ ] Feed keyboard and button events into the Smalltalk input event-buffer primitives
 - [ ] Implement host-side time/timer support for the remaining clock primitives
 - [ ] Decide how to render or synthesize the Smalltalk cursor on the host side
 - [ ] Verify the UI command visually in a real desktop session and record the result in this ticket

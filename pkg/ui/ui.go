@@ -153,7 +153,7 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 			copyDisplayBits(pixels, snapshot)
 		}
 
-		quit, err := processEventsAndPresent(renderer, texture, pixels, textureWidth, textureHeight)
+		quit, err := processEventsAndPresent(interp, window, renderer, texture, pixels, textureWidth, textureHeight)
 		if err != nil {
 			return err
 		}
@@ -163,13 +163,17 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 	}
 }
 
-func processEventsAndPresent(renderer *sdl.Renderer, texture *sdl.Texture, pixels []uint32, width int, height int) (bool, error) {
+func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window, renderer *sdl.Renderer, texture *sdl.Texture, pixels []uint32, width int, height int) (bool, error) {
 	quit := false
 	err := doSDL(func() error {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch event.(type) {
+			switch e := event.(type) {
 			case *sdl.QuitEvent:
 				quit = true
+			case *sdl.MouseMotionEvent:
+				updateMousePoint(interp, window, width, height, e.X, e.Y)
+			case *sdl.MouseButtonEvent:
+				updateMousePoint(interp, window, width, height, e.X, e.Y)
 			}
 		}
 		if renderer == nil || texture == nil || width <= 0 || height <= 0 || len(pixels) == 0 {
@@ -188,6 +192,25 @@ func processEventsAndPresent(renderer *sdl.Renderer, texture *sdl.Texture, pixel
 		return nil
 	})
 	return quit, err
+}
+
+func updateMousePoint(interp *interpreter.Interpreter, window *sdl.Window, logicalWidth int, logicalHeight int, x int32, y int32) {
+	if interp == nil || window == nil || logicalWidth <= 0 || logicalHeight <= 0 {
+		return
+	}
+	windowWidth, windowHeight := window.GetSize()
+	if windowWidth <= 0 || windowHeight <= 0 {
+		return
+	}
+	logicalX := int(int64(x) * int64(logicalWidth) / int64(windowWidth))
+	logicalY := int(int64(y) * int64(logicalHeight) / int64(windowHeight))
+	if logicalX >= logicalWidth {
+		logicalX = logicalWidth - 1
+	}
+	if logicalY >= logicalHeight {
+		logicalY = logicalHeight - 1
+	}
+	interp.SetMousePoint(logicalX, logicalY)
 }
 
 func copyDisplayBits(dst []uint32, snapshot interpreter.DisplaySnapshot) (blackPixels int, whitePixels int) {

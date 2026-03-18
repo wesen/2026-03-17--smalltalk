@@ -93,3 +93,15 @@ Step 8: fixed the BitBlt copy-loop row-advance bug so successful display blits n
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-5000.png — Updated early snapshot showing a recognizable windowed scene
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-50000.png — Later snapshot showing the visible `System Browser`
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png — Refreshed off-screen SDL capture after the copy-loop fix
+
+
+## 2026-03-18
+
+Step 9: added passive mouse-point and cursor-location support so the SDL host can feed live mouse coordinates into primitives `90` and `91`.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added mouse/cursor bookkeeping plus primitive `90` and `91`
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Added direct primitive tests for passive mouse-point and cursor-location behavior
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — SDL event loop now maps host mouse coordinates into interpreter state
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/tasks.md — Split the broad input task into passive mouse support vs buffered keyboard/button follow-up

@@ -907,3 +907,77 @@ cycles=50000 blackPixels=112228 whitePixels=194972
 - A literal-looking translation of a simulation can still be wrong if the meaning of the mutated variables changes.
 - The best clue was not visual style. It was the exact row boundary where rendering stopped.
 - Once the bug was phrased as "why do display writes stop at row 255?" the diagnosis got much faster.
+
+## Step 9: Passive Mouse Point And Cursor Location Support
+
+Once the UI was visually recognizable, the next gap was obvious: the host window still had no path for feeding live pointer position into the image. I did not want to jump immediately into the full asynchronous input-event buffer described in the Blue Book because that includes semaphores, event words, sample intervals, keyboard/button encoding, and the `primInputWord` machinery. That is the right destination, but not the right next slice.
+
+The smallest useful next step was passive mouse support:
+
+- primitive `90` (`primitiveMousePoint`)
+- primitive `91` (`primitiveCursorLocPut`)
+
+The Blue Book description for `primitiveMousePoint` is straightforward: allocate a new `Point` and store the current pointing-device location in its x and y fields. The description for `primitiveCursorLocPut` is also narrow: update the cursor location from the argument `Point`, and if the cursor is linked to the pointing device, update the pointing-device location as well.
+
+That meant I could add useful host/input plumbing without yet implementing the buffered event stream (`93` through `95`) or the timer primitives.
+
+### What I did
+- Extended [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) with minimal input state:
+  - `mouseX`
+  - `mouseY`
+  - `cursorX`
+  - `cursorY`
+- Added `SetMousePoint(x, y)` so the host loop can update the current pointer location.
+- Implemented primitive `90`:
+  - pops the receiver
+  - allocates a fresh `Point`
+  - stores the current `mouseX` / `mouseY`
+  - pushes the new `Point`
+- Implemented primitive `91`:
+  - pops the argument `Point`
+  - pops the receiver
+  - updates `cursorX` / `cursorY`
+  - if `cursorLinked` is true, also updates `mouseX` / `mouseY`
+  - pushes the receiver back
+- Updated [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) so SDL mouse motion and button events map window coordinates into the interpreter's logical display coordinates and feed them through `SetMousePoint`.
+- Added direct primitive tests in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestPrimitiveMousePointReturnsConfiguredPoint`
+  - `TestPrimitiveCursorLocPutUpdatesCursorAndReturnsReceiver`
+  - `TestPrimitiveCursorLocPutUpdatesMouseWhenLinked`
+- Validated the new slice with:
+
+```bash
+go test ./pkg/interpreter -run 'TestPrimitiveMousePointReturnsConfiguredPoint|TestPrimitiveCursorLocPutUpdatesCursorAndReturnsReceiver|TestPrimitiveCursorLocPutUpdatesMouseWhenLinked|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles'
+SDL_VIDEODRIVER=dummy go run ./cmd/st80-ui -max-cycles 50000 -cycles-per-frame 500
+```
+
+### Why
+- Passive pointer location is the cheapest real input bridge.
+- It is directly specified in the Blue Book.
+- It gives the image a host-backed pointer location without dragging in the entire event-buffer design all at once.
+
+### What worked
+- The primitive tests pass.
+- The dummy SDL UI path still runs cleanly after the host event-loop changes.
+- The new code stays small and isolated:
+  - interpreter bookkeeping
+  - primitive `90`
+  - primitive `91`
+  - mouse coordinate mapping in the SDL loop
+
+### What didn't work
+- This does not yet implement:
+  - keyboard input
+  - button state words
+  - input semaphores
+  - sample interval handling
+  - buffered event words via primitive `95`
+- The Smalltalk cursor is still not visibly overlaid by the host UI. The VM now has more accurate cursor/pointer state, but the host loop does not yet synthesize the cursor image.
+
+### What I learned
+- There is a clean incremental path for host input work: passive pointer state first, then buffered events.
+- The right separation is:
+  - passive polling primitives (`90`, `91`)
+  - event-buffer primitives (`93`, `94`, `95`)
+  - time/timer primitives (`98`, `99`, `100`)
+- Doing the passive slice first reduces the number of moving parts in the next input pass.
