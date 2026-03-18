@@ -219,13 +219,23 @@ func (om *ObjectMemory) FetchByteLengthOf(oop uint16) int {
 // Field index 0 is the first field after the class.
 func (om *ObjectMemory) FetchPointer(fieldIndex int, ofObject uint16) uint16 {
 	loc := om.HeapAddress(ofObject)
-	return om.objectSpace[loc+2+fieldIndex]
+	addr := loc + 2 + fieldIndex
+	if addr < 0 || addr >= len(om.objectSpace) {
+		panic(fmt.Sprintf("FetchPointer: OOP 0x%04X field %d: addr %d out of bounds (os=%d, loc=%d)",
+			ofObject, fieldIndex, addr, len(om.objectSpace), loc))
+	}
+	return om.objectSpace[addr]
 }
 
 // StorePointer stores an OOP at the given field index in the object.
 func (om *ObjectMemory) StorePointer(fieldIndex int, ofObject uint16, withValue uint16) {
 	loc := om.HeapAddress(ofObject)
-	om.objectSpace[loc+2+fieldIndex] = withValue
+	addr := loc + 2 + fieldIndex
+	if addr < 0 || addr >= len(om.objectSpace) {
+		panic(fmt.Sprintf("StorePointer: OOP 0x%04X field %d: addr %d out of bounds (os=%d, loc=%d)",
+			ofObject, fieldIndex, addr, len(om.objectSpace), loc))
+	}
+	om.objectSpace[addr] = withValue
 }
 
 // FetchWord returns the raw 16-bit word at the given word index in the object.

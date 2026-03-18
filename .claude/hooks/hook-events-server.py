@@ -7,6 +7,7 @@ Classic Macintosh retro UI.
 """
 
 import argparse
+import glob
 import html
 import json
 import os
@@ -415,6 +416,7 @@ def page_shell(title, body, active_tab=""):
         ("Commands", "/commands"),
         ("Searches", "/searches"),
         ("Tokens", "/tokens"),
+        ("Transcripts", "/transcripts"),
         ("SQL", "/sql"),
     ]
     menu_items = []
@@ -669,6 +671,107 @@ def query_one(conn, sql, params=()):
     return row
 
 
+# ── Transcript helpers ───────────────────────────────────────────────────────
+
+TRANSCRIPTS_DIR = os.path.expanduser("~/.claude/projects")
+
+
+def list_transcripts():
+    """Scan ~/.claude/projects for all .jsonl transcripts, return metadata."""
+    results = []
+    for path in glob.glob(os.path.join(TRANSCRIPTS_DIR, "*", "*.jsonl")):
+        proj = os.path.basename(os.path.dirname(path))
+        sid = os.path.splitext(os.path.basename(path))[0]
+        try:
+            size = os.path.getsize(path)
+        except OSError:
+            size = 0
+        results.append({
+            "path": path,
+            "project": proj,
+            "session_id": sid,
+            "size": size,
+        })
+    return sorted(results, key=lambda r: r["path"], reverse=True)
+
+
+def parse_transcript(path, summary_only=False):
+    """Parse a JSONL transcript file. If summary_only, skip heavy content."""
+    entries = []
+    total_input = 0
+    total_output = 0
+    total_cache_create = 0
+    total_cache_read = 0
+    user_msgs = 0
+    asst_msgs = 0
+    tool_uses = []
+    first_ts = last_ts = None
+    first_user_msg = None
+    model = None
+
+    try:
+        with open(path) as f:
+            for line in f:
+                obj = json.loads(line)
+                ts = obj.get("timestamp")
+                if ts:
+                    if not first_ts:
+                        first_ts = ts
+                    last_ts = ts
+                etype = obj.get("type")
+
+                if etype == "user":
+                    content = obj.get("message", {}).get("content", "")
+                    if isinstance(content, str) and content:
+                        user_msgs += 1
+                        if not first_user_msg:
+                            first_user_msg = content
+
+                elif etype == "assistant":
+                    asst_msgs += 1
+                    msg = obj.get("message", {})
+                    usage = msg.get("usage", {})
+                    if not model:
+                        model = msg.get("model")
+                    total_input += usage.get("input_tokens", 0)
+                    total_output += usage.get("output_tokens", 0)
+                    total_cache_create += usage.get("cache_creation_input_tokens", 0)
+                    total_cache_read += usage.get("cache_read_input_tokens", 0)
+
+                    if not summary_only:
+                        for c in msg.get("content", []):
+                            if isinstance(c, dict) and c.get("type") == "tool_use":
+                                tool_uses.append({
+                                    "name": c.get("name"),
+                                    "id": c.get("id"),
+                                    "input_preview": truncate(
+                                        json.dumps(c.get("input", {})), 120
+                                    ),
+                                    "timestamp": ts,
+                                })
+
+                if not summary_only:
+                    entries.append(obj)
+    except (OSError, json.JSONDecodeError):
+        pass
+
+    return {
+        "first_ts": first_ts,
+        "last_ts": last_ts,
+        "user_msgs": user_msgs,
+        "asst_msgs": asst_msgs,
+        "total_input": total_input,
+        "total_output": total_output,
+        "total_cache_create": total_cache_create,
+        "total_cache_read": total_cache_read,
+        "total_tokens": total_input + total_output,
+        "model": model,
+        "first_user_msg": first_user_msg,
+        "tool_uses": tool_uses,
+        "entries": entries,
+    }
+
+
 # ── Request Handler ──────────────────────────────────────────────────────────
 
 
@@ -691,6 +794,8 @@ class HookEventsHandler(BaseHTTPRequestHandler):
             "/commands": self.page_commands,
             "/searches": self.page_searches,
             "/tokens": self.page_tokens,
+            "/transcripts": self.page_transcripts,
+            "/transcripts/detail": self.page_transcript_detail,
             "/sql": self.page_sql,
         }
 

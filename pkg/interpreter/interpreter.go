@@ -86,9 +86,28 @@ type Interpreter struct {
 	// Primitive success flag
 	success bool
 
+	// Process scheduling registers (Blue Book p.642)
+	newProcessWaiting bool
+	newProcess        uint16
+	semaphoreList     [256]uint16
+	semaphoreIndex    int
+
 	// Cycle counter for tracing
 	cycleCount uint64
 }
+
+// Scheduling constants
+const (
+	ProcessListsIndex     = 0
+	ActiveProcessIndex    = 1
+	FirstLinkIndex        = 0
+	LastLinkIndex         = 1
+	ExcessSignalsIndex    = 2
+	NextLinkIndex         = 0
+	SuspendedContextIndex = 1
+	PriorityIndex         = 2
+	MyListIndex           = 3
+)
 
 // New creates a new Interpreter with the given object memory.
 func New(memory *om.ObjectMemory) *Interpreter {
@@ -176,6 +195,7 @@ func (interp *Interpreter) newActiveContext(aContext uint16) {
 
 func (interp *Interpreter) push(object uint16) {
 	interp.stackPointer++
+	// No bounds check here — trust the image
 	interp.storePointer(interp.stackPointer, interp.activeContext, object)
 }
 
@@ -439,12 +459,10 @@ func (interp *Interpreter) executeNewMethod() {
 }
 
 func (interp *Interpreter) activateNewMethod() {
-	contextSize := TempFrameStart
-	if interp.largeContextFlagOf(interp.newMethod) == 1 {
-		contextSize += 32
-	} else {
-		contextSize += 12
-	}
+	// Always use large contexts to avoid overflow during debugging.
+	// The Blue Book uses largeContextFlagOf to choose 12 vs 32, but the
+	// flag in the image may not be set correctly for all methods.
+	contextSize := TempFrameStart + 32
 	newContext := interp.instantiateClassWithPointers(om.ClassMethodContextPointer, contextSize)
 	interp.storePointer(SenderIndex, newContext, interp.activeContext)
 	interp.storePointer(InstructionPointerIndex, newContext,
@@ -1120,13 +1138,13 @@ func (interp *Interpreter) dispatchControlPrimitives() {
 	case 84: // perform:withArguments:
 		interp.primitivePerformWithArgs()
 	case 85: // signal
-		interp.primitiveFail() // Semaphore
+		interp.primitiveSignal()
 	case 86: // wait
-		interp.primitiveFail() // Semaphore
+		interp.primitiveWait()
 	case 87: // resume
-		interp.primitiveFail() // Process
+		interp.primitiveResume()
 	case 88: // suspend
-		interp.primitiveFail() // Process
+		interp.primitiveSuspend()
 	case 89: // flushCache
 		interp.methodCache = [methodCacheSize]uint16{}
 	default:
@@ -1199,6 +1217,159 @@ func (interp *Interpreter) dispatchInputOutputPrimitives() {
 	case 100: // signal:atMilliseconds:
 		interp.primitiveFail()
 	default:
+		interp.primitiveFail()
+	}
+}
+
+// ---- Process scheduling (Blue Book p.641-647) ----
+
+func (interp *Interpreter) schedulerPointer() uint16 {
+	return interp.fetchPointer(ValueIndex, om.SchedulerAssociationPointer)
+}
+
+func (interp *Interpreter) activeProcessPointer() uint16 {
+	if interp.newProcessWaiting {
+		return interp.newProcess
+	}
+	return interp.fetchPointer(ActiveProcessIndex, interp.schedulerPointer())
+}
+
+func (interp *Interpreter) isEmptyList(aLinkedList uint16) bool {
+	return interp.fetchPointer(FirstLinkIndex, aLinkedList) == om.NilPointer
+}
+
+func (interp *Interpreter) removeFirstLinkOfList(aLinkedList uint16) uint16 {
+	firstLink := interp.fetchPointer(FirstLinkIndex, aLinkedList)
+	lastLink := interp.fetchPointer(LastLinkIndex, aLinkedList)
+	if firstLink == lastLink {
+		interp.storePointer(FirstLinkIndex, aLinkedList, om.NilPointer)
+		interp.storePointer(LastLinkIndex, aLinkedList, om.NilPointer)
+	} else {
+		nextLink := interp.fetchPointer(NextLinkIndex, firstLink)
+		interp.storePointer(FirstLinkIndex, aLinkedList, nextLink)
+	}
+	interp.storePointer(NextLinkIndex, firstLink, om.NilPointer)
+	return firstLink
+}
+
+func (interp *Interpreter) addLastLink(aLink uint16, toList uint16) {
+	if interp.isEmptyList(toList) {
+		interp.storePointer(FirstLinkIndex, toList, aLink)
+	} else {
+		lastLink := interp.fetchPointer(LastLinkIndex, toList)
+		interp.storePointer(NextLinkIndex, lastLink, aLink)
+	}
+	interp.storePointer(LastLinkIndex, toList, aLink)
+	interp.storePointer(MyListIndex, aLink, toList)
+}
+
+func (interp *Interpreter) wakeHighestPriority() uint16 {
+	processLists := interp.fetchPointer(ProcessListsIndex, interp.schedulerPointer())
+	priority := interp.fetchWordLengthOf(processLists)
+	for {
+		processList := interp.fetchPointer(priority-1, processLists)
+		if !interp.isEmptyList(processList) {
+			return interp.removeFirstLinkOfList(processList)
+		}
+		priority--
+		if priority <= 0 {
+			panic("wakeHighestPriority: no runnable process")
+		}
+	}
+}
+
+func (interp *Interpreter) sleep(aProcess uint16) {
+	priority := int(om.SmallIntegerValue(interp.fetchPointer(PriorityIndex, aProcess)))
+	processLists := interp.fetchPointer(ProcessListsIndex, interp.schedulerPointer())
+	processList := interp.fetchPointer(priority-1, processLists)
+	interp.addLastLink(aProcess, processList)
+}
+
+func (interp *Interpreter) transferTo(aProcess uint16) {
+	interp.newProcessWaiting = true
+	interp.newProcess = aProcess
+}
+
+func (interp *Interpreter) suspendActive() {
+	interp.transferTo(interp.wakeHighestPriority())
+}
+
+func (interp *Interpreter) resume(aProcess uint16) {
+	activeProcess := interp.activeProcessPointer()
+	activePriority := int(om.SmallIntegerValue(interp.fetchPointer(PriorityIndex, activeProcess)))
+	newPriority := int(om.SmallIntegerValue(interp.fetchPointer(PriorityIndex, aProcess)))
+	if newPriority > activePriority {
+		interp.sleep(activeProcess)
+		interp.transferTo(aProcess)
+	} else {
+		interp.sleep(aProcess)
+	}
+}
+
+func (interp *Interpreter) synchronousSignal(aSemaphore uint16) {
+	if interp.isEmptyList(aSemaphore) {
+		excessSignals := int(om.SmallIntegerValue(
+			interp.fetchPointer(ExcessSignalsIndex, aSemaphore)))
+		interp.storePointer(ExcessSignalsIndex, aSemaphore,
+			om.SmallIntegerOop(int16(excessSignals+1)))
+	} else {
+		interp.resume(interp.removeFirstLinkOfList(aSemaphore))
+	}
+}
+
+func (interp *Interpreter) checkProcessSwitch() {
+	for interp.semaphoreIndex > 0 {
+		interp.semaphoreIndex--
+		interp.synchronousSignal(interp.semaphoreList[interp.semaphoreIndex])
+	}
+	if interp.newProcessWaiting {
+		interp.newProcessWaiting = false
+		activeProcess := interp.activeProcessPointer()
+		interp.storePointer(SuspendedContextIndex, activeProcess, interp.activeContext)
+		scheduler := interp.schedulerPointer()
+		// newProcess was set by transferTo:
+		interp.storePointer(ActiveProcessIndex, scheduler, interp.newProcess)
+		interp.newActiveContext(
+			interp.fetchPointer(SuspendedContextIndex, interp.newProcess))
+	}
+}
+
+func (interp *Interpreter) asynchronousSignal(aSemaphore uint16) {
+	if interp.semaphoreIndex < len(interp.semaphoreList) {
+		interp.semaphoreList[interp.semaphoreIndex] = aSemaphore
+		interp.semaphoreIndex++
+	}
+}
+
+func (interp *Interpreter) primitiveSignal() {
+	sem := interp.stackTop()
+	interp.synchronousSignal(sem)
+}
+
+func (interp *Interpreter) primitiveWait() {
+	thisReceiver := interp.stackTop()
+	excessSignals := int(om.SmallIntegerValue(
+		interp.fetchPointer(ExcessSignalsIndex, thisReceiver)))
+	if excessSignals > 0 {
+		interp.storePointer(ExcessSignalsIndex, thisReceiver,
+			om.SmallIntegerOop(int16(excessSignals-1)))
+	} else {
+		interp.addLastLink(interp.activeProcessPointer(), thisReceiver)
+		interp.suspendActive()
+	}
+}
+
+func (interp *Interpreter) primitiveResume() {
+	interp.resume(interp.stackTop())
+}
+
+func (interp *Interpreter) primitiveSuspend() {
+	activeProcess := interp.activeProcessPointer()
+	if interp.stackTop() == activeProcess {
+		interp.popStack()
+		interp.push(om.NilPointer)
+		interp.suspendActive()
+	} else {
 		interp.primitiveFail()
 	}
 }
@@ -1600,6 +1771,7 @@ func (interp *Interpreter) Run(maxCycles uint64) error {
 		interp.activeContext, interp.method, interp.receiver)
 
 	for interp.cycleCount = 0; maxCycles == 0 || interp.cycleCount < maxCycles; interp.cycleCount++ {
+		interp.checkProcessSwitch()
 		interp.currentBytecode = interp.fetchBytecode()
 
 		if interp.cycleCount < 20 {
@@ -1610,9 +1782,10 @@ func (interp *Interpreter) Run(maxCycles uint64) error {
 
 		interp.dispatchOnThisBytecode()
 
-		if interp.cycleCount%100000 == 0 && interp.cycleCount > 0 {
-			fmt.Printf("[cycle %d] ip=%d, sp=%d, bc=%d\n",
-				interp.cycleCount, interp.instructionPointer, interp.stackPointer, interp.currentBytecode)
+		if interp.cycleCount%500000 == 0 && interp.cycleCount > 0 {
+			fmt.Printf("[cycle %d] ctx=0x%04X ip=%d sp=%d bc=%d method=0x%04X rcvr=0x%04X\n",
+				interp.cycleCount, interp.activeContext, interp.instructionPointer,
+				interp.stackPointer, interp.currentBytecode, interp.method, interp.receiver)
 		}
 	}
 
