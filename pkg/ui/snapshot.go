@@ -58,7 +58,8 @@ func CaptureSnapshot(opts SnapshotOptions) (SnapshotDiagnostic, error) {
 	}
 
 	pixels := make([]uint32, snapshot.Width*snapshot.Height)
-	black, white := copyDisplayBits(pixels, snapshot)
+	cursor, hasCursor := interp.CursorSnapshot()
+	black, white := copyDisplayBits(pixels, snapshot, hasCursor, cursor)
 	hash := hashWords(snapshot.Words)
 
 	if opts.OutputPath != "" {

@@ -219,6 +219,18 @@ type DisplaySnapshot struct {
 	Words       []uint16
 }
 
+// CursorSnapshot captures the currently designated cursor form and location in
+// host-friendly terms so the UI can overlay it on the display bitmap.
+type CursorSnapshot struct {
+	FormPointer uint16
+	X           int
+	Y           int
+	Width       int
+	Height      int
+	Raster      int
+	Words       []uint16
+}
+
 // Scheduling constants
 const (
 	ProcessListsIndex     = 0
@@ -2889,6 +2901,33 @@ func (interp *Interpreter) DisplaySnapshot() (DisplaySnapshot, bool) {
 	}
 	return DisplaySnapshot{
 		FormPointer: interp.displayScreen,
+		Width:       form.width,
+		Height:      form.height,
+		Raster:      (form.width-1)/16 + 1,
+		Words:       words,
+	}, true
+}
+
+// CursorSnapshot returns a copy of the current designated cursor form and
+// cursor location, if the image has registered one via beCursor.
+func (interp *Interpreter) CursorSnapshot() (CursorSnapshot, bool) {
+	interp.initializeActiveContext()
+	if interp.cursorForm == om.NilPointer || !interp.memory.ValidOop(interp.cursorForm) {
+		return CursorSnapshot{}, false
+	}
+	form, ok := interp.formWordsOf(interp.cursorForm)
+	if !ok || form.width <= 0 || form.height <= 0 {
+		return CursorSnapshot{}, false
+	}
+	wordLen := interp.fetchWordLengthOf(form.bits)
+	words := make([]uint16, wordLen)
+	for i := 0; i < wordLen; i++ {
+		words[i] = interp.fetchWord(i, form.bits)
+	}
+	return CursorSnapshot{
+		FormPointer: interp.cursorForm,
+		X:           interp.cursorX,
+		Y:           interp.cursorY,
 		Width:       form.width,
 		Height:      form.height,
 		Raster:      (form.width-1)/16 + 1,

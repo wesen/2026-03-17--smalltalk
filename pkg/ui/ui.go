@@ -106,6 +106,7 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 
 		snapshot, ok := interp.DisplaySnapshot()
 		if ok {
+			cursor, hasCursor := interp.CursorSnapshot()
 			if texture == nil || snapshot.Width != textureWidth || snapshot.Height != textureHeight {
 				if err := doSDL(func() error {
 					if texture != nil {
@@ -157,7 +158,7 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 			if len(pixels) != snapshot.Width*snapshot.Height {
 				pixels = make([]uint32, snapshot.Width*snapshot.Height)
 			}
-			copyDisplayBits(pixels, snapshot)
+			copyDisplayBits(pixels, snapshot, hasCursor, cursor)
 		}
 
 		quit, err := processEventsAndPresent(interp, window, renderer, texture, pixels, textureWidth, textureHeight)
@@ -272,7 +273,7 @@ func specialKeyParameter(sym sdl.Keycode) (uint16, bool) {
 	}
 }
 
-func copyDisplayBits(dst []uint32, snapshot interpreter.DisplaySnapshot) (blackPixels int, whitePixels int) {
+func copyDisplayBits(dst []uint32, snapshot interpreter.DisplaySnapshot, hasCursor bool, cursor interpreter.CursorSnapshot) (blackPixels int, whitePixels int) {
 	white := uint32(0xFFFFFFFF)
 	black := uint32(0xFF000000)
 	for y := 0; y < snapshot.Height; y++ {
@@ -290,7 +291,32 @@ func copyDisplayBits(dst []uint32, snapshot interpreter.DisplaySnapshot) (blackP
 			}
 		}
 	}
+	if hasCursor {
+		overlayCursorBits(dst, snapshot.Width, snapshot.Height, cursor, black)
+	}
 	return blackPixels, whitePixels
+}
+
+func overlayCursorBits(dst []uint32, displayWidth int, displayHeight int, cursor interpreter.CursorSnapshot, black uint32) {
+	for cy := 0; cy < cursor.Height; cy++ {
+		y := cursor.Y + cy
+		if y < 0 || y >= displayHeight {
+			continue
+		}
+		rowBase := cy * cursor.Raster
+		pixelBase := y * displayWidth
+		for cx := 0; cx < cursor.Width; cx++ {
+			x := cursor.X + cx
+			if x < 0 || x >= displayWidth {
+				continue
+			}
+			word := cursor.Words[rowBase+cx/16]
+			mask := uint(15 - (cx & 15))
+			if (word>>mask)&1 != 0 {
+				dst[pixelBase+x] = black
+			}
+		}
+	}
 }
 
 func doSDL(fn func() error) error {
