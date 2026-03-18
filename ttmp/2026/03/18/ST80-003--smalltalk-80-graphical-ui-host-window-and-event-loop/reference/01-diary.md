@@ -682,3 +682,155 @@ go test ./...
 - Left SmallInteger-only sites unchanged:
   - arithmetic primitives `1` through `18` where currently implemented
 - This change is preventive hardening built directly from the primitive-71 bug pattern.
+
+## Step 6: BitBlt Field Order Bug Fix
+
+The next major UI/debugging breakthrough came from stopping the generic "blank white UI" investigation and reducing it to one concrete `copyBits` send. By this point, the display-allocation bug was already fixed: the designated display form was the correct `640x480` size. The remaining question was why the display still stayed effectively white.
+
+The crucial evidence came from a very narrow diagnostic around the first `Form>>fill:rule:mask:` path. That probe showed:
+
+- the image really does send `copyBits`
+- the receiver at that send site is a real `BitBlt`
+- method lookup resolves to `BitBlt>>copyBits`
+- primitive decoding resolves to primitive `96`
+
+So the bug was no longer "the image never draws" or "the primitive is not wired." The first real hint was that `copyBits` still recorded zero successful copy operations and there was no primitive failure detail either. That combination only made sense if `primitiveCopyBits` was returning early without error.
+
+Dumping the live `BitBlt` receiver fields at that first send exposed the mismatch. The object had `640` and `480` in the slots the Go constants were interpreting as `sourceX` and `sourceY`, while the slots the Go constants were interpreting as `clipWidth` and `clipHeight` were `0` and `0`. In other words, my `BitBlt` tail-slot mapping was wrong.
+
+The correct tail ordering is:
+
+- `sourceX`
+- `sourceY`
+- `clipX`
+- `clipY`
+- `clipWidth`
+- `clipHeight`
+
+The Go code had assumed:
+
+- `clipX`
+- `clipY`
+- `clipWidth`
+- `clipHeight`
+- `sourceX`
+- `sourceY`
+
+That mistake meant `primitiveCopyBits` immediately clipped every operation down to zero width and zero height, then returned success without touching the framebuffer.
+
+### What I did
+- Corrected the `BitBlt` slot constants in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `BitBltSourceXIndex = 8`
+  - `BitBltSourceYIndex = 9`
+  - `BitBltClipXIndex = 10`
+  - `BitBltClipYIndex = 11`
+  - `BitBltClipWidthIndex = 12`
+  - `BitBltClipHeightIndex = 13`
+- Added a normal regression test in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles`
+- Captured a direct post-fix framebuffer artifact at [display-5000.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-5000.png)
+- Refreshed the off-screen SDL window capture at [st80-ui.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png)
+- Wrote a detailed intern-facing explanation in [04-bitblt-field-order-bug-writeup.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/04-bitblt-field-order-bug-writeup.md)
+
+### Why
+- The bug was not in SDL.
+- The bug was not in display allocation anymore.
+- The bug was not in primitive-number dispatch.
+- The bug was a specification-alignment error: a wrong field-order assumption for a layout-sensitive primitive object.
+
+### What worked
+- The framebuffer immediately stopped being all white.
+- A direct snapshot at 5000 cycles reported:
+
+```text
+cycles=5000 width=640 height=480 blackPixels=12817 whitePixels=294383
+```
+
+- The SDL capture also stopped being completely blank.
+- The new regression test makes the old symptom hard to reintroduce silently.
+
+### What didn't work
+- The rendered output is still not visually correct enough to call the UI finished. The fix restored drawing, but the image currently looks structurally wrong rather than blank. That means the next frontier is likely in BitBlt/display semantics rather than allocation or slot-order plumbing.
+
+### What I learned
+- A primitive can be "wired correctly" and still be functionally dead if the receiver layout assumptions are off.
+- The right debugging pattern for this class of bug is:
+  - prove the send happens
+  - prove the receiver class
+  - dump the live object fields
+  - compare that concrete object against the assumed constant ordering
+- This is exactly the kind of mismatch that justifies a more systematic Blue Book audit.
+
+## Step 7: Intern OCR Handoff For A Systematic Blue Book Audit
+
+After the `BitBlt` field-order bug, it became clear that ad hoc debugging is not enough for the display/rendering classes. The bug itself was simple once exposed: the first live `BitBlt` object showed `640x480` in the slots I had interpreted as `sourceX/sourceY`, while the slots I had interpreted as `clipWidth/clipHeight` were `0,0`. That meant the Go VM constants were not matching the object layout implied by the image and the book. The right response is not just "fix this one constant set." The right response is to build a repeatable audit path from the Blue Book into structured reference data.
+
+I did not want to hand an intern a vague instruction like "OCR the book and summarize it." That would likely produce a lot of text and not much implementation value. What we actually need is a machine-usable and reviewer-usable extraction: class layouts, ordered method signatures, primitive-number mappings, field-access notes, and page references that can be compared directly against [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go).
+
+### Prompt Context
+
+**User prompt (verbatim):** "can you make a set of instructions for an intern to do the OCR and extract all then ecessary info from the book? they're really good at OCR"
+
+**Assistant interpretation:** Create an intern-facing reference document that explains how to OCR the Blue Book and, more importantly, how to extract the resulting text into structured implementation facts that will help the VM audit.
+
+**Inferred user intent:** Turn OCR into a concrete audit pipeline rather than a generic documentation exercise, with emphasis on field ordering, argument ordering, primitive semantics, and exact page citation.
+
+### What I did
+- Added [03-bluebook-ocr-extraction-instructions-for-intern.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/03-bluebook-ocr-extraction-instructions-for-intern.md).
+- Made the document explicit about:
+  - using the Blue Book as the primary source
+  - not using existing implementations as reference
+  - preserving ambiguity instead of guessing
+  - attaching page references to every extracted fact
+- Specified the exact outputs we want:
+  - OCR notes
+  - page/topic index
+  - class layout table
+  - method signature table
+  - primitive audit table
+  - graphics/BitBlt narrative audit
+  - object-memory narrative audit
+  - open-questions list
+- Prioritized the first extraction targets:
+  - `BitBlt`
+  - `Form`
+  - `DisplayScreen`
+  - bitmap/display storage classes
+  - `Point`
+  - `Rectangle`
+  - primitive/header/object-memory topics
+- Included concrete CSV schemas and examples so the intern knows what "good" output looks like.
+- Updated [tasks.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/tasks.md) to add the systematic Blue Book OCR audit as a tracked follow-up.
+
+### Why
+- The `BitBlt` bug showed that a single wrong slot-order assumption can make the UI look completely wrong while the interpreter still appears superficially healthy.
+- A reviewer needs to be able to answer "what exact order does the book require?" quickly and with page citations.
+- Raw OCR text is not enough. The useful artifact is a structured extraction that maps directly onto VM constants and primitive implementations.
+
+### What worked
+- The handoff is concrete enough that an intern can execute it without guessing the desired output format.
+- The deliverables are directly tied to the kinds of bugs we have already seen:
+  - class layout mismatches
+  - method argument order mismatches
+  - primitive number / stack-contract mismatches
+- The document is reusable for future audits outside graphics, especially object memory and primitive dispatch.
+
+### What didn't work
+- I did not yet produce the extracted tables themselves. This step is the instruction set for that work, not the completed audit.
+
+### What I learned
+- The right unit of extraction is not "chapter summary." It is "implementation fact with citation."
+- The most valuable audit documents are tables, not prose, as long as they preserve order and page references.
+- The classes most likely to hide layout bugs are the ones that bridge image-level objects and interpreter-level constants.
+
+### What should be done in the future
+- Have the intern produce the OCR pack under this ticket.
+- Use the resulting tables to do a line-by-line audit of:
+  - field-index constants
+  - primitive dispatch tables
+  - constructor/setter argument ordering
+  - object-memory layout assumptions
+- Turn any confirmed mismatch into:
+  - a code fix
+  - a regression test
+  - a short writeup in this ticket

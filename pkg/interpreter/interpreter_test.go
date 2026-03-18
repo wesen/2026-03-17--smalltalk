@@ -290,6 +290,29 @@ func TestTrace3SendSelectorsMatch(t *testing.T) {
 	t.Skip("diagnostic check retained while display/control-path trace alignment is still under active investigation")
 }
 
+func TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	runInterpreterCycles(t, interp, 5000)
+
+	snapshot, ok := interp.DisplaySnapshot()
+	if !ok {
+		t.Fatalf("display snapshot unavailable after 5000 cycles")
+	}
+	if snapshot.Width != 640 || snapshot.Height != 480 {
+		t.Fatalf("expected 640x480 display after 5000 cycles, got %dx%d", snapshot.Width, snapshot.Height)
+	}
+
+	nonZeroWords := 0
+	for _, word := range snapshot.Words {
+		if word != 0 {
+			nonZeroWords++
+		}
+	}
+	if nonZeroWords == 0 {
+		t.Fatalf("expected rendered pixels after 5000 cycles, got all-white display")
+	}
+}
+
 func TestDiagnoseRecursiveNotUnderstood(t *testing.T) {
 	t.Skip("diagnostic test retained for manual investigation")
 	classNames := loadOopNames(t, "data/class.oops")
@@ -805,9 +828,14 @@ func TestDumpGraphicsMethodHeaders(t *testing.T) {
 		0x035E, // DisplayScreen class>>boundingBox
 		0x0360, // DisplayScreen class>>displayHeight:
 		0x0362, // DisplayScreen class>>displayExtent:
+		0x8B48, // Point class>>x:y:
+		0x8B8E, // Point>>setX:setY:
+		0x8BBA, // Point>>corner:
 		0x73A2, // DisplayScreen>>beDisplay
 		0x1148, // Form>>bits
 		0x113E, // Form>>offset
+		0x142C, // CharacterScanner>>scanCharactersFrom:to:in:rightX:stopConditions:displaying:
+		0x170E, // Form>>fill:rule:mask:
 		0x170C, // Form>>extent:offset:bits:
 		0x137C, // BitBlt class>>destForm:sourceForm:halftoneForm:combinationRule:destOrigin:sourceOrigin:extent:clipRect:
 		0x13F0, // BitBlt>>setDestForm:sourceForm:halftoneForm:combinationRule:destOrigin:sourceOrigin:extent:clipRect:
@@ -818,10 +846,11 @@ func TestDumpGraphicsMethodHeaders(t *testing.T) {
 		0x13E6, // BitBlt>>sourceForm:
 	}
 	for _, method := range methods {
-		t.Logf("method=0x%04X(%s) flag=%d field=%d literals=%d temps=%d args=%d bytes=%d initialIP=%d",
+		t.Logf("method=0x%04X(%s) flag=%d field=%d literals=%d temps=%d args=%d primitive=%d header=0x%04X headerExt=0x%04X bytes=%d initialIP=%d",
 			method, methodNames[method], interp.flagValueOf(method), interp.fieldIndexOf(method),
 			interp.literalCountOf(method), interp.temporaryCountOf(method),
-			interp.argumentCountOf(method), interp.memory.FetchByteLengthOf(method), interp.initialInstructionPointerOfMethod(method))
+			interp.argumentCountOf(method), interp.primitiveIndexOf(method), interp.headerOf(method), interp.headerExtensionOf(method),
+			interp.memory.FetchByteLengthOf(method), interp.initialInstructionPointerOfMethod(method))
 		for i := 0; i < interp.literalCountOf(method); i++ {
 			lit := interp.literalOfMethod(i, method)
 			t.Logf("  literal[%d]=0x%04X string=%q class=0x%04X(%s)",
@@ -1015,6 +1044,36 @@ func TestDumpTrace3FirstMismatchUpTo750(t *testing.T) {
 	}
 }
 
+func TestDumpTrace3FirstMismatchUpTo2000(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	traceLines := loadTraceSendLines(t, "data/trace3")
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	for interp.cycleCount = 0; interp.cycleCount < 2000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+
+		traceCycle := interp.cycleCount + 1
+		if line, exists := traceLines[traceCycle]; exists {
+			selector, _, ok := decodeSendForCurrentBytecode(interp)
+			if !ok {
+				t.Fatalf("trace3 cycle %d expected send %q but bytecode=%d method=0x%04X(%s) was not a send",
+					traceCycle, line, interp.currentBytecode, interp.method, methodNames[interp.method])
+			}
+			selectorName := symbolString(interp, selector)
+			if selectorName == "" || !strings.Contains(line, selectorName) {
+				t.Fatalf("trace3 cycle %d mismatch: trace=%q actualSelector=%q method=0x%04X(%s) ip=%d sp=%d bytecode=%d",
+					traceCycle, line, selectorName, interp.method, methodNames[interp.method], interp.instructionPointer, interp.stackPointer, interp.currentBytecode)
+			}
+		}
+
+		interp.dispatchOnThisBytecode()
+	}
+}
+
 func TestDumpFirstCopyBitsFailureState(t *testing.T) {
 	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
 		t.Skip("diagnostic test retained for manual investigation")
@@ -1071,6 +1130,195 @@ func TestDumpFirstCopyBitsFailureState(t *testing.T) {
 	logForm("destForm", destForm)
 	logForm("sourceForm", sourceForm)
 	logForm("halftoneForm", halftoneForm)
+}
+
+func TestDumpDisplayCopyBitsSummary(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	checkpoints := map[uint64]bool{
+		1000:    true,
+		10000:   true,
+		100000:  true,
+		2000000: true,
+	}
+	var loggedOps uint64
+	for interp.cycleCount = 0; interp.cycleCount < 2000000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+
+		if interp.displayCopyBitsCount > loggedOps && loggedOps < 10 {
+			t.Logf("display copyBits op=%d cycle=%d method=0x%04X(%s) bitBlt=0x%04X changedOps=%d changedWords=%d",
+				interp.displayCopyBitsCount, interp.cycleCount, interp.method, methodNames[interp.method],
+				interp.lastDisplayCopyBitsBitBlt, interp.displayCopyBitsChangedOps, interp.displayCopyBitsChangedWords)
+			loggedOps = interp.displayCopyBitsCount
+		}
+
+		if checkpoints[interp.cycleCount] {
+			snapshot, ok := interp.DisplaySnapshot()
+			if !ok {
+				t.Logf("checkpoint cycle=%d snapshot=unavailable displayOps=%d changedOps=%d changedWords=%d",
+					interp.cycleCount, interp.displayCopyBitsCount, interp.displayCopyBitsChangedOps, interp.displayCopyBitsChangedWords)
+				continue
+			}
+			nonZeroWords := 0
+			for _, word := range snapshot.Words {
+				if word != 0 {
+					nonZeroWords++
+				}
+			}
+			t.Logf("checkpoint cycle=%d width=%d height=%d nonZeroWords=%d displayOps=%d changedOps=%d changedWords=%d firstDisplayOpCycle=%d firstDisplayChangeCycle=%d lastDisplayChangeCycle=%d",
+				interp.cycleCount, snapshot.Width, snapshot.Height, nonZeroWords,
+				interp.displayCopyBitsCount, interp.displayCopyBitsChangedOps, interp.displayCopyBitsChangedWords,
+				interp.firstDisplayCopyBitsCycle, interp.firstDisplayChangeCycle, interp.lastDisplayChangeCycle)
+		}
+	}
+}
+
+func TestDumpDisplayWordWriteSummary(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	checkpoints := map[uint64]bool{
+		1000:   true,
+		2000:   true,
+		10000:  true,
+		100000: true,
+	}
+	var loggedWrites uint64
+	for interp.cycleCount = 0; interp.cycleCount < 100000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+
+		if interp.displayWordWriteCount > loggedWrites && loggedWrites < 10 {
+			t.Logf("display word write=%d cycle=%d method=0x%04X(%s) changedWords=%d firstChangeCycle=%d lastChangeCycle=%d",
+				interp.displayWordWriteCount, interp.cycleCount, interp.method, methodNames[interp.method],
+				interp.displayWordChangedCount, interp.firstDisplayWordChangeCycle, interp.lastDisplayWordChangeCycle)
+			loggedWrites = interp.displayWordWriteCount
+		}
+
+		if checkpoints[interp.cycleCount] {
+			snapshot, ok := interp.DisplaySnapshot()
+			if !ok {
+				t.Logf("checkpoint cycle=%d snapshot=unavailable displayWordWrites=%d changed=%d",
+					interp.cycleCount, interp.displayWordWriteCount, interp.displayWordChangedCount)
+				continue
+			}
+			nonZeroWords := 0
+			for _, word := range snapshot.Words {
+				if word != 0 {
+					nonZeroWords++
+				}
+			}
+			t.Logf("checkpoint cycle=%d width=%d height=%d nonZeroWords=%d displayWordWrites=%d changed=%d copyBits=%d displayCopyBits=%d",
+				interp.cycleCount, snapshot.Width, snapshot.Height, nonZeroWords,
+				interp.displayWordWriteCount, interp.displayWordChangedCount, interp.copyBitsCount, interp.displayCopyBitsCount)
+		}
+	}
+}
+
+func TestDumpCopyBitsDestinations(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	var logged uint64
+	for interp.cycleCount = 0; interp.cycleCount < 200000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+
+		if interp.copyBitsCount > logged && logged < 20 {
+			t.Logf("copyBits op=%d cycle=%d method=0x%04X(%s) bitBlt=0x%04X destForm=0x%04X destBits=0x%04X size=%dx%d targetsDisplay=%v displayOps=%d changedOps=%d",
+				interp.copyBitsCount, interp.lastSuccessfulCopyBitsCycle, interp.method, methodNames[interp.method],
+				interp.lastSuccessfulCopyBitsBitBlt, interp.lastSuccessfulCopyBitsDestForm, interp.lastSuccessfulCopyBitsDestBits,
+				interp.lastSuccessfulCopyBitsDestWidth, interp.lastSuccessfulCopyBitsDestHeight, interp.lastSuccessfulCopyBitsTargetsDisplay,
+				interp.displayCopyBitsCount, interp.displayCopyBitsChangedOps)
+			logged = interp.copyBitsCount
+		}
+	}
+}
+
+func TestDumpActiveMethodCheckpoints(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	methodNames := loadOopNames(t, "data/method.oops")
+	classNames := loadOopNames(t, "data/class.oops")
+	interp := loadTestInterpreter(t)
+
+	checkpoints := map[uint64]bool{
+		1000:   true,
+		2000:   true,
+		5000:   true,
+		10000:  true,
+		100000: true,
+	}
+	for interp.cycleCount = 0; interp.cycleCount < 100000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+
+		if checkpoints[interp.cycleCount] {
+			receiverClass := interp.fetchClassOf(interp.receiver)
+			t.Logf("checkpoint cycle=%d activeContext=0x%04X method=0x%04X(%s) receiver=0x%04X class=0x%04X(%s) ip=%d sp=%d copyBits=%d displayCopyBits=%d",
+				interp.cycleCount, interp.activeContext, interp.method, methodNames[interp.method],
+				interp.receiver, receiverClass, classNames[receiverClass], interp.instructionPointer, interp.stackPointer,
+				interp.copyBitsCount, interp.displayCopyBitsCount)
+		}
+	}
+}
+
+func TestDumpFillRuleMaskWindow(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	for interp.cycleCount = 0; interp.cycleCount < 2400; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		if interp.cycleCount >= 1980 && interp.cycleCount <= 2200 {
+			if selector, argCount, ok := decodeSendForCurrentBytecode(interp); ok {
+				t.Logf("cycle=%d method=0x%04X(%s) ip=%d sp=%d bytecode=%d selector=%q args=%d copyBits=%d displayWordWrites=%d",
+					interp.cycleCount, interp.method, methodNames[interp.method], interp.instructionPointer, interp.stackPointer,
+					interp.currentBytecode, symbolString(interp, selector), argCount, interp.copyBitsCount, interp.displayWordWriteCount)
+				if symbolString(interp, selector) == "copyBits" {
+					receiver := interp.stackValue(argCount)
+					receiverClass := interp.fetchClassOf(receiver)
+					savedSelector := interp.messageSelector
+					savedMethod := interp.newMethod
+					savedPrimitive := interp.primitiveIndex
+					interp.messageSelector = selector
+					interp.findNewMethodInClass(receiverClass)
+					t.Logf("  copyBits receiver=0x%04X class=0x%04X lookedUpMethod=0x%04X(%s) primitive=%d stackTop=0x%04X",
+						receiver, receiverClass, interp.newMethod, methodNames[interp.newMethod], interp.primitiveIndex, interp.stackTop())
+					for i := 0; i < interp.fetchWordLengthOf(receiver); i++ {
+						t.Logf("    bitblt field[%d]=0x%04X", i, interp.fetchPointer(i, receiver))
+					}
+					interp.messageSelector = savedSelector
+					interp.newMethod = savedMethod
+					interp.primitiveIndex = savedPrimitive
+				}
+			} else {
+				t.Logf("cycle=%d method=0x%04X(%s) ip=%d sp=%d bytecode=%d copyBits=%d displayWordWrites=%d",
+					interp.cycleCount, interp.method, methodNames[interp.method], interp.instructionPointer, interp.stackPointer,
+					interp.currentBytecode, interp.copyBitsCount, interp.displayWordWriteCount)
+			}
+		}
+		interp.dispatchOnThisBytecode()
+	}
 }
 
 func TestDetectInvalidActiveContextAtScale(t *testing.T) {

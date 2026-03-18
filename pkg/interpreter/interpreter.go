@@ -87,12 +87,12 @@ const (
 	BitBltDestYIndex           = 5
 	BitBltWidthIndex           = 6
 	BitBltHeightIndex          = 7
-	BitBltClipXIndex           = 8
-	BitBltClipYIndex           = 9
-	BitBltClipWidthIndex       = 10
-	BitBltClipHeightIndex      = 11
-	BitBltSourceXIndex         = 12
-	BitBltSourceYIndex         = 13
+	BitBltSourceXIndex         = 8
+	BitBltSourceYIndex         = 9
+	BitBltClipXIndex           = 10
+	BitBltClipYIndex           = 11
+	BitBltClipWidthIndex       = 12
+	BitBltClipHeightIndex      = 13
 )
 
 // Method cache size (must be power of 2 * 4)
@@ -143,6 +143,33 @@ type Interpreter struct {
 	lastCopyBitsFailure string
 	lastCopyBitsBitBlt  uint16
 	lastCopyBitsCycle   uint64
+
+	copyBitsCount                        uint64
+	lastSuccessfulCopyBitsCycle          uint64
+	lastSuccessfulCopyBitsBitBlt         uint16
+	lastSuccessfulCopyBitsDestForm       uint16
+	lastSuccessfulCopyBitsDestBits       uint16
+	lastSuccessfulCopyBitsDestWidth      int
+	lastSuccessfulCopyBitsDestHeight     int
+	lastSuccessfulCopyBitsTargetsDisplay bool
+
+	displayWordWriteCount       uint64
+	displayWordChangedCount     uint64
+	firstDisplayWordWriteCycle  uint64
+	lastDisplayWordWriteCycle   uint64
+	firstDisplayWordChangeCycle uint64
+	lastDisplayWordChangeCycle  uint64
+
+	// Display-targeted BitBlt diagnostics.
+	displayCopyBitsCount        uint64
+	displayCopyBitsChangedOps   uint64
+	displayCopyBitsChangedWords uint64
+	firstDisplayCopyBitsCycle   uint64
+	lastDisplayCopyBitsCycle    uint64
+	firstDisplayCopyBitsBitBlt  uint16
+	lastDisplayCopyBitsBitBlt   uint16
+	firstDisplayChangeCycle     uint64
+	lastDisplayChangeCycle      uint64
 }
 
 // DisplaySnapshot captures the current designated display form in host-friendly
@@ -220,7 +247,33 @@ func (interp *Interpreter) fetchWord(wordIndex int, ofObject uint16) uint16 {
 	return interp.memory.FetchWord(wordIndex, ofObject)
 }
 
+func (interp *Interpreter) displayBitsObject() (uint16, bool) {
+	if interp.displayScreen == 0 || interp.displayScreen == om.NilPointer || !interp.memory.ValidOop(interp.displayScreen) {
+		return 0, false
+	}
+	form, ok := interp.formWordsOf(interp.displayScreen)
+	if !ok {
+		return 0, false
+	}
+	return form.bits, true
+}
+
 func (interp *Interpreter) storeWord(wordIndex int, ofObject uint16, withValue uint16) {
+	if displayBits, ok := interp.displayBitsObject(); ok && ofObject == displayBits {
+		previous := interp.memory.FetchWord(wordIndex, ofObject)
+		interp.displayWordWriteCount++
+		if interp.firstDisplayWordWriteCycle == 0 {
+			interp.firstDisplayWordWriteCycle = interp.cycleCount
+		}
+		interp.lastDisplayWordWriteCycle = interp.cycleCount
+		if previous != withValue {
+			interp.displayWordChangedCount++
+			if interp.firstDisplayWordChangeCycle == 0 {
+				interp.firstDisplayWordChangeCycle = interp.cycleCount
+			}
+			interp.lastDisplayWordChangeCycle = interp.cycleCount
+		}
+	}
 	interp.memory.StoreWord(wordIndex, ofObject, withValue)
 }
 
@@ -1267,7 +1320,7 @@ func (interp *Interpreter) subscriptStoring(array uint16, index int, class uint1
 		if interp.isPointers(class) {
 			interp.storePointer(index+fixedFields-1, array, value)
 		} else if om.IsSmallInteger(value) {
-			interp.memory.StoreWord(index+fixedFields-1, array, uint16(om.SmallIntegerValue(value)))
+			interp.storeWord(index+fixedFields-1, array, uint16(om.SmallIntegerValue(value)))
 		} else {
 			interp.primitiveFail()
 		}
@@ -1863,6 +1916,14 @@ func (interp *Interpreter) doPrimitiveCopyBits(bitBlt uint16) bool {
 	sourceDelta := sourceRaster*vDir - ((nWords + preloadWords) * hDir)
 	destDelta := destRaster*vDir - (nWords * hDir)
 	halftoneY := dy
+	displayBits := uint16(0)
+	if interp.displayScreen != 0 && interp.displayScreen != om.NilPointer && interp.memory.ValidOop(interp.displayScreen) {
+		if displayForm, ok := interp.formWordsOf(interp.displayScreen); ok {
+			displayBits = displayForm.bits
+		}
+	}
+	targetsDisplay := displayBits != 0 && dest.bits == displayBits
+	changedDisplayWords := uint64(0)
 
 	for i := 0; i < h; i++ {
 		halftoneWord := allOnes
@@ -1907,6 +1968,9 @@ func (interp *Interpreter) doPrimitiveCopyBits(bitBlt uint16) bool {
 			destWord := interp.fetchWord(lineDestIndex, dest.bits)
 			merge := mergeWord(combinationRule, skewWord&halftoneWord, destWord)
 			out := (mergeMask & merge) | (^mergeMask & destWord)
+			if targetsDisplay && out != destWord {
+				changedDisplayWords++
+			}
 			interp.storeWord(lineDestIndex, dest.bits, out)
 			lineSourceIndex += hDir
 			lineDestIndex += hDir
@@ -1919,6 +1983,33 @@ func (interp *Interpreter) doPrimitiveCopyBits(bitBlt uint16) bool {
 		sourceIndex += sourceDelta
 		destIndex += destDelta
 	}
+
+	if targetsDisplay {
+		interp.displayCopyBitsCount++
+		if interp.firstDisplayCopyBitsCycle == 0 {
+			interp.firstDisplayCopyBitsCycle = interp.cycleCount
+			interp.firstDisplayCopyBitsBitBlt = bitBlt
+		}
+		interp.lastDisplayCopyBitsCycle = interp.cycleCount
+		interp.lastDisplayCopyBitsBitBlt = bitBlt
+		if changedDisplayWords > 0 {
+			interp.displayCopyBitsChangedOps++
+			interp.displayCopyBitsChangedWords += changedDisplayWords
+			if interp.firstDisplayChangeCycle == 0 {
+				interp.firstDisplayChangeCycle = interp.cycleCount
+			}
+			interp.lastDisplayChangeCycle = interp.cycleCount
+		}
+	}
+
+	interp.copyBitsCount++
+	interp.lastSuccessfulCopyBitsCycle = interp.cycleCount
+	interp.lastSuccessfulCopyBitsBitBlt = bitBlt
+	interp.lastSuccessfulCopyBitsDestForm = destForm
+	interp.lastSuccessfulCopyBitsDestBits = dest.bits
+	interp.lastSuccessfulCopyBitsDestWidth = dest.width
+	interp.lastSuccessfulCopyBitsDestHeight = dest.height
+	interp.lastSuccessfulCopyBitsTargetsDisplay = targetsDisplay
 
 	return true
 }

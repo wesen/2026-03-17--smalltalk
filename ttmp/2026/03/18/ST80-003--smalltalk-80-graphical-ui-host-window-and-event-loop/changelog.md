@@ -57,3 +57,25 @@ Step 5: broadened the same positive-integer decoding fix across clear size/index
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added popPositiveInteger and widened positive size/index primitive decoding (commit d2d22d8)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Direct positive-integer decoder tests and retained startup regression coverage (commit d2d22d8)
 
+
+## 2026-03-18
+
+Step 6: fixed the `BitBlt` field-index order so `primitiveCopyBits` reads `sourceX/sourceY` and `clipX/clipY/clipWidth/clipHeight` from the correct slots, restoring non-white framebuffer output.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Corrected `BitBlt` slot constants for `primitiveCopyBits`
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Added a normal regression for non-white early display output
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/04-bitblt-field-order-bug-writeup.md — Detailed intern-facing explanation of the bug and fix
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-5000.png — First post-fix direct framebuffer snapshot showing non-white output
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png — Updated off-screen SDL capture after the `BitBlt` fix
+
+
+## 2026-03-18
+
+Step 7: prepared a structured OCR/extraction handoff for the Blue Book so an intern can build audit-ready class-layout, method-signature, and primitive-reference tables instead of raw OCR text.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/03-bluebook-ocr-extraction-instructions-for-intern.md — Intern-facing OCR and structured extraction workflow for the Blue Book
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/tasks.md — Added the systematic Blue Book OCR audit as an explicit follow-up task

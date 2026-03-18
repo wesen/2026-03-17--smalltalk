@@ -13,4 +13,5 @@
 - [ ] Implement host-side time/timer support for the remaining clock primitives
 - [ ] Decide how to render or synthesize the Smalltalk cursor on the host side
 - [ ] Verify the UI command visually in a real desktop session and record the result in this ticket
-- [ ] Investigate why the corrected 640x480 designated display remains all white and never receives visible drawing
+- [x] Investigate why the corrected 640x480 designated display remains all white and never receives visible drawing
+- [ ] Build a Blue Book OCR extraction pack so we can audit class layouts, method argument order, and primitive expectations systematically
