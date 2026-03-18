@@ -66,3 +66,11 @@ Step 5: Added a focused late-runtime diagnostic showing that the bad value: rece
 
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Late blockCopy/value corruption trace retained in skipped/manual form (commit 85de9e9)
 
+
+## 2026-03-18
+
+Step 6: Removed the downloaded Wolczko source artifacts from the ticket workspace at the user's request, restored a clean repo state, and recorded the new reference boundary in the diary.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/reference/01-diary.md — Cleanup/provenance record for the removed ticket-local `sources/` tree
