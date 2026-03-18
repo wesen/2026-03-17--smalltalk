@@ -716,3 +716,58 @@ func TestTraceAroundLateInvalidActiveContext(t *testing.T) {
 		}
 	}
 }
+
+func TestTraceAroundLateValueReceiverCorruption(t *testing.T) {
+	t.Skip("diagnostic test retained for manual investigation")
+	methodNames := loadOopNames(t, "data/method.oops")
+	classNames := loadOopNames(t, "data/class.oops")
+	interp := loadTestInterpreter(t)
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("panic at cycle=%d method=0x%04X(%s): %v", interp.cycleCount, interp.method, methodNames[interp.method], r)
+		}
+	}()
+
+	for interp.cycleCount = 0; interp.cycleCount < 708780; interp.cycleCount++ {
+		if interp.cycleCount >= 708752 {
+			t.Logf("before cycle=%d ctx=0x%04X method=0x%04X(%s) receiver=0x%04X class=0x%04X(%s) ip=%d sp=%d temp0=0x%04X temp1=0x%04X temp2=0x%04X stackTop=0x%04X stack1=0x%04X stack2=0x%04X",
+				interp.cycleCount, interp.activeContext, interp.method, methodNames[interp.method],
+				interp.receiver, interp.fetchClassOf(interp.receiver), classNames[interp.fetchClassOf(interp.receiver)],
+				interp.instructionPointer, interp.stackPointer,
+				interp.fetchPointer(TempFrameStart, interp.homeContext),
+				interp.fetchPointer(TempFrameStart+1, interp.homeContext),
+				interp.fetchPointer(TempFrameStart+2, interp.homeContext),
+				interp.stackTop(), interp.stackValue(1), interp.stackValue(2))
+		}
+
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+
+		if interp.cycleCount >= 708752 {
+			if selector, argCount, ok := decodeSendForCurrentBytecode(interp); ok {
+				receiver := interp.stackValue(argCount)
+				t.Logf("fetched cycle=%d bytecode=%d sendReceiver=0x%04X sendClass=0x%04X(%s) selector=%q argCount=%d",
+					interp.cycleCount, interp.currentBytecode, receiver, interp.fetchClassOf(receiver),
+					classNames[interp.fetchClassOf(receiver)], symbolString(interp, selector), argCount)
+			} else {
+				t.Logf("fetched cycle=%d bytecode=%d", interp.cycleCount, interp.currentBytecode)
+			}
+		}
+
+		interp.dispatchOnThisBytecode()
+
+		if interp.cycleCount >= 708752 {
+			t.Logf("after cycle=%d ctx=0x%04X method=0x%04X(%s) receiver=0x%04X ip=%d sp=%d",
+				interp.cycleCount, interp.activeContext, interp.method, methodNames[interp.method],
+				interp.receiver, interp.instructionPointer, interp.stackPointer)
+			if interp.cycleCount == 708757 {
+				block := interp.stackTop()
+				t.Logf("createdBlock oop=0x%04X class=0x%04X(%s) wordLen=%d field0=0x%04X field1=0x%04X field2=0x%04X field3=0x%04X field4=0x%04X field5=0x%04X",
+					block, interp.fetchClassOf(block), classNames[interp.fetchClassOf(block)], interp.fetchWordLengthOf(block),
+					interp.fetchPointer(0, block), interp.fetchPointer(1, block), interp.fetchPointer(2, block),
+					interp.fetchPointer(3, block), interp.fetchPointer(4, block), interp.fetchPointer(5, block))
+			}
+		}
+	}
+}
