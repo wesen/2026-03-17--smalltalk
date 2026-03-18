@@ -765,3 +765,130 @@ if os.path.isdir(base):
 PY
 git status --short
 ```
+
+## Step 7: Safe Context-Body Reuse, Segment-Wrap Guarding, and Recovery from the Late blockCopy: Corruption
+
+This step finally turned the late `blockCopy:` corruption hypothesis into a concrete allocator fix. The key observation from Step 5 was still the anchor: the bad `value:` receiver at cycle `708768` was already invalid immediately after `blockCopy:`. That meant the corruption was not happening in `Number>>to:do:` or later block invocation logic; it was happening at allocation time.
+
+The final repair was narrower than a full collector but broader than the earlier slot-only recycling. I added exact-size body reuse for explicitly freed context bodies, prevented those tracked context OOPs from being reassigned to unrelated object shapes, added an explicit segment-wrap exhaustion guard, and hardened context-shape probes so they reject undersized objects cleanly. With that combination in place, the old late-runtime frontier disappeared and the interpreter once again ran through both `800000` and `2000000` cycles cleanly.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ah yes, you can do anything. continue, write up the whole issue and bug and keep a detailed diary, commit frequently"
+
+**Assistant interpretation:** Stop treating allocator work as an optional larger refactor, fix the real late-runtime memory bug directly inside the repo, and document the investigation and repair carefully enough for later review.
+
+**Inferred user intent:** Reach the actual VM blocker instead of circling around symptoms, and leave a durable debugging record that explains both the bug and the shape of the chosen fix.
+
+**Commit (code):** 6cb8881 — "Reuse freed context bodies safely"
+
+### What I did
+- Re-read the object-memory allocator and compared the current failure against the Blue Book object-table address format already reflected in the code:
+  - 4-bit segment
+  - 16-bit location
+- Formed the concrete hypothesis that appending bodies forever while only recycling OOP slots would eventually corrupt body addressing once the effective segment field wrapped.
+- Implemented `reusableBodies` tracking in [objectmemory.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go) so only objects explicitly freed by this runtime are candidates for body reuse.
+- Changed `FreeObject` to preserve the retired body's segment/location metadata and record its exact body size.
+- Added exact-size body reuse in `instantiate(...)`:
+  - if a tracked freed body matches the requested size, reuse that body in place
+  - rewrite size/class/fields before returning the OOP
+- Added an explicit object-space exhaustion panic if a fresh append would require a segment beyond the 4-bit limit.
+- The first allocator pass regressed startup around cycle `95`. I traced that regression and found the second necessary constraint:
+  - tracked freed context OOPs must not be reassigned to unrelated smaller object shapes on mismatched allocations
+- Adjusted the allocator so tracked freed OOPs are reserved for exact-size reuse only; mismatched allocations skip them and use another free slot or extend the OT instead.
+- Hardened [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `isMethodContext`
+  - `isBlockContext`
+  - both now require the candidate object to have at least `MethodIndex + 1` fields before probing field `3`
+- Added focused regression coverage in [objectmemory_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory_test.go):
+  - exact-size freed body reuse keeps object-space size stable
+  - mismatched tracked freed body slots stay reserved instead of being repurposed immediately
+  - true segment overflow panics explicitly instead of silently wrapping
+- Validated with:
+  - `go test ./...`
+  - `go run ./cmd/st80 data/VirtualImage 800000`
+  - `go run ./cmd/st80 data/VirtualImage 2000000`
+
+### Why
+- Step 5 had already shown the block object was invalid at birth, so another send/lookup fix would have been treating the symptom.
+- The object-table entry format cannot represent unbounded append-only body growth without eventual loss of address fidelity.
+- Slot reuse by itself was too weak:
+  - it helped OOP pressure
+  - it did nothing for object-space growth
+- The startup regression from the first attempt also clarified that OOP identity and body identity must be handled together. Recycling a context OOP into an unrelated tiny object shape is too dangerous while stale context references can still exist in dormant fields.
+
+### What worked
+- The late `blockCopy:` / `value:` corruption frontier is gone.
+- The interpreter now survives both of the meaningful checkpoints I used in this ticket:
+  - `800000` cycles
+  - `2000000` cycles
+- The allocator now has a real safety property it lacked before:
+  - true segment exhaustion is explicit
+  - it is no longer silent address wrap into fake objects
+- The new object-memory tests cover the intended allocator invariants directly instead of relying only on long-run integration behavior.
+
+### What didn't work
+- The first body-reuse patch was still too permissive. It caused an early startup failure around cycle `95`:
+
+```text
+FetchPointer: OOP 0x02AC field 3: addr 259221 out of bounds (os=259220, loc=259216)
+```
+
+- That failed attempt was not discarded silently. I used it to refine the fix:
+  - tracked freed context OOPs must remain reserved for exact-shape reuse
+  - context-shape checks must reject undersized objects before reading field `3`
+
+### What I learned
+- The long-run failure really was allocator-level, not a later interpreter-send bug.
+- In this VM, “reclaiming an object” is not one thing. Reusing the OOP slot and reusing the body are related but not interchangeable.
+- The late trace and the early regression together were more informative than either one alone:
+  - the late trace identified the right layer
+  - the early regression identified the missing safety constraint
+
+### What was tricky to build
+- The hard part was avoiding a fix that only looked right from one side. Reusing bodies to stop object-space growth is attractive, but if the corresponding freed OOP is allowed to turn into a differently shaped object too soon, stale context references become more dangerous, not less.
+- Another subtle part was deciding what to preserve in `FreeObject`. I needed enough metadata to support safe exact-size reuse later, but I could not treat image-era free entries as if they were trustworthy reusable bodies from this runtime.
+
+### What warrants a second pair of eyes
+- The current fix is still a tactical reclamation strategy, not a full general-purpose Smalltalk object-memory collector.
+- `maybeRecycleContext` is still rooted in context reachability from the active context chain, not a full root-set traversal of the entire object memory.
+- That is acceptable for the current frontier because it removed the proven late failure, but it is still worth reviewing carefully before expanding body reuse beyond recycled contexts.
+
+### What should be done in the future
+- Revalidate against local `trace2` and `trace3` now that the late allocator corruption is gone.
+- Confirm where the VM is spending time at long run and whether it is actually idling as expected.
+- Decide whether the current context-only body reuse should remain a tactical stopgap or evolve into broader object-memory reclamation.
+- Restore proper small-vs-large context sizing once the runtime frontier is stable enough that this no longer obscures debugging.
+
+### Code review instructions
+- Start in [objectmemory.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go):
+  - `FreeObject`
+  - `initializeBody`
+  - `instantiate`
+- Then review the defensive interpreter-side changes in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `isMethodContext`
+  - `isBlockContext`
+- Then review [objectmemory_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory_test.go) for the new invariants the allocator is expected to maintain.
+- Validate with:
+  - `go test ./...`
+  - `go run ./cmd/st80 data/VirtualImage 800000`
+  - `go run ./cmd/st80 data/VirtualImage 2000000`
+
+### Technical details
+- Key before/after evidence from this step:
+  - old late failure:
+    - invalid `blockCopy:` result around cycle `708768`
+    - recursive `doesNotUnderstand:` afterward
+  - first failed allocator attempt:
+    - startup panic around cycle `95`
+  - final landed state:
+    - `800000` cycles clean
+    - `2000000` cycles clean
+- Commands used in this step:
+
+```bash
+go test ./...
+go run ./cmd/st80 data/VirtualImage 800000
+go run ./cmd/st80 data/VirtualImage 2000000
+git commit -m "Reuse freed context bodies safely"
+```

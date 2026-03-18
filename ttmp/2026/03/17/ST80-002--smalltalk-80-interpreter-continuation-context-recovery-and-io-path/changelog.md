@@ -74,3 +74,14 @@ Step 6: Removed the downloaded Wolczko source artifacts from the ticket workspac
 ### Related Files
 
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/reference/01-diary.md — Cleanup/provenance record for the removed ticket-local `sources/` tree
+
+
+## 2026-03-18
+
+Step 7: Reused freed context bodies safely, reserved tracked recycled context OOPs for exact-shape reuse, hardened context-shape checks, and removed the late blockCopy:/value: corruption frontier; the interpreter now runs through 800,000 and 2,000,000 cycles cleanly again (commit 6cb8881).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go — Exact-size body reuse, tracked retired bodies, and explicit segment-wrap guard (commit 6cb8881)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory_test.go — Focused allocator regressions for safe reuse and segment exhaustion (commit 6cb8881)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Defensive context-shape checks for undersized non-context objects (commit 6cb8881)
