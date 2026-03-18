@@ -10,7 +10,7 @@ import (
 
 func main() {
 	imagePath := flag.String("image", "data/VirtualImage", "path to the Smalltalk-80 image")
-	cyclesPerFrame := flag.Uint64("cycles-per-frame", 50000, "interpreter cycles to run between window refreshes")
+	cyclesPerFrame := flag.Uint64("cycles-per-frame", 5000, "interpreter cycles to run between window refreshes")
 	maxCycles := flag.Uint64("max-cycles", 0, "maximum cycles to execute before exiting (0 means run until window close)")
 	scale := flag.Int("scale", 2, "window scale factor")
 	title := flag.String("title", "Smalltalk-80", "window title")

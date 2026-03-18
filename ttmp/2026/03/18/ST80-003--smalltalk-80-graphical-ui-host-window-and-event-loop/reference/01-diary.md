@@ -2016,3 +2016,96 @@ Image: 596128 bytes, objectSpace=258880 words @512, objectTable=38736 words @518
 ### Technical details
 - Host-side run log still contained only the startup image line and no event-debug output.
 - That means the current experiment did not reach even the raw SDL event logging branch for the injected sequence.
+
+## Step 19: Cleaner SDL Focus Diagnostics And Smaller Default Poll Chunks
+
+At this point the raw SDL event logger was useful, but the output still made live diagnosis harder than it needed to be. It printed focus status every poll, which buried the interesting transitions in noise, and it still did not print the SDL window's own ID at creation time. That made it too easy to stare at `windowID=1` or `windowID=2` without being certain whether that was actually the `Smalltalk-80` window.
+
+I tightened that debug path instead of adding more one-off probes. The host UI now prints the created SDL window ID once, only logs mouse/keyboard focus when those IDs change, shows human-readable window-event names, and uses a smaller default `cycles-per-frame` so event polling is less coarse. That gives the next desktop run a much cleaner signal.
+
+### Prompt Context
+
+**User prompt (verbatim):** "alright do it"
+
+**Assistant interpretation:** Apply the focused host-debug cleanup that makes the SDL event logs actually useful for the next manual run.
+
+**Inferred user intent:** Remove low-value debug noise, make the event logs interpretable, and improve host responsiveness enough that manual testing is meaningful.
+
+### What I did
+- Changed the default `cycles-per-frame` from `50000` to `5000` in:
+  - [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go)
+  - [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go)
+- When `-event-debug` is enabled, the UI now logs:
+  - the created SDL window ID once at creation time
+  - focus changes only, instead of printing focus every poll
+  - human-readable SDL window event names
+- Added helpers in [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) for:
+  - resolving current mouse/keyboard focus IDs
+  - formatting focus IDs cleanly
+  - translating `SDL_WindowEventID` values to names
+- Revalidated with:
+
+```bash
+gofmt -w pkg/ui/ui.go cmd/st80-ui/main.go
+go test ./pkg/ui ./cmd/st80-ui
+SDL_VIDEODRIVER=dummy go run ./cmd/st80-ui -event-debug -max-cycles 20000 -cycles-per-frame 5000
+```
+
+### Why
+- The previous focus spam was making the right debugging information harder to see.
+- Printing the created window ID once is the simplest way to tell whether later focus IDs actually refer to our SDL window.
+- A smaller default chunk size should make host polling less coarse during manual interactive runs.
+
+### What worked
+- The build/test stayed green.
+- The dummy-driver smoke run now prints a concise, interpretable startup sequence:
+
+```text
+Image: 596128 bytes, objectSpace=258880 words @512, objectTable=38736 words @518656
+[event-debug cycle=5000] created-window windowID=1 title="Smalltalk-80" size=640x480
+[event-debug cycle=5000] mouse-focus windowID=1
+[event-debug cycle=5000] keyboard-focus windowID=1
+```
+
+- That means the debug stream now clearly identifies the SDL window itself and stops flooding the log with repeated unchanged focus state.
+
+### What didn't work
+- The first build attempt hit a small SDL type mismatch:
+
+```text
+cannot use e.Event (variable of uint32 type sdl.WindowEventID) as uint8 value in argument to windowEventName
+```
+
+- The fix was to make `windowEventName` accept `sdl.WindowEventID` directly.
+
+### What I learned
+- The right debugging improvement here was not “more logs,” it was better-shaped logs.
+- Printing the window ID once is enough to make later focus lines meaningful.
+- The default `50000` cycle chunk was too large for good interactive diagnostics even if it was acceptable for earlier headless progress.
+
+### What was tricky to build
+- The main subtlety was avoiding another noisy debug stream. Focus state is useful, but only on change.
+- The second subtlety was SDL typing: `WindowEvent.Event` is not a plain `uint8` in this binding, so the helper had to match SDL's own event-ID type.
+
+### What warrants a second pair of eyes
+- Review whether `5000` is the right long-term default chunk size or whether it should go lower still for interactive use.
+- Review whether we should also add a small frame delay/cap so manual runs stop pegging a CPU core unnecessarily.
+
+### What should be done in the future
+- Re-run the real desktop/manual test with the cleaner event-debug stream.
+- If real mouse motion still does not produce `mouse-motion` lines, add one more narrow probe around SDL window events and pointer enter/leave behavior.
+
+### Code review instructions
+- Review [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) for:
+  - created-window logging
+  - focus-change-only logging
+  - `windowEventName`
+- Review [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go) for the default `cycles-per-frame` change.
+- Validate with the commands listed above.
+
+### Technical details
+- New dummy-driver startup output:
+  - created SDL window ID
+  - mouse-focus ID
+  - keyboard-focus ID
+- The focus IDs now remain silent unless they actually change.

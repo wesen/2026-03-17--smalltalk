@@ -27,7 +27,7 @@ func Run(opts Options) error {
 		opts.ImagePath = "data/VirtualImage"
 	}
 	if opts.CyclesPerFrame == 0 {
-		opts.CyclesPerFrame = 50000
+		opts.CyclesPerFrame = 5000
 	}
 	if opts.Scale <= 0 {
 		opts.Scale = 2
@@ -77,6 +77,8 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 	var textureHeight int
 	var pixels []uint32
 	var lastInputStats interpreter.InputStats
+	var lastMouseFocusID uint32 = ^uint32(0)
+	var lastKeyboardFocusID uint32 = ^uint32(0)
 	defer func() {
 		_ = doSDL(func() error {
 			if texture != nil {
@@ -136,6 +138,13 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 						return err
 					}
 					window.SetTitle(opts.WindowTitle)
+					window.Raise()
+					if opts.EventDebug {
+						if id, err := window.GetID(); err == nil {
+							fmt.Printf("[event-debug cycle=%d] created-window windowID=%d title=%q size=%dx%d\n",
+								interp.CycleCount(), id, opts.WindowTitle, snapshot.Width, snapshot.Height)
+						}
+					}
 					if err := renderer.SetLogicalSize(int32(snapshot.Width), int32(snapshot.Height)); err != nil {
 						return err
 					}
@@ -165,7 +174,7 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 			copyDisplayBits(pixels, snapshot, hasCursor, cursor)
 		}
 
-		quit, err := processEventsAndPresent(interp, window, renderer, texture, pixels, textureWidth, textureHeight, opts.EventDebug)
+		quit, err := processEventsAndPresent(interp, window, renderer, texture, pixels, textureWidth, textureHeight, opts.EventDebug, &lastMouseFocusID, &lastKeyboardFocusID)
 		if err != nil {
 			return err
 		}
@@ -190,7 +199,7 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 	}
 }
 
-func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window, renderer *sdl.Renderer, texture *sdl.Texture, pixels []uint32, width int, height int, eventDebug bool) (bool, error) {
+func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window, renderer *sdl.Renderer, texture *sdl.Texture, pixels []uint32, width int, height int, eventDebug bool, lastMouseFocusID *uint32, lastKeyboardFocusID *uint32) (bool, error) {
 	quit := false
 	err := doSDL(func() error {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -242,6 +251,23 @@ func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window
 						interp.RecordDecodedKey(parameter, e.Timestamp)
 					}
 				}
+			case *sdl.WindowEvent:
+				if eventDebug {
+					fmt.Printf("[event-debug cycle=%d] window event=%s windowID=%d data1=%d data2=%d\n",
+						interp.CycleCount(), windowEventName(e.Event), e.WindowID, e.Data1, e.Data2)
+				}
+			}
+		}
+		if eventDebug && window != nil {
+			mouseFocusID := focusWindowID(sdl.GetMouseFocus)
+			if lastMouseFocusID != nil && mouseFocusID != *lastMouseFocusID {
+				fmt.Printf("[event-debug cycle=%d] mouse-focus windowID=%s\n", interp.CycleCount(), formatFocusID(mouseFocusID))
+				*lastMouseFocusID = mouseFocusID
+			}
+			keyboardFocusID := focusWindowID(sdl.GetKeyboardFocus)
+			if lastKeyboardFocusID != nil && keyboardFocusID != *lastKeyboardFocusID {
+				fmt.Printf("[event-debug cycle=%d] keyboard-focus windowID=%s\n", interp.CycleCount(), formatFocusID(keyboardFocusID))
+				*lastKeyboardFocusID = keyboardFocusID
 			}
 		}
 		if renderer == nil || texture == nil || width <= 0 || height <= 0 || len(pixels) == 0 {
@@ -260,6 +286,64 @@ func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window
 		return nil
 	})
 	return quit, err
+}
+
+func focusWindowID(getFocus func() *sdl.Window) uint32 {
+	focused := getFocus()
+	if focused == nil {
+		return 0
+	}
+	id, err := focused.GetID()
+	if err != nil {
+		return 0
+	}
+	return id
+}
+
+func formatFocusID(id uint32) string {
+	if id == 0 {
+		return "none"
+	}
+	return fmt.Sprintf("%d", id)
+}
+
+func windowEventName(event sdl.WindowEventID) string {
+	switch event {
+	case sdl.WINDOWEVENT_SHOWN:
+		return "shown"
+	case sdl.WINDOWEVENT_HIDDEN:
+		return "hidden"
+	case sdl.WINDOWEVENT_EXPOSED:
+		return "exposed"
+	case sdl.WINDOWEVENT_MOVED:
+		return "moved"
+	case sdl.WINDOWEVENT_RESIZED:
+		return "resized"
+	case sdl.WINDOWEVENT_SIZE_CHANGED:
+		return "size-changed"
+	case sdl.WINDOWEVENT_MINIMIZED:
+		return "minimized"
+	case sdl.WINDOWEVENT_MAXIMIZED:
+		return "maximized"
+	case sdl.WINDOWEVENT_RESTORED:
+		return "restored"
+	case sdl.WINDOWEVENT_ENTER:
+		return "enter"
+	case sdl.WINDOWEVENT_LEAVE:
+		return "leave"
+	case sdl.WINDOWEVENT_FOCUS_GAINED:
+		return "focus-gained"
+	case sdl.WINDOWEVENT_FOCUS_LOST:
+		return "focus-lost"
+	case sdl.WINDOWEVENT_CLOSE:
+		return "close"
+	case sdl.WINDOWEVENT_TAKE_FOCUS:
+		return "take-focus"
+	case sdl.WINDOWEVENT_HIT_TEST:
+		return "hit-test"
+	default:
+		return fmt.Sprintf("%d", event)
+	}
 }
 
 func mapWindowToLogicalPoint(window *sdl.Window, logicalWidth int, logicalHeight int, x int32, y int32) (int, int, bool) {

@@ -214,3 +214,14 @@ Step 18: added raw SDL event-debug logging and confirmed that even an off-screen
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — Added raw SDL event-debug logging around `sdl.PollEvent` handling (commit 342e7d3)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go — Added the `-event-debug` flag for host-side input diagnostics (commit 342e7d3)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/09-offscreen-input-exercise-note.md — Updated with the stronger openbox/raw-event-debug result
+
+
+## 2026-03-18
+
+Step 19: cleaned up the SDL debug stream by logging the created window ID once, logging focus only when it changes, translating window-event names, and reducing the default `cycles-per-frame` chunk size for more responsive manual runs.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — Created-window logging, focus-change-only logging, human-readable window-event names, and lower default polling chunk
+- /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go — Lowered the default `cycles-per-frame` for interactive runs
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Detailed diary entry for the SDL debug cleanup
