@@ -141,3 +141,13 @@ Step 12: added host-side cursor snapshot/overlay support so the SDL renderer can
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/snapshot.go — Snapshot rendering now uses the same cursor overlay path as the SDL host loop
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui_test.go — Added a focused regression for cursor overlay composition
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/08-host-cursor-overlay-note.md — Notes on the chosen OR-style host cursor rendering behavior
+
+
+## 2026-03-18
+
+Step 13: added an off-screen Xvfb/xdotool input-exercise script and recorded that a simple mouse/click/type sequence produced no visible before/after delta in the captured UI, pushing the next frontier toward live event-consumption instrumentation.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-ui-input-and-capture.sh — Ticket-local helper that injects mouse/keyboard events under Xvfb and captures before/after/diff screenshots
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/09-offscreen-input-exercise-note.md — Notes on the inconclusive off-screen input exercise and what it implies about the next debugging slice

@@ -1359,3 +1359,113 @@ pkg/ui/snapshot.go:61:42: not enough arguments in call to copyDisplayBits
 go test ./pkg/ui ./pkg/interpreter -run 'TestCopyDisplayBitsOverlaysCursorBits|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles|TestPrimitive(SecondClockIntoStoresLittleEndianSeconds|MillisecondClockIntoStoresLittleEndianTicks|SignalAtMillisecondsSignalsImmediatelyWhenPastDue|SignalAtMillisecondsSchedulesFutureSignal)'
 SDL_VIDEODRIVER=dummy go run ./cmd/st80-ui -max-cycles 50000 -cycles-per-frame 500
 ```
+
+## Step 13: Off-Screen Input Exercise Script And The No-Delta Result
+
+At this point the host UI has real display rendering, active input primitives, timer primitives, and cursor overlay support. The next practical question was no longer “can the host deliver events?” in the abstract. It was “does the live UI visibly react when I inject events into the off-screen window?” That is a sharper question, and the answer matters because it tells me whether the next work should stay on the host side or move into image-level event-consumption debugging.
+
+I added an off-screen exercise script that runs `st80-ui` under `Xvfb`, injects a small mouse/keyboard sequence via `xdotool`, and captures before/after/diff screenshots. The result was useful even though it was not the answer I wanted: the captured before/after images were visually identical. That means the next frontier is not “make Xvfb screenshots possible” or “can the host generate input events at all.” The next frontier is proving where the live path is dropping or ignoring the events.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 10)
+
+**Assistant interpretation:** Keep pushing forward until the UI path is not just present but demonstrably useful, and document each concrete debugging slice on the way.
+
+**Inferred user intent:** Replace guesswork with concrete evidence about what still is and is not working in the live UI path.
+
+### What I did
+- Added ticket-local helper [exercise-ui-input-and-capture.sh](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-ui-input-and-capture.sh).
+- The script:
+  - starts `Xvfb`
+  - runs `st80-ui`
+  - finds the `Smalltalk-80` window
+  - captures a before screenshot
+  - injects:
+    - mouse move
+    - left click
+    - typed `a`
+    - `Return`
+  - captures an after screenshot
+  - emits a diff image
+- The first version tried:
+
+```bash
+xdotool windowactivate --sync "$WIN_ID"
+```
+
+which failed under plain `Xvfb` because there is no window manager.
+- I removed the activation dependency and targeted the window directly with `xdotool`’s `--window` options.
+- Ran the helper:
+
+```bash
+ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-ui-input-and-capture.sh
+```
+
+- Inspected:
+  - `st80-ui-before.png`
+  - `st80-ui-after.png`
+  - `st80-ui-diff.png`
+
+### Why
+- I needed a cheap repeatable way to answer “does visible state change under injected input?” without requiring an interactive desktop session each time.
+- A script in the ticket workspace is the right place for that helper because it is part of the debugging workflow, not just an ephemeral command line.
+- The result constrains the next step: if the UI had visibly changed, the next work would be interaction polish; because it did not, the next work needs more runtime instrumentation.
+
+### What worked
+- The script reliably boots the UI under `Xvfb`.
+- The script reliably captures before/after/diff images.
+- The current screenshot clearly shows a live cursor-rendered UI state, so the cursor-overlay work is at least visible in the host window.
+- The script is now reusable for future input debugging.
+
+### What didn't work
+- The first attempt failed with:
+
+```text
+Your windowmanager claims not to support _NET_ACTIVE_WINDOW, so the attempt to activate the window was aborted.
+xdo_activate_window on window:2097160 reported an error
+```
+
+- After removing `windowactivate`, the script completed, but the resulting before/after screenshots were visually identical.
+- The diff image was blank, which means the simple injected sequence did not produce any visible UI delta in this run.
+
+### What I learned
+- The host-side plumbing is far enough along that I can now ask narrower, evidence-based questions about live behavior.
+- A no-delta result is still useful. It narrows the problem.
+- The remaining issue may be one of:
+  - the image not consuming these events in the exercised UI state
+  - focus/targeting semantics under `Xvfb` not matching a real desktop session closely enough
+  - missing parts of the keyboard/event mapping beyond the current text/editing-key subset
+  - missing instrumentation to prove events are entering and/or being drained from the interpreter-side queue
+
+### What was tricky to build
+- The tricky part was not the capture. It was input injection under a root X server with no window manager. `windowactivate` is a natural first try, but it is the wrong assumption in plain `Xvfb`.
+- The other tricky part is interpreting a blank diff correctly. It is tempting to over-read it as “input is broken,” but it is more precise to say “this particular injected sequence caused no visible screen delta.”
+
+### What warrants a second pair of eyes
+- Review whether the injected sequence is the right one for the currently visible Smalltalk UI state.
+- Review whether I should instrument queue insertion/drain counts next instead of relying on visible-screen change as the only signal.
+- Review whether a lightweight window manager under `Xvfb` would make the keyboard part of the exercise more representative.
+
+### What should be done in the future
+- Instrument live event consumption so I can tell:
+  - whether the host recorded the event
+  - whether the interpreter enqueued the event words
+  - whether the image drained or ignored them
+- Re-run the same exercise after that instrumentation exists.
+- Later, repeat the exercise on a real desktop session to separate `Xvfb` limitations from real VM/image behavior.
+
+### Code review instructions
+- Review [exercise-ui-input-and-capture.sh](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-ui-input-and-capture.sh).
+- Then read [09-offscreen-input-exercise-note.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/09-offscreen-input-exercise-note.md).
+- Optionally inspect the generated local artifacts in `various/ui-capture/` from the last run.
+
+### Technical details
+- Injected sequence in the current helper:
+  - move mouse to `(120, 120)` in the window
+  - click button 1
+  - type `a`
+  - press `Return`
+- Observed result:
+  - before/after screenshots looked the same
+  - diff image was blank

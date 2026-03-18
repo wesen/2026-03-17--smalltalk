@@ -20,3 +20,4 @@
 - [ ] Expand the decoded-keyboard host mapping to cover control/meta-key edge cases beyond ASCII text and the main editing keys
 - [ ] Audit live image behavior around the new timer primitives and delayed-process wakeups in a real desktop session
 - [ ] Verify the host-rendered cursor shape/location visually in a real desktop session
+- [ ] Instrument live event consumption now that the off-screen input exercise script shows no visible before/after UI delta yet
