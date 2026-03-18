@@ -14,9 +14,13 @@ RelatedFiles:
     - Path: data/trace3
       Note: Reference startup trace used to identify the primitive-71 divergence
     - Path: pkg/interpreter/interpreter.go
-      Note: Primitive 71 LargePositiveInteger size fix and positive integer decoder (commit acaa659)
+      Note: |-
+        Primitive 71 LargePositiveInteger size fix and positive integer decoder (commit acaa659)
+        Broader positive size/index primitive decoding pass that generalizes the primitive-71 fix (commit d2d22d8)
     - Path: pkg/interpreter/interpreter_test.go
-      Note: Trace3 startup regression and targeted startup diagnostics for the display allocation bug (commit acaa659)
+      Note: |-
+        Trace3 startup regression and targeted startup diagnostics for the display allocation bug (commit acaa659)
+        Direct decoder tests for the broader positive-integer bug pattern pass (commit d2d22d8)
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-1000.png
       Note: Post-fix direct framebuffer snapshot showing the corrected 640x480 surface
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-2000000.png
@@ -27,6 +31,7 @@ LastUpdated: 2026-03-18T10:27:20.190673224-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 
 # DisplayBitmap new: LargePositiveInteger Size Bug Writeup
@@ -112,9 +117,21 @@ cycles=2000000 width=640 height=480 raster=40 blackPixels=0 whitePixels=307200
   - non-negative SmallIntegers
   - `LargePositiveInteger` byte objects
 - Switched primitive `71` to use that decoder instead of `popInteger()`
+- Follow-up pass:
+  - added `popPositiveInteger`
+  - switched the clear positive-index / positive-size primitive sites to use it:
+    - `at:`
+    - `at:put:`
+    - `stringAt:`
+    - `stringAt:put:`
+    - `objectAt:`
+    - `objectAt:put:`
+    - `instVarAt:`
+    - `instVarAt:put:`
 - Added a normal regression test in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
   - `TestTrace3DisplayStartupSendSelectorsMatch`
   - validates `trace3` selector flow through cycle `757`
+  - plus direct decoder tests for `LargePositiveInteger` and negative SmallInteger rejection
 
 ### Why this fix is correct
 
@@ -127,6 +144,15 @@ cycles=2000000 width=640 height=480 raster=40 blackPixels=0 whitePixels=307200
 - The designated display is now correctly `640x480`.
 - The UI and direct snapshots still show that the full-size framebuffer remains all white.
 - So this fix resolves the structural display-allocation bug, but not yet the later “why nothing draws into the corrected display surface” issue.
+
+### Broader conclusion
+
+Yes, this bug pattern was broader than the one display path. The safe rule in this interpreter is:
+
+- use SmallInteger-only decoding for primitives whose semantics really are SmallInteger arithmetic
+- use positive-integer decoding for primitives whose semantics are “size” or “1-based index”
+
+That distinction is now explicit in the interpreter instead of being encoded accidentally through `popInteger()` reuse.
 
 ## Usage Examples
 

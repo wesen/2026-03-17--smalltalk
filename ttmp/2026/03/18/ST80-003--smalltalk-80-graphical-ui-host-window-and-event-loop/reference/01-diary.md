@@ -22,8 +22,11 @@ RelatedFiles:
         Stepped execution API plus display snapshot export for the SDL host loop (commit 8e85254)
         Stepped interpreter API and display snapshot export (commit 8e85254)
         Primitive 71 LargePositiveInteger size fix and positive integer decoder (commit acaa659)
+        Broader positive size/index primitive decoding pass (commit d2d22d8)
     - Path: pkg/interpreter/interpreter_test.go
-      Note: Trace3 startup regression and startup diagnostics for the display allocation bug (commit acaa659)
+      Note: |-
+        Trace3 startup regression and startup diagnostics for the display allocation bug (commit acaa659)
+        Direct LargePositiveInteger decoder tests and broader bug-pattern coverage (commit d2d22d8)
     - Path: pkg/ui/snapshot.go
       Note: Direct framebuffer snapshot capture and PNG output (commit ee69a09)
     - Path: pkg/ui/ui.go
@@ -50,6 +53,7 @@ LastUpdated: 2026-03-18T09:33:46.413235314-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 
 
@@ -579,3 +583,102 @@ pkg/interpreter/interpreter.go:709:17: undefined: strconv
   - `display-2000000.png`: `640x480`, all white, same hash
 - Updated UI capture artifact:
   - [st80-ui.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png)
+
+## Step 5: Broader Pass on the Same Positive-Integer Decoding Bug Pattern
+
+Once primitive `71` was fixed, the next obvious question was whether the same mistake existed elsewhere in the interpreter. The answer was yes: a cluster of primitives were still using `popInteger()` even though their arguments are semantically positive sizes or 1-based indices, not specifically SmallIntegers. That is the same conceptual bug, just without the same startup visibility.
+
+I treated this as a pattern pass rather than another speculative rewrite. The guiding rule is straightforward: arithmetic primitives stay SmallInteger-only unless explicitly extended, but size/index primitives should accept any non-negative integer representation the image can legally produce. I encoded that distinction by adding a shared `popPositiveInteger` helper on top of `positiveIntegerValueOf`, then moved the clear positive-index sites over to it.
+
+### Prompt Context
+
+**User prompt (verbatim):** "can you do a pass on that bug pattern?"
+
+**Assistant interpretation:** Audit the interpreter for other places where the same LargePositiveInteger-vs-SmallInteger decoding mistake could appear, fix the clear cases, and validate that the broader change is safe.
+
+**Inferred user intent:** Prevent this from becoming a recurring class of VM bugs instead of only fixing the one display allocation that first exposed it.
+
+**Commit (code):** d2d22d8 — "Broaden positive integer primitive decoding"
+
+### What I did
+- Audited all `popInteger()` call sites in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go).
+- Split the sites into two buckets:
+  - primitives that really are SmallInteger arithmetic/comparison/bit operations
+  - primitives whose arguments are positive sizes or 1-based indices
+- Added `popPositiveInteger` in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) so those second-bucket primitives can share the same non-negative integer decoding.
+- Switched these primitives to `popPositiveInteger`:
+  - `primitiveAt`
+  - `primitiveAtPut`
+  - `primitiveStringAt`
+  - `primitiveStringAtPut`
+  - storage primitives `68`, `69`, `71`, `73`, and `74`
+- Added direct decoder tests in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestPositiveIntegerValueOfLargePositiveInteger`
+  - `TestPositiveIntegerValueOfRejectsNegativeSmallInteger`
+- Re-ran:
+
+```bash
+go test ./pkg/interpreter
+go test ./...
+```
+
+### Why
+- The display-allocation bug came from reusing a SmallInteger-only helper in a place whose semantics were broader.
+- The same misuse on index-taking primitives would be a latent correctness bug for large collections, large strings, large bitmaps, or reflective access with large integer indices.
+- Converting the clear positive-index sites now is cheaper than rediscovering them later one bug at a time.
+
+### What worked
+- The broader pass stayed small and explicit.
+- Both new decoder tests pass.
+- The existing startup trace regression and the full suite still pass:
+
+```bash
+go test ./pkg/interpreter
+go test ./...
+```
+
+- The result is a cleaner semantic split in the interpreter:
+  - `popInteger` remains for genuine SmallInteger primitives
+  - `popPositiveInteger` is used where the image is allowed to supply a `LargePositiveInteger`
+
+### What didn't work
+- No runtime failure surfaced during this pass. It was preventive work based on the now-proven pattern rather than a second independently observed bug.
+
+### What I learned
+- The important distinction is not “integer vs non-integer.” It is “SmallInteger-only primitive contract” vs “general non-negative integer contract.”
+- Once that distinction is made explicit in helper naming, the code is much easier to audit.
+- The original UI bug was a high-signal example of a broader interpreter hygiene issue.
+
+### What was tricky to build
+- The tricky part was not overgeneralizing. Some `popInteger()` sites should remain SmallInteger-only, especially the arithmetic and bit-operation primitives. Widening those silently would blur interpreter semantics and make later LargeInteger work harder to reason about.
+- The right pass was therefore selective: broaden only the sites that clearly consume sizes or 1-based indices.
+
+### What warrants a second pair of eyes
+- Review whether any remaining `popInteger()` sites outside arithmetic/bit operations are still semantically too narrow.
+- Review whether `primitiveSize` should eventually grow a LargePositiveInteger return path for collections larger than SmallInteger range, rather than failing back to Smalltalk.
+
+### What should be done in the future
+- Keep using the “primitive contract” distinction during future audits:
+  - SmallInteger arithmetic stays narrow
+  - size/index consumers use positive-integer decoding
+- Revisit other result-producing primitives later if the image starts needing LargePositiveInteger results rather than only LargePositiveInteger inputs.
+
+### Code review instructions
+- Start in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `popPositiveInteger`
+  - all call sites converted from `popInteger`
+- Then review [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestPositiveIntegerValueOfLargePositiveInteger`
+  - `TestPositiveIntegerValueOfRejectsNegativeSmallInteger`
+  - `TestTrace3DisplayStartupSendSelectorsMatch`
+- Validate with:
+  - `go test ./pkg/interpreter`
+  - `go test ./...`
+
+### Technical details
+- Converted positive-index / positive-size sites:
+  - subscript primitives `60`, `61`, `63`, `64`
+  - storage primitives `68`, `69`, `71`, `73`, `74`
+- Left SmallInteger-only sites unchanged:
+  - arithmetic primitives `1` through `18` where currently implemented
+- This change is preventive hardening built directly from the primitive-71 bug pattern.
