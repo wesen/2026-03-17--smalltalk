@@ -159,6 +159,10 @@ type Interpreter struct {
 	lastDisplayWordWriteCycle   uint64
 	firstDisplayWordChangeCycle uint64
 	lastDisplayWordChangeCycle  uint64
+	minDisplayWordIndexWritten  int
+	maxDisplayWordIndexWritten  int
+	minDisplayWordIndexChanged  int
+	maxDisplayWordIndexChanged  int
 
 	// Display-targeted BitBlt diagnostics.
 	displayCopyBitsCount        uint64
@@ -262,12 +266,24 @@ func (interp *Interpreter) storeWord(wordIndex int, ofObject uint16, withValue u
 	if displayBits, ok := interp.displayBitsObject(); ok && ofObject == displayBits {
 		previous := interp.memory.FetchWord(wordIndex, ofObject)
 		interp.displayWordWriteCount++
+		if interp.displayWordWriteCount == 1 || wordIndex < interp.minDisplayWordIndexWritten {
+			interp.minDisplayWordIndexWritten = wordIndex
+		}
+		if wordIndex > interp.maxDisplayWordIndexWritten {
+			interp.maxDisplayWordIndexWritten = wordIndex
+		}
 		if interp.firstDisplayWordWriteCycle == 0 {
 			interp.firstDisplayWordWriteCycle = interp.cycleCount
 		}
 		interp.lastDisplayWordWriteCycle = interp.cycleCount
 		if previous != withValue {
 			interp.displayWordChangedCount++
+			if interp.displayWordChangedCount == 1 || wordIndex < interp.minDisplayWordIndexChanged {
+				interp.minDisplayWordIndexChanged = wordIndex
+			}
+			if wordIndex > interp.maxDisplayWordIndexChanged {
+				interp.maxDisplayWordIndexChanged = wordIndex
+			}
 			if interp.firstDisplayWordChangeCycle == 0 {
 				interp.firstDisplayWordChangeCycle = interp.cycleCount
 			}
@@ -1980,8 +1996,8 @@ func (interp *Interpreter) doPrimitiveCopyBits(bitBlt uint16) bool {
 				mergeMask = allOnes
 			}
 		}
-		sourceIndex += sourceDelta
-		destIndex += destDelta
+		sourceIndex = lineSourceIndex + sourceDelta
+		destIndex = lineDestIndex + destDelta
 	}
 
 	if targetsDisplay {

@@ -834,3 +834,76 @@ I did not want to hand an intern a vague instruction like "OCR the book and summ
   - a code fix
   - a regression test
   - a short writeup in this ticket
+
+## Step 8: BitBlt CopyLoop Row-Advance Fix
+
+The next graphics bug was a different class of mistake from the `BitBlt` field-order bug. After the field-order fix, the UI was no longer blank, but it was still obviously wrong: the framebuffer showed a distorted horizontal-band image, and all non-white pixels were confined to the top 256 rows. That exact `255/256` boundary was suspicious enough that I stopped looking at screenshots as "visual weirdness" and turned it into a direct invariant: are we actually writing display words beyond row 255?
+
+The answer was no. Instrumentation showed:
+
+```text
+displayWordWrites=49612 changed=37345 writeIndexRange=0..10241 changedIndexRange=0..10227
+```
+
+Given a raster of 40 words per row, index `10240` is exactly row `256`. That meant the copy loop itself, not the snapshot/UI code, was effectively stalling in the top half of the display. The key clue was that this happened even though the very first display `BitBlt` had geometry that looked perfectly sane:
+
+- full-screen fill at `640x480`
+- later centered rectangles like `502x304`
+- text blits landing inside a plausible clip rectangle
+
+If the geometry was sane but writes never escaped row 255, the translation of the Blue Book copy loop had to be wrong.
+
+That turned out to be exactly the issue. In the Blue Book simulation, `sourceIndex` and `destIndex` are the running indices advanced inside the inner horizontal loop, and `sourceDelta` / `destDelta` are added to those already-advanced running values after the row finishes. My Go version introduced `lineSourceIndex` and `lineDestIndex` temporaries inside each row, but then I updated the base indices like this:
+
+```go
+sourceIndex += sourceDelta
+destIndex += destDelta
+```
+
+That is only correct if the base indices themselves were advanced inside the row. They were not. The real running position after a row lived in `lineSourceIndex` / `lineDestIndex`. So the code was starting each new row from the wrong place.
+
+The fix was:
+
+```go
+sourceIndex = lineSourceIndex + sourceDelta
+destIndex = lineDestIndex + destDelta
+```
+
+That re-aligned the Go implementation with the actual state transitions of the Blue Book `copyLoop`.
+
+### What I did
+- Corrected row-to-row index progression in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) so the next-row starting positions are based on the post-row running indices.
+- Strengthened [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles` now also requires visible content below row 255
+- Added focused diagnostics to confirm:
+  - the first display `BitBlt` rectangles were plausible
+  - display word writes had been artificially capped at row 255 before the fix
+- Refreshed ticket artifacts:
+  - [display-5000.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-5000.png)
+  - [display-50000.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-50000.png)
+  - [st80-ui.png](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png)
+- Wrote a detailed writeup in [05-bitblt-copyloop-row-advance-bug-writeup.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/05-bitblt-copyloop-row-advance-bug-writeup.md)
+
+### Why
+- The field-order fix proved the VM could draw at all.
+- The row-255 cutoff proved the remaining bug was in the copy-loop implementation, not SDL, not snapshotting, and not generic display designation.
+- The Blue Book simulation was detailed enough to compare state transitions directly, not just high-level intent.
+
+### What worked
+- The post-fix `5000`-cycle framebuffer now shows a recognizable windowed scene instead of a corrupted band.
+- The post-fix `50000`-cycle snapshot shows a visible `System Browser`.
+- The off-screen SDL capture now also shows that recognizable UI state.
+- Black-pixel counts increased sharply:
+
+```text
+cycles=50000 blackPixels=112228 whitePixels=194972
+```
+
+### What didn't work
+- The UI is still not interactive. Rendering is now much more believable, but keyboard, mouse, timer, and cursor host integration remain open.
+- I have not yet done a fresh long-run semantic audit of all remaining BitBlt edge cases; this fix addresses the row progression bug specifically.
+
+### What I learned
+- A literal-looking translation of a simulation can still be wrong if the meaning of the mutated variables changes.
+- The best clue was not visual style. It was the exact row boundary where rendering stopped.
+- Once the bug was phrased as "why do display writes stop at row 255?" the diagnosis got much faster.

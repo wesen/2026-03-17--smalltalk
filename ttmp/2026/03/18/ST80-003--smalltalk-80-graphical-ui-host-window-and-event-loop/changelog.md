@@ -79,3 +79,17 @@ Step 7: prepared a structured OCR/extraction handoff for the Blue Book so an int
 
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/03-bluebook-ocr-extraction-instructions-for-intern.md — Intern-facing OCR and structured extraction workflow for the Blue Book
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/tasks.md — Added the systematic Blue Book OCR audit as an explicit follow-up task
+
+
+## 2026-03-18
+
+Step 8: fixed the BitBlt copy-loop row-advance bug so successful display blits now progress across the full framebuffer instead of stalling in the top 256 rows, producing a recognizable `System Browser` window.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Corrected `sourceIndex` / `destIndex` row progression in the BitBlt copy loop
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Strengthened the display regression and added diagnostics for display write ranges and BitBlt geometry
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/05-bitblt-copyloop-row-advance-bug-writeup.md — Detailed intern-facing explanation of the row-advance bug and fix
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-5000.png — Updated early snapshot showing a recognizable windowed scene
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-50000.png — Later snapshot showing the visible `System Browser`
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png — Refreshed off-screen SDL capture after the copy-loop fix

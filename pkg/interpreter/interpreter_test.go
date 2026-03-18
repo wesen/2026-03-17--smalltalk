@@ -303,13 +303,23 @@ func TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles(t *testing.T) {
 	}
 
 	nonZeroWords := 0
+	nonZeroWordsBelowRow255 := 0
+	lowerHalfStart := 256 * snapshot.Raster
 	for _, word := range snapshot.Words {
 		if word != 0 {
 			nonZeroWords++
 		}
 	}
+	for _, word := range snapshot.Words[lowerHalfStart:] {
+		if word != 0 {
+			nonZeroWordsBelowRow255++
+		}
+	}
 	if nonZeroWords == 0 {
 		t.Fatalf("expected rendered pixels after 5000 cycles, got all-white display")
+	}
+	if nonZeroWordsBelowRow255 == 0 {
+		t.Fatalf("expected rendered pixels below row 255 after 5000 cycles, got empty lower display")
 	}
 }
 
@@ -1225,6 +1235,21 @@ func TestDumpDisplayWordWriteSummary(t *testing.T) {
 	}
 }
 
+func TestDumpDisplayWordIndexRange(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	interp := loadTestInterpreter(t)
+
+	runInterpreterCycles(t, interp, 200000)
+
+	t.Logf("displayWordWrites=%d changed=%d writeIndexRange=%d..%d changedIndexRange=%d..%d firstWriteCycle=%d lastWriteCycle=%d",
+		interp.displayWordWriteCount, interp.displayWordChangedCount,
+		interp.minDisplayWordIndexWritten, interp.maxDisplayWordIndexWritten,
+		interp.minDisplayWordIndexChanged, interp.maxDisplayWordIndexChanged,
+		interp.firstDisplayWordWriteCycle, interp.lastDisplayWordWriteCycle)
+}
+
 func TestDumpCopyBitsDestinations(t *testing.T) {
 	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
 		t.Skip("diagnostic test retained for manual investigation")
@@ -1245,6 +1270,42 @@ func TestDumpCopyBitsDestinations(t *testing.T) {
 				interp.lastSuccessfulCopyBitsDestWidth, interp.lastSuccessfulCopyBitsDestHeight, interp.lastSuccessfulCopyBitsTargetsDisplay,
 				interp.displayCopyBitsCount, interp.displayCopyBitsChangedOps)
 			logged = interp.copyBitsCount
+		}
+	}
+}
+
+func TestDumpDisplayCopyBitsGeometry(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	logged := 0
+	intField := func(bitBlt uint16, index int) int {
+		value, ok := interp.smallIntegerValueOf(interp.fetchPointer(index, bitBlt))
+		if !ok {
+			return 1 << 30
+		}
+		return value
+	}
+
+	for interp.cycleCount = 0; interp.cycleCount < 100000 && logged < 12; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+
+		if interp.lastSuccessfulCopyBitsCycle == interp.cycleCount && interp.lastSuccessfulCopyBitsTargetsDisplay {
+			bitBlt := interp.lastSuccessfulCopyBitsBitBlt
+			t.Logf("displayCopyBits[%d] cycle=%d method=0x%04X(%s) bitBlt=0x%04X rule=%d dest=(%d,%d) size=%dx%d source=(%d,%d) clip=(%d,%d %dx%d)",
+				logged+1, interp.cycleCount, interp.method, methodNames[interp.method], bitBlt,
+				intField(bitBlt, BitBltCombinationRuleIndex),
+				intField(bitBlt, BitBltDestXIndex), intField(bitBlt, BitBltDestYIndex),
+				intField(bitBlt, BitBltWidthIndex), intField(bitBlt, BitBltHeightIndex),
+				intField(bitBlt, BitBltSourceXIndex), intField(bitBlt, BitBltSourceYIndex),
+				intField(bitBlt, BitBltClipXIndex), intField(bitBlt, BitBltClipYIndex),
+				intField(bitBlt, BitBltClipWidthIndex), intField(bitBlt, BitBltClipHeightIndex))
+			logged++
 		}
 	}
 }
