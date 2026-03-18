@@ -1,0 +1,4 @@
+Openbox-Message: Unable to find a valid menu file "/var/lib/openbox/debian-menu.xml"
+Obt-Message: Failed to open an Input Method
+XIO:  fatal IO error 4 (Interrupted system call) on X server ":98"
+      after 4326 requests (4323 known processed) with 0 events remaining.

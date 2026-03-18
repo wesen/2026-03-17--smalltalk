@@ -1,0 +1,8 @@
+
+xwininfo: Window id: 0x46f (the root window) (has no name)
+
+  Root window id: 0x46f (the root window) (has no name)
+  Parent window id: 0x0 (none)
+     1 child:
+     0x200008 "Smalltalk-80": ("st80-ui" "st80-ui")  1280x960+0+32  +0+32
+
