@@ -1469,3 +1469,99 @@ xdo_activate_window on window:2097160 reported an error
 - Observed result:
   - before/after screenshots looked the same
   - diff image was blank
+
+## Step 14: Input-Debug Instrumentation And The No-Event Result
+
+The off-screen exercise narrowed the problem to “no visible change,” but that still left an important ambiguity: was the host actually recording any events, queuing any words, or draining anything? Without that, a blank diff could still mean many different things. So the next slice was not another UI behavior guess. It was instrumentation.
+
+I added coarse input-debug counters to the interpreter and an `-input-debug` flag to `st80-ui` so the live process could log when host events were recorded and when queue counters changed. Then I reran the same off-screen exercise. The result was stronger than before: the UI run log contained no input-debug lines at all. Combined with the unchanged images, that strongly suggests the current Xvfb/xdotool path is not delivering events into the SDL loop under this setup.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 10)
+
+**Assistant interpretation:** Continue replacing ambiguity with hard evidence, especially where the live UI still does not behave as expected.
+
+**Inferred user intent:** Push past “it seems unchanged” and get specific about which stage of the live event path is flat.
+
+### What I did
+- Extended [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) with coarse input counters:
+  - `inputWordsEnqueued`
+  - `inputWordsDequeued`
+  - `mouseMotionsRecorded`
+  - `mouseButtonsRecorded`
+  - `decodedKeysRecorded`
+- Added `InputStats` plus `InputStats()` on the interpreter.
+- Updated [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) so the UI loop can log input stats whenever they change.
+- Added `-input-debug` in [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go).
+- Updated [exercise-ui-input-and-capture.sh](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-ui-input-and-capture.sh) to run `st80-ui` with `-input-debug`.
+- Ran formatting:
+
+```bash
+gofmt -w pkg/interpreter/interpreter.go pkg/ui/ui.go cmd/st80-ui/main.go
+```
+
+- Revalidated focused build/test coverage:
+
+```bash
+go test ./pkg/ui ./pkg/interpreter ./cmd/st80-ui -run 'TestCopyDisplayBitsOverlaysCursorBits|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles|TestPrimitive(SecondClockIntoStoresLittleEndianSeconds|MillisecondClockIntoStoresLittleEndianTicks|SignalAtMillisecondsSignalsImmediatelyWhenPastDue|SignalAtMillisecondsSchedulesFutureSignal)'
+```
+
+- Reran the off-screen exercise helper and inspected:
+  - the before/after PNGs
+  - the UI run log
+
+### Why
+- Without live counters, “no visible delta” still leaves too many explanations open.
+- The cheapest useful instrumentation is not deep tracing. It is a few counters that answer:
+  - did the host record anything?
+  - did anything enter the queue?
+  - did anything leave the queue?
+- Putting the switch behind `-input-debug` keeps the normal UI path quiet.
+
+### What worked
+- The UI builds and runs with `-input-debug`.
+- The focused test set is green after the instrumentation change.
+- The instrumentation now exists for future live runs without further code edits.
+- The rerun produced a more specific negative result:
+  - before/after images remained visually identical
+  - the UI run log contained only the image banner, with no input-debug lines
+
+### What didn't work
+- The rerun still did not produce visible UI change.
+- More importantly, it did not produce any logged input counter changes either.
+- That means the problem is upstream of queue consumption counters: under this off-screen setup, the SDL loop does not appear to be receiving the injected events at all.
+
+### What I learned
+- The current off-screen event-injection setup is likely the wrong layer to trust blindly. At least in this configuration, `xdotool --window` plus plain `Xvfb` is not enough evidence of event delivery into SDL.
+- The new instrumentation is still valuable because it converts that conclusion from guesswork into a more concrete statement.
+- The next debugging move is likely environment/event-delivery specific, not another VM primitive pass.
+
+### What was tricky to build
+- The tricky part here was restraint. It would be easy to add a much larger tracing system, but the right first step was a tiny amount of instrumentation that answers the highest-value question.
+- The second tricky part was interpreting an empty debug log correctly: it does not prove the VM ignores events. It more specifically suggests the UI process never observed them.
+
+### What warrants a second pair of eyes
+- Review whether the logging point in the UI loop is the right place for this first round of instrumentation.
+- Review whether `xdotool` under `Xvfb` needs a different focus/pointer strategy for SDL windows.
+- Review whether the next environment experiment should add a lightweight window manager or use a different event-injection tool.
+
+### What should be done in the future
+- Figure out why the current Xvfb exercise is not delivering visible SDL events.
+- Once that is understood, rerun the exact same exercise and compare the new input-debug counters.
+- Only after that decide whether the next problem is image-side event consumption or environment-side delivery.
+
+### Code review instructions
+- Start in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `InputStats`
+  - `InputStats()`
+  - the counter increments in the input-recording and queue methods
+- Then review [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) for the optional logging path.
+- Then review [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go) and the updated [exercise-ui-input-and-capture.sh](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-ui-input-and-capture.sh).
+
+### Technical details
+- Rerun observation:
+  - PNG hashes differed
+  - pixel-level compare reported zero changed pixels
+  - the UI run log contained no input-debug lines
+- That combination is consistent with metadata/capture variation, not real screen-content change.

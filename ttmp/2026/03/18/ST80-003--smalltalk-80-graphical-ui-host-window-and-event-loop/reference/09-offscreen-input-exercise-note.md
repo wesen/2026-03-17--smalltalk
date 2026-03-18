@@ -53,6 +53,13 @@ The visible result was:
 - after screenshot: visually identical
 - diff image: blank
 
+After adding `-input-debug` instrumentation to the UI process and rerunning the same helper, the `st80-ui-run.log` still contained no input-debug lines at all.
+
+That narrows the interpretation:
+
+- not only was there no visible screen delta
+- there was also no observed change in the host/input counters exposed by the UI process
+
 # What this does and does not prove
 
 This does prove:
@@ -60,6 +67,7 @@ This does prove:
 - the off-screen capture path works
 - the script can locate the UI window
 - the helper can inject an input sequence without crashing the UI
+- the current rerun did not produce any logged host/input counter changes inside the UI process
 
 This does not yet prove:
 
@@ -88,7 +96,7 @@ Without that, each future off-screen input attempt will still be partly guesswor
 
 The best next debugging move after this note is:
 
-- add live input-consumption instrumentation
+- figure out why the current Xvfb/xdotool setup is not producing any observed SDL/UI-side events
 
 Then rerun the exact same script and compare:
 

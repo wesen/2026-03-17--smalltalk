@@ -151,3 +151,16 @@ Step 13: added an off-screen Xvfb/xdotool input-exercise script and recorded tha
 
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-ui-input-and-capture.sh — Ticket-local helper that injects mouse/keyboard events under Xvfb and captures before/after/diff screenshots
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/09-offscreen-input-exercise-note.md — Notes on the inconclusive off-screen input exercise and what it implies about the next debugging slice
+
+
+## 2026-03-18
+
+Step 14: added live input-debug counters plus a `-input-debug` UI flag, then reran the off-screen exercise and observed that the SDL/UI process still emitted no input-debug lines, narrowing the next issue to host-event delivery under the current Xvfb setup.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added coarse input counters and `InputStats` export
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — UI loop now optionally logs input queue/consumption counters as they change
+- /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go — Added the `-input-debug` flag
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-ui-input-and-capture.sh — Exercise script now runs the UI with `-input-debug`
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/09-offscreen-input-exercise-note.md — Updated note with the no-debug-output result

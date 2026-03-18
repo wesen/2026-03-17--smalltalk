@@ -45,6 +45,7 @@ sleep 1
     -max-cycles "$MAX_CYCLES" \
     -cycles-per-frame "$CYCLES_PER_FRAME" \
     -scale "$SCALE" \
+    -input-debug \
     -title "$WINDOW_TITLE"
 ) >"$RUN_LOG" 2>&1 &
 UI_PID=$!
