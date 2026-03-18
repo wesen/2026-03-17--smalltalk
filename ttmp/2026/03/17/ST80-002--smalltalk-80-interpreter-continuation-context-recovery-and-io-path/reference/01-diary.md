@@ -17,7 +17,7 @@ RelatedFiles:
       Note: Regression test for startup execution past the former context overflow (commit dd8e4ba)
 ExternalSources: []
 Summary: Continuation diary for finishing the Smalltalk-80 VM after the initial handoff ticket.
-LastUpdated: 2026-03-17T23:27:00-04:00
+LastUpdated: 2026-03-17T23:58:00-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
@@ -188,3 +188,119 @@ git commit -m "Fix SmallInteger decoding for VM headers"
   - method temporary count comes from bits 3..7 of the decoded header value
   - the large-context flag indicates whether `maximum stack depth + temporaries > 12`
   - large `MethodContext`s allocate `32 + TempFrameStart`, small ones `12 + TempFrameStart`
+
+## Step 2: Method Cache Hash Fix and Restoration of Long-Run Execution
+
+The next failure did not come from the interpreter dying in a completely new subsystem. It still looked like a message-send/runtime corruption bug, but once I tightened the trace it became clear that the selector/class lookup itself was fine and the corruption only appeared in the cached path. That distinction mattered because it turned a vague “message send is broken” problem into a very specific “cache entry layout is wrong” problem with a direct Blue Book citation.
+
+This step also corrected a mistaken intermediate hypothesis of my own. I briefly suspected instruction-pointer decoding again because `<Object>doesNotUnderstand:>` was entering in ways that looked nonsensical. The method dump exposed one more subtle metadata issue (15-bit field numbering for SmallInteger payloads), but the decisive runtime corruption in the live startup sequence came from the method cache hash not reserving four words per entry. Once that hash was fixed, the startup path stopped jumping into bogus compiled methods, the later `doesNotUnderstand:` recursion vanished, and the VM ran cleanly through 2,000,000 cycles.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue past the first startup fix without pausing, keep the diary dense, and document each new bug as its own understandable unit instead of merging multiple root causes into one note.
+
+**Inferred user intent:** Preserve a reviewable trail of runtime fixes while driving the VM toward a stable interpreter baseline before starting UI work.
+
+**Commit (code):** 408f7b8 — "Fix method metadata and cache decoding"
+
+### What I did
+- Added deeper interpreter diagnostics in `pkg/interpreter/interpreter_test.go` to inspect:
+  - the `doesNotUnderstand:` failure path
+  - the first invalid `activeContext`
+  - the first invalid `method` register
+  - the startup cycles around the corruption point
+  - direct method lookup for `Point>>y`
+- Observed that the long-run failure had an invalid `activeContext` / `method` combination, but the first actionable corruption actually occurred earlier:
+
+```text
+method became invalid at cycle 129 after bytecode=207 in ctx=0x3BF6 home=0x3BF6 method=0x170C(<Form>extent:offset:bits:) ip=6 sp=9; new method=0x021E class=0x0038 activeContext=0x418E homeContext=0x418E isBlock=false
+```
+
+- Used the local Xerox resource tables to establish expected ground truth:
+  - `Point>>x` = `0x8B6A`
+  - `Point>>y` = `0x8BAC`
+- Verified that direct uncached lookup for `Point>>y` was correct.
+- Cleared the method cache just before the bad `y` send and saw the corruption disappear, which isolated the bug to cached lookup rather than dictionary lookup.
+- Pulled the Blue Book cache algorithm with `pdftotext` and found the missing operation:
+  - the hash must be shifted left by 2 so each cache entry occupies four consecutive array slots
+- Fixed `findNewMethodInClass` so the Go implementation mirrors the Blue Book’s 1-based Smalltalk algorithm correctly in a 0-based Go array.
+- Re-ran the VM successfully for:
+  - `go run ./cmd/st80 data/VirtualImage 500000`
+  - `go run ./cmd/st80 data/VirtualImage 2000000`
+- Re-ran the full test suite:
+  - `go test ./...`
+
+### Why
+- The bad method chosen at cycle 129 happened on a `y` send to a real `Point`, so the class dictionary itself was the first thing to verify.
+- Once direct lookup proved correct, the only remaining place that could explain a wrong method for the same selector/class pair was the method cache.
+- The Blue Book explicitly defines the cache entry layout as four sequential words per entry, so omitting the `bitShift: 2` term causes aliasing between logically unrelated entries.
+
+### What worked
+- The staged narrowing sequence worked well:
+  - detect first invalid register
+  - localize to a single send bytecode
+  - verify direct lookup against the local Xerox tables
+  - disable cache to see whether the corruption disappears
+  - confirm the cache formula against the Blue Book
+- Fixing the cache hash immediately removed both the early bad method activation and the later recursive `doesNotUnderstand:` path.
+- After the fix, the interpreter ran through 2,000,000 cycles with no panic, which is the strongest runtime result of this session so far.
+
+### What didn't work
+- I briefly tried changing the SmallInteger bit extractor to 15-bit numbering globally before the cache bug was isolated. That improved one diagnostic path (`doesNotUnderstand:` metadata) but reintroduced the startup overflow, so it was not the standalone fix I needed.
+- Several of the added tests were purely diagnostic and stopped reflecting the new ground truth once the cache fix landed. I kept them in the tree but marked them skipped so the stable suite remains signal, not archaeology.
+
+### What I learned
+- The cache bug was a literal Blue Book translation error:
+  - Smalltalk hash formula: `(((selector bitAnd: class) bitAnd: 16rFF) bitShift: 2) + 1`
+  - Go 0-based translation: `(((selector & class) & 0xFF) << 2)`
+- Method lookup can be perfectly correct while cached dispatch is catastrophically wrong; treating those as one subsystem would have hidden the real fix.
+- The earlier metadata work and the cache work were related only in symptoms. They were distinct bugs.
+
+### What was tricky to build
+- The hardest part was resisting the temptation to “explain everything” with one root cause. After the first header decode fix, it was natural to suspect another IP/header issue when `doesNotUnderstand:` still looked wrong. The cache diagnostics disproved that: the corruption appeared only in the live cached send path, and uncached lookup for the same selector/class pair was correct. That forced a second, separate bug model, which was the right call.
+
+### What warrants a second pair of eyes
+- The SmallInteger bit-extraction helper still deserves a future audit, because the Blue Book’s 15-bit payload numbering is easy to mistranslate and I temporarily explored a broader change there.
+- The runtime now survives long runs, but the current frontier has shifted to “what exactly is the system doing during the apparent idle loop?” rather than “why is it crashing?”
+
+### What should be done in the future
+- Map the 500K / 1M / 1.5M cycle methods back to local method names to confirm the runtime is in the expected scheduler/input loop.
+- Compare current execution against `trace2` / `trace3` again now that both the metadata and cache bugs are fixed.
+- Start implementing the minimum I/O/display primitives needed to move from stable idle execution to visible UI behavior.
+- After the runtime path is stable enough to support real graphics work, create the separate UI ticket requested by the user.
+
+### Code review instructions
+- Start with `findNewMethodInClass` in `pkg/interpreter/interpreter.go`.
+- Compare the Go hash computation with the Blue Book cache formula quoted in the new cache writeup.
+- Then inspect the regression tests in `pkg/interpreter/interpreter_test.go`:
+  - `TestStartupRunsPastFormerContextOverflow`
+  - `TestDetectFirstInvalidActiveContext`
+  - `TestDetectFirstInvalidMethodRegister`
+  - `TestLookupPointYMethod`
+- Validate with:
+  - `go test ./...`
+  - `go run ./cmd/st80 data/VirtualImage 500000`
+  - `go run ./cmd/st80 data/VirtualImage 2000000`
+
+### Technical details
+- Useful commands from this step:
+
+```bash
+go test ./pkg/interpreter -run TestDetectFirstInvalidMethodRegister -v
+go test ./pkg/interpreter -run TestLookupPointYMethod -v
+go test ./pkg/interpreter -run TestTraceAroundMethodCorruption -v
+pdftotext smalltalk-Bluebook.pdf - | sed -n '34890,34940p'
+go run ./cmd/st80 data/VirtualImage 500000
+go run ./cmd/st80 data/VirtualImage 2000000
+go test ./...
+git commit -m "Fix method metadata and cache decoding"
+```
+
+- Key Blue Book cache excerpt distilled into Go:
+
+```text
+Smalltalk: (((messageSelector bitAnd: class) bitAnd: 16rFF) bitShift: 2) + 1
+Go (0-based): ((int(messageSelector) & int(class)) & 0xFF) << 2
+```

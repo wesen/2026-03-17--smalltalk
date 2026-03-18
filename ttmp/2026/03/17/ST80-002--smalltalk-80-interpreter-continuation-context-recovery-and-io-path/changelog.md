@@ -24,3 +24,14 @@ Added a detailed ticket writeup of the tagged-SmallInteger header decode bug for
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/reference/02-tagged-smallinteger-header-decode-bug-writeup.md — Intern-facing bug explanation and validation steps
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/tasks.md — Continuation task list after the startup fix
 
+
+## 2026-03-17
+
+Step 2: Fixed the Blue-Book method cache hash translation so cached selector/class lookups no longer alias across entries; the VM now runs 2,000,000 cycles cleanly (commit 408f7b8).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Method cache hash fix and comment
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Regression and retained diagnostics for cache corruption investigation
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/reference/03-method-cache-hash-collision-writeup.md — Intern-facing explanation of the cache bug and validation steps
+
