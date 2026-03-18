@@ -152,6 +152,7 @@ func loadTestInterpreter(t *testing.T) *Interpreter {
 	}
 
 	interp := New(memory)
+	interp.SetSnapshotPath(imagePath)
 	scheduler := interp.fetchPointer(ValueIndex, om.SchedulerAssociationPointer)
 	activeProcess := interp.fetchPointer(ActiveProcessIndex, scheduler)
 	suspendedContext := interp.fetchPointer(SuspendedContextIndex, activeProcess)
@@ -435,6 +436,47 @@ func TestPrimitiveInputWordReturnsQueuedWord(t *testing.T) {
 	}
 	if interp.inputWordCount != 0 {
 		t.Fatalf("expected input buffer to be empty after primitiveInputWord, got %d words", interp.inputWordCount)
+	}
+}
+
+func TestPrimitiveSnapshotWritesImageAndReturnsReceiver(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	snapshotPath := filepath.Join(t.TempDir(), "snapshot.image")
+	interp.SetSnapshotPath(snapshotPath)
+
+	receiver := om.SchedulerAssociationPointer
+	originalSP := interp.stackPointer
+	interp.push(receiver)
+
+	interp.initPrimitive()
+	interp.primitiveSnapshot()
+	if !interp.success {
+		t.Fatalf("expected primitiveSnapshot to succeed")
+	}
+	if interp.stackPointer != originalSP+1 {
+		t.Fatalf("expected stack pointer %d, got %d", originalSP+1, interp.stackPointer)
+	}
+	if interp.stackTop() != receiver {
+		t.Fatalf("expected receiver 0x%04X on stack, got 0x%04X", receiver, interp.stackTop())
+	}
+
+	info, err := os.Stat(snapshotPath)
+	if err != nil {
+		t.Fatalf("stat snapshot: %v", err)
+	}
+	if info.Size() == 0 {
+		t.Fatalf("expected non-empty snapshot file")
+	}
+
+	reloaded, err := image.LoadImage(snapshotPath)
+	if err != nil {
+		t.Fatalf("reload snapshot: %v", err)
+	}
+	if got, want := reloaded.ObjectSpaceSize(), interp.memory.ObjectSpaceSize(); got != want {
+		t.Fatalf("expected object space size %d after reload, got %d", want, got)
+	}
+	if got, want := len(reloaded.ObjectTableWords()), len(interp.memory.ObjectTableWords()); got != want {
+		t.Fatalf("expected object table words %d after reload, got %d", want, got)
 	}
 }
 

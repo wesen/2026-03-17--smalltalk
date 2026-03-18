@@ -40,6 +40,7 @@ func Run(opts Options) error {
 		return fmt.Errorf("load image: %w", err)
 	}
 	interp := interpreter.New(om)
+	interp.SetSnapshotPath(opts.ImagePath)
 
 	var runErr error
 	sdl.Main(func() {

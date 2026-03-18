@@ -48,6 +48,7 @@ func CaptureSnapshot(opts SnapshotOptions) (SnapshotDiagnostic, error) {
 	}
 
 	interp := interpreter.New(om)
+	interp.SetSnapshotPath(opts.ImagePath)
 	if err := interp.RunSteps(opts.Cycles); err != nil {
 		return SnapshotDiagnostic{}, err
 	}

@@ -4,9 +4,11 @@ package interpreter
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"time"
 
+	stimage "github.com/wesen/st80/pkg/image"
 	om "github.com/wesen/st80/pkg/objectmemory"
 )
 
@@ -168,6 +170,7 @@ type Interpreter struct {
 	timerSemaphore    uint16
 	timerTickDeadline uint32
 	timerActive       bool
+	snapshotPath      string
 
 	inputWordsEnqueued   uint64
 	inputWordsDequeued   uint64
@@ -269,6 +272,15 @@ func New(memory *om.ObjectMemory) *Interpreter {
 		timeNow:   time.Now,
 		tickStart: tickStart,
 	}
+}
+
+// SetSnapshotPath configures where primitive 97 writes the current image.
+func (interp *Interpreter) SetSnapshotPath(path string) {
+	if path == "" {
+		interp.snapshotPath = ""
+		return
+	}
+	interp.snapshotPath = filepath.Clean(path)
 }
 
 // ---- Bit extraction (Blue Book p.575) ----
@@ -1686,6 +1698,8 @@ func (interp *Interpreter) dispatchInputOutputPrimitives() {
 		interp.primitiveInputWord()
 	case 96: // copyBits
 		interp.primitiveCopyBits()
+	case 97: // snapshot
+		interp.primitiveSnapshot()
 	case 101: // beCursor
 		interp.primitiveBeCursor()
 	case 102: // beDisplay
@@ -1705,6 +1719,21 @@ func (interp *Interpreter) primitiveBeDisplay() {
 	screen := interp.popStack()
 	interp.displayScreen = screen
 	interp.push(screen)
+}
+
+func (interp *Interpreter) primitiveSnapshot() {
+	rcvr := interp.popStack()
+	if interp.snapshotPath == "" {
+		interp.unPop(1)
+		interp.primitiveFail()
+		return
+	}
+	if err := stimage.WriteImage(interp.snapshotPath, interp.memory); err != nil {
+		interp.unPop(1)
+		interp.primitiveFail()
+		return
+	}
+	interp.push(rcvr)
 }
 
 func (interp *Interpreter) newPointWith(x int, y int) uint16 {

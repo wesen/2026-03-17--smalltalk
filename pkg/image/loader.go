@@ -24,6 +24,17 @@ import (
 
 const headerSize = 512
 
+func alignUp(value int, alignment int) int {
+	if alignment <= 0 {
+		return value
+	}
+	remainder := value % alignment
+	if remainder == 0 {
+		return value
+	}
+	return value + alignment - remainder
+}
+
 // LoadImage reads a Smalltalk-80 virtual image file and returns an ObjectMemory.
 func LoadImage(path string) (*objectmemory.ObjectMemory, error) {
 	data, err := os.ReadFile(path)
@@ -71,4 +82,36 @@ func LoadImage(path string) (*objectmemory.ObjectMemory, error) {
 	}
 
 	return objectmemory.New(objectTable, objectSpace), nil
+}
+
+// WriteImage serializes the current object memory back into the Smalltalk-80
+// virtual image format used by LoadImage.
+func WriteImage(path string, memory *objectmemory.ObjectMemory) error {
+	objectSpace := memory.ObjectSpaceWords()
+	objectTable := memory.ObjectTableWords()
+
+	objectSpaceWords := len(objectSpace)
+	objectTableWords := len(objectTable)
+	objectSpaceBytes := objectSpaceWords * 2
+	objectTableBytes := objectTableWords * 2
+	objectTableStart := alignUp(headerSize+objectSpaceBytes, headerSize)
+	fileSize := objectTableStart + objectTableBytes
+
+	data := make([]byte, fileSize)
+	binary.BigEndian.PutUint32(data[0:4], uint32(objectSpaceWords))
+	binary.BigEndian.PutUint32(data[4:8], uint32(objectTableWords))
+
+	for i, word := range objectSpace {
+		offset := headerSize + i*2
+		binary.BigEndian.PutUint16(data[offset:offset+2], word)
+	}
+	for i, word := range objectTable {
+		offset := objectTableStart + i*2
+		binary.BigEndian.PutUint16(data[offset:offset+2], word)
+	}
+
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return fmt.Errorf("write image file: %w", err)
+	}
+	return nil
 }

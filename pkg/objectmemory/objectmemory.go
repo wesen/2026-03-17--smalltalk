@@ -325,6 +325,20 @@ func (om *ObjectMemory) ObjectTableEntryCount() int {
 	return om.otEntryCount
 }
 
+// ObjectTableWords returns a copy of the raw object table words.
+func (om *ObjectMemory) ObjectTableWords() []uint16 {
+	words := make([]uint16, len(om.objectTable))
+	copy(words, om.objectTable)
+	return words
+}
+
+// ObjectSpaceWords returns a copy of the raw object space words.
+func (om *ObjectMemory) ObjectSpaceWords() []uint16 {
+	words := make([]uint16, len(om.objectSpace))
+	copy(words, om.objectSpace)
+	return words
+}
+
 func (om *ObjectMemory) initializeBody(loc int, classPointer uint16, bodySize int, pointerFields bool) {
 	om.objectSpace[loc] = uint16(bodySize)
 	om.objectSpace[loc+1] = classPointer
