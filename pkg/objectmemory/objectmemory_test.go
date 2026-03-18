@@ -2,6 +2,12 @@ package objectmemory
 
 import "testing"
 
+func allocatePastReservedOops(om *ObjectMemory) {
+	for i := 0; i <= int(MustBeBooleanSelector/2); i++ {
+		om.InstantiateClass(SmallIntegerOop(1), 0, true)
+	}
+}
+
 func TestInstantiateReusesFreedBodyForExactSize(t *testing.T) {
 	om := New(nil, nil)
 
@@ -92,6 +98,50 @@ func TestInstantiatePanicsWhenReservedSingletonIsMarkedFree(t *testing.T) {
 	}()
 
 	om.InstantiateClass(ClassArrayPointer, 1, true)
+}
+
+func TestReclaimInaccessibleObjectsFreesUnreachableObjectAndReusesBody(t *testing.T) {
+	om := New(nil, nil)
+	allocatePastReservedOops(om)
+
+	root := om.InstantiateClass(SmallIntegerOop(1), 1, true)
+	child := om.InstantiateClass(SmallIntegerOop(1), 2, true)
+	garbage := om.InstantiateClass(SmallIntegerOop(1), 2, true)
+	om.StorePointer(0, root, child)
+
+	stats := om.ReclaimInaccessibleObjects([]uint16{root})
+	if stats.FreedObjects == 0 {
+		t.Fatalf("expected reclaim to free at least one object")
+	}
+	if !om.IsFree(garbage) {
+		t.Fatalf("expected garbage oop 0x%04X to be free after reclaim", garbage)
+	}
+	if om.IsFree(root) || om.IsFree(child) {
+		t.Fatalf("expected reachable objects to stay allocated")
+	}
+
+	reused := om.InstantiateClass(ClassPointPointer, 2, true)
+	if reused != garbage {
+		t.Fatalf("expected point allocation to reuse garbage oop 0x%04X, got 0x%04X", garbage, reused)
+	}
+}
+
+func TestReclaimInaccessibleObjectsMarksCompiledMethodLiteralPointers(t *testing.T) {
+	om := New(nil, nil)
+	allocatePastReservedOops(om)
+
+	literal := om.InstantiateClass(SmallIntegerOop(1), 1, true)
+	method := om.InstantiateClassWithBytes(ClassCompiledMethodPointer, 6)
+	om.StorePointer(0, method, SmallIntegerOop(1))
+	om.StorePointer(1, method, literal)
+
+	stats := om.ReclaimInaccessibleObjects([]uint16{method})
+	if stats.FreedObjects == 0 {
+		t.Fatalf("expected reclaim to free unrelated seeded objects as well")
+	}
+	if om.IsFree(method) || om.IsFree(literal) {
+		t.Fatalf("expected compiled method roots to keep literal reachable")
+	}
 }
 
 func TestStorePointerPanicsWhenFieldIndexIsNegative(t *testing.T) {

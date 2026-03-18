@@ -217,6 +217,9 @@ type Interpreter struct {
 	lastDisplayCopyBitsBitBlt   uint16
 	firstDisplayChangeCycle     uint64
 	lastDisplayChangeCycle      uint64
+
+	garbageCollectionCount uint64
+	lastGarbageCollection  om.GCStats
 }
 
 // DisplaySnapshot captures the current designated display form in host-friendly
@@ -371,15 +374,111 @@ func (interp *Interpreter) storeWord(wordIndex int, ofObject uint16, withValue u
 }
 
 func (interp *Interpreter) instantiateClassWithPointers(classPointer uint16, instanceSize int) uint16 {
-	return interp.memory.InstantiateClass(classPointer, instanceSize, true)
+	return interp.instantiateWithGarbageCollection(func() (uint16, error) {
+		return interp.memory.TryInstantiateClass(classPointer, instanceSize, true)
+	}, classPointer, instanceSize, "pointer")
 }
 
 func (interp *Interpreter) instantiateClassWithWords(classPointer uint16, instanceSize int) uint16 {
-	return interp.memory.InstantiateClassWithWords(classPointer, instanceSize)
+	return interp.instantiateWithGarbageCollection(func() (uint16, error) {
+		return interp.memory.TryInstantiateClassWithWords(classPointer, instanceSize)
+	}, classPointer, instanceSize, "word")
 }
 
 func (interp *Interpreter) instantiateClassWithBytes(classPointer uint16, instanceSize int) uint16 {
-	return interp.memory.InstantiateClassWithBytes(classPointer, instanceSize)
+	return interp.instantiateWithGarbageCollection(func() (uint16, error) {
+		return interp.memory.TryInstantiateClassWithBytes(classPointer, instanceSize)
+	}, classPointer, instanceSize, "byte")
+}
+
+func guaranteedRootPointers() []uint16 {
+	return []uint16{
+		om.NilPointer,
+		om.FalsePointer,
+		om.TruePointer,
+		om.SchedulerAssociationPointer,
+		om.ClassSmallIntegerPointer,
+		om.ClassStringPointer,
+		om.ClassArrayPointer,
+		om.ClassFloatPointer,
+		om.ClassMethodContextPointer,
+		om.ClassBlockContextPointer,
+		om.ClassPointPointer,
+		om.ClassLargePositiveIntegerPointer,
+		om.ClassMessagePointer,
+		om.ClassCompiledMethodPointer,
+		om.ClassSemaphorePointer,
+		om.ClassCharacterPointer,
+		om.DoesNotUnderstandSelector,
+		om.CannotReturnSelector,
+		om.SpecialSelectorsPointer,
+		om.CharacterTablePointer,
+		om.MustBeBooleanSelector,
+		om.ClassSymbolPointer,
+		om.ClassMethodDictionaryPointer,
+		om.ClassAssociationPointer,
+		om.ClassObjectPointer,
+	}
+}
+
+func (interp *Interpreter) garbageCollectionRoots() []uint16 {
+	roots := make([]uint16, 0, len(guaranteedRootPointers())+16+interp.semaphoreIndex)
+	roots = append(roots, guaranteedRootPointers()...)
+	roots = append(roots,
+		interp.activeContext,
+		interp.homeContext,
+		interp.method,
+		interp.receiver,
+		interp.messageSelector,
+		interp.newMethod,
+		interp.displayScreen,
+		interp.cursorForm,
+		interp.inputSemaphore,
+		interp.timerSemaphore,
+	)
+	if interp.newProcessWaiting {
+		roots = append(roots, interp.newProcess)
+	}
+	for i := 0; i < interp.semaphoreIndex; i++ {
+		roots = append(roots, interp.semaphoreList[i])
+	}
+	return roots
+}
+
+func (interp *Interpreter) collectGarbage() om.GCStats {
+	stats := interp.memory.ReclaimInaccessibleObjects(interp.garbageCollectionRoots())
+	interp.garbageCollectionCount++
+	interp.lastGarbageCollection = stats
+	interp.methodCache = [methodCacheSize]uint16{}
+	return stats
+}
+
+func (interp *Interpreter) instantiateWithGarbageCollection(allocate func() (uint16, error), classPointer uint16, instanceSize int, kind string) uint16 {
+	result, err := allocate()
+	if err == nil {
+		return result
+	}
+
+	stats := interp.collectGarbage()
+	result, err = allocate()
+	if err == nil {
+		return result
+	}
+
+	panic(fmt.Sprintf(
+		"allocation failed after GC: kind=%s class=0x%04X instanceSize=%d err=%v gcCount=%d roots=%d marked=%d freed=%d freeBefore=%d freeAfter=%d reusableBodies=%d",
+		kind,
+		classPointer,
+		instanceSize,
+		err,
+		interp.garbageCollectionCount,
+		stats.RootsExamined,
+		stats.MarkedObjects,
+		stats.FreedObjects,
+		stats.FreeEntriesBefore,
+		stats.FreeEntriesAfter,
+		stats.ReusableBodies,
+	))
 }
 
 // ---- Context management (Blue Book p.582-585) ----

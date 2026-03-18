@@ -21,6 +21,24 @@ import "fmt"
 
 const maxObjectTableEntries = 1 << 15
 
+type allocationError struct {
+	message string
+}
+
+func (e allocationError) Error() string {
+	return e.message
+}
+
+// GCStats summarizes one reclamation pass.
+type GCStats struct {
+	RootsExamined     int
+	MarkedObjects     int
+	FreedObjects      int
+	FreeEntriesBefore int
+	FreeEntriesAfter  int
+	ReusableBodies    int
+}
+
 // Well-known object pointers from the Blue Book specification (p.576).
 // initializeSmallIntegers
 const (
@@ -422,8 +440,8 @@ func (om *ObjectMemory) instantiate(classPointer uint16, bodySize int, pointerFi
 	// Compute segment and location within segment
 	segment := fullLocation / 65536
 	if segment > int(otSegmentMask) {
-		panic(fmt.Sprintf("object space exhausted: need segment %d for class 0x%04X bodySize=%d (limit=%d words)",
-			segment, classPointer, bodySize, (int(otSegmentMask)+1)*65536))
+		panic(allocationError{fmt.Sprintf("object space exhausted: need segment %d for class 0x%04X bodySize=%d (limit=%d words)",
+			segment, classPointer, bodySize, (int(otSegmentMask)+1)*65536)})
 	}
 	locationInSegment := fullLocation % 65536
 	// Extend object space
@@ -458,7 +476,7 @@ func (om *ObjectMemory) instantiate(classPointer uint16, bodySize int, pointerFi
 	}
 	// No free entry — extend the OT
 	if om.otEntryCount >= maxObjectTableEntries {
-		panic(fmt.Sprintf("object table exhausted: otEntryCount=%d class=0x%04X bodySize=%d", om.otEntryCount, classPointer, bodySize))
+		panic(allocationError{fmt.Sprintf("object table exhausted: otEntryCount=%d class=0x%04X bodySize=%d", om.otEntryCount, classPointer, bodySize)})
 	}
 	newOop := uint16(om.otEntryCount * 2)
 	om.otEntryCount++
@@ -491,14 +509,139 @@ func isReservedSingletonOop(oop uint16) bool {
 	}
 }
 
+func tryAllocation(fn func() uint16) (oop uint16, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch v := r.(type) {
+			case allocationError:
+				err = v
+			default:
+				panic(r)
+			}
+		}
+	}()
+	return fn(), nil
+}
+
+func extractBits(firstBitIndex, lastBitIndex int, ofValue uint16) int {
+	return int((ofValue >> (14 - lastBitIndex)) & ((1 << (lastBitIndex - firstBitIndex + 1)) - 1))
+}
+
+func (om *ObjectMemory) compiledMethodPointerCount(oop uint16) int {
+	if om.FetchWordLengthOf(oop) == 0 {
+		return 0
+	}
+	headerPointer := om.FetchPointer(0, oop)
+	if !IsSmallInteger(headerPointer) {
+		return 1
+	}
+	header := uint16(SmallIntegerValue(headerPointer))
+	literalCount := extractBits(9, 14, header)
+	count := literalCount + 1
+	if count > om.FetchWordLengthOf(oop) {
+		return om.FetchWordLengthOf(oop)
+	}
+	return count
+}
+
+func (om *ObjectMemory) objectPointerCountOf(oop uint16) int {
+	if om.HasPointerFields(oop) {
+		return om.FetchWordLengthOf(oop)
+	}
+	if om.FetchClassOf(oop) == ClassCompiledMethodPointer {
+		return om.compiledMethodPointerCount(oop)
+	}
+	return 0
+}
+
+func (om *ObjectMemory) countFreeEntries() int {
+	freeEntries := 0
+	for i := 0; i < om.otEntryCount; i++ {
+		if om.IsFree(uint16(i * 2)) {
+			freeEntries++
+		}
+	}
+	return freeEntries
+}
+
+// ReclaimInaccessibleObjects performs a first-pass mark/sweep reclamation.
+// It reuses the existing exact-size body reuse path and primarily solves
+// object-table exhaustion under live allocation pressure.
+func (om *ObjectMemory) ReclaimInaccessibleObjects(rootPointers []uint16) GCStats {
+	stats := GCStats{
+		RootsExamined:     len(rootPointers),
+		FreeEntriesBefore: om.countFreeEntries(),
+	}
+	marked := make([]bool, om.otEntryCount)
+	stack := make([]uint16, 0, len(rootPointers))
+
+	mark := func(oop uint16) {
+		if IsSmallInteger(oop) || !om.ValidOop(oop) {
+			return
+		}
+		index := otIndex(oop) / 2
+		if index < 0 || index >= len(marked) || marked[index] {
+			return
+		}
+		marked[index] = true
+		stats.MarkedObjects++
+		stack = append(stack, oop)
+	}
+
+	for _, root := range rootPointers {
+		mark(root)
+	}
+
+	for len(stack) > 0 {
+		oop := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		mark(om.FetchClassOf(oop))
+		pointerCount := om.objectPointerCountOf(oop)
+		for i := 0; i < pointerCount; i++ {
+			mark(om.FetchPointer(i, oop))
+		}
+	}
+
+	for i := 0; i < om.otEntryCount; i++ {
+		oop := uint16(i * 2)
+		if om.IsFree(oop) || isReservedSingletonOop(oop) {
+			continue
+		}
+		if marked[i] {
+			continue
+		}
+		om.FreeObject(oop)
+		stats.FreedObjects++
+	}
+
+	stats.FreeEntriesAfter = om.countFreeEntries()
+	stats.ReusableBodies = len(om.reusableBodies)
+	return stats
+}
+
 // InstantiateClass creates a new pointer or word object with the given word length.
 func (om *ObjectMemory) InstantiateClass(classPointer uint16, instanceSize int, isPointers bool) uint16 {
 	return om.instantiate(classPointer, instanceSize+2, isPointers, false)
 }
 
+// TryInstantiateClass returns allocation exhaustion as an error instead of panicking.
+func (om *ObjectMemory) TryInstantiateClass(classPointer uint16, instanceSize int, isPointers bool) (uint16, error) {
+	return tryAllocation(func() uint16 {
+		return om.InstantiateClass(classPointer, instanceSize, isPointers)
+	})
+}
+
 // InstantiateClassWithWords creates a non-pointer object addressed in words.
 func (om *ObjectMemory) InstantiateClassWithWords(classPointer uint16, wordLength int) uint16 {
 	return om.instantiate(classPointer, wordLength+2, false, false)
+}
+
+// TryInstantiateClassWithWords returns allocation exhaustion as an error instead of panicking.
+func (om *ObjectMemory) TryInstantiateClassWithWords(classPointer uint16, wordLength int) (uint16, error) {
+	return tryAllocation(func() uint16 {
+		return om.InstantiateClassWithWords(classPointer, wordLength)
+	})
 }
 
 // InstantiateClassWithBytes creates a non-pointer object addressed in bytes.
@@ -509,6 +652,13 @@ func (om *ObjectMemory) InstantiateClassWithBytes(classPointer uint16, byteLengt
 		wordLength++
 	}
 	return om.instantiate(classPointer, wordLength+2, false, oddLength)
+}
+
+// TryInstantiateClassWithBytes returns allocation exhaustion as an error instead of panicking.
+func (om *ObjectMemory) TryInstantiateClassWithBytes(classPointer uint16, byteLength int) (uint16, error) {
+	return tryAllocation(func() uint16 {
+		return om.InstantiateClassWithBytes(classPointer, byteLength)
+	})
 }
 
 // ObjectSpaceSize returns the size of the object space in words.

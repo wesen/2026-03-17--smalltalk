@@ -211,6 +211,40 @@ func TestPositiveIntegerValueOfRejectsNegativeSmallInteger(t *testing.T) {
 	}
 }
 
+func TestInstantiateClassWithPointersCollectsGarbageOnObjectTableExhaustion(t *testing.T) {
+	const maxObjectTableEntries = 1 << 15
+
+	memory := om.New(nil, nil)
+	interp := New(memory)
+
+	for i := 0; i <= int(om.MustBeBooleanSelector/2); i++ {
+		interp.instantiateClassWithPointers(om.SmallIntegerOop(1), 0)
+	}
+
+	root := interp.instantiateClassWithPointers(om.SmallIntegerOop(1), 1)
+	child := interp.instantiateClassWithPointers(om.SmallIntegerOop(1), 2)
+	interp.storePointer(0, root, child)
+	interp.activeContext = root
+
+	for interp.memory.ObjectTableEntryCount() < maxObjectTableEntries {
+		interp.instantiateClassWithPointers(om.SmallIntegerOop(1), 2)
+	}
+
+	result := interp.instantiateClassWithPointers(om.SmallIntegerOop(1), 2)
+	if result == 0 && interp.garbageCollectionCount == 0 {
+		t.Fatalf("expected allocation retry to succeed after GC")
+	}
+	if interp.garbageCollectionCount == 0 {
+		t.Fatalf("expected garbage collection to run on object-table exhaustion")
+	}
+	if interp.lastGarbageCollection.FreedObjects == 0 {
+		t.Fatalf("expected GC to free unreachable objects, stats=%+v", interp.lastGarbageCollection)
+	}
+	if !interp.memory.ValidOop(root) || !interp.memory.ValidOop(child) {
+		t.Fatalf("expected rooted objects to survive GC")
+	}
+}
+
 func assertTraceSendSelectorsMatchUpTo(t *testing.T, relativePath string, maxAllowedCycle uint64) {
 	t.Helper()
 
