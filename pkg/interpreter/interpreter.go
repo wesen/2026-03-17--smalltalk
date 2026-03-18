@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	stimage "github.com/wesen/st80/pkg/image"
@@ -688,6 +689,36 @@ func (interp *Interpreter) debugStringOf(oop uint16) string {
 		return interp.memory.FetchStringOf(oop)
 	}
 	return ""
+}
+
+func (interp *Interpreter) oopSummary(oop uint16) string {
+	if om.IsSmallInteger(oop) {
+		return fmt.Sprintf("0x%04X<SmallInteger %d>", oop, om.SmallIntegerValue(oop))
+	}
+	if !interp.memory.ValidOop(oop) {
+		return fmt.Sprintf("0x%04X<invalid>", oop)
+	}
+	class := interp.fetchClassOf(oop)
+	return fmt.Sprintf("0x%04X<class=0x%04X(%q) words=%d>", oop, class, interp.debugStringOf(class), interp.fetchWordLengthOf(oop))
+}
+
+func (interp *Interpreter) oopFieldsSummary(oop uint16, maxFields int) string {
+	if om.IsSmallInteger(oop) || !interp.memory.ValidOop(oop) {
+		return ""
+	}
+	wordLen := interp.fetchWordLengthOf(oop)
+	if maxFields > wordLen {
+		maxFields = wordLen
+	}
+	if maxFields < 0 {
+		maxFields = 0
+	}
+	parts := make([]string, 0, maxFields)
+	for i := 0; i < maxFields; i++ {
+		field := interp.fetchPointer(i, oop)
+		parts = append(parts, fmt.Sprintf("%d=%s", i, interp.oopSummary(field)))
+	}
+	return strings.Join(parts, " ")
 }
 
 func (interp *Interpreter) createActualMessage() {
@@ -2573,8 +2604,19 @@ func (interp *Interpreter) checkProcessSwitch() {
 		scheduler := interp.schedulerPointer()
 		// newProcess was set by transferTo:
 		interp.storePointer(ActiveProcessIndex, scheduler, interp.newProcess)
-		interp.newActiveContext(
-			interp.fetchPointer(SuspendedContextIndex, interp.newProcess))
+		targetContext := interp.fetchPointer(SuspendedContextIndex, interp.newProcess)
+		if !interp.isMethodContext(targetContext) && !interp.isBlockContext(targetContext) {
+			panic(fmt.Sprintf(
+				"checkProcessSwitch: newProcess has invalid suspendedContext newProcess=%s fields=[%s] activeProcess=%s activeFields=[%s] scheduler=%s targetContext=%s",
+				interp.oopSummary(interp.newProcess),
+				interp.oopFieldsSummary(interp.newProcess, 4),
+				interp.oopSummary(activeProcess),
+				interp.oopFieldsSummary(activeProcess, 4),
+				interp.oopSummary(scheduler),
+				interp.oopSummary(targetContext),
+			))
+		}
+		interp.newActiveContext(targetContext)
 	}
 }
 
