@@ -685,6 +685,16 @@ func (interp *Interpreter) popInteger() int {
 	return 0
 }
 
+func (interp *Interpreter) popPositiveInteger() int {
+	integerPointer := interp.popStack()
+	value, ok := interp.positiveIntegerValueOf(integerPointer)
+	if !ok {
+		interp.success = false
+		return 0
+	}
+	return value
+}
+
 func (interp *Interpreter) positiveIntegerValueOf(oop uint16) (int, bool) {
 	if om.IsSmallInteger(oop) {
 		value := int(om.SmallIntegerValue(oop))
@@ -1115,7 +1125,7 @@ func (interp *Interpreter) dispatchSubscriptAndStreamPrimitives() {
 }
 
 func (interp *Interpreter) primitiveAt() {
-	index := interp.popInteger()
+	index := interp.popPositiveInteger()
 	rcvr := interp.popStack()
 	if !interp.success {
 		interp.unPop(2)
@@ -1133,7 +1143,7 @@ func (interp *Interpreter) primitiveAt() {
 
 func (interp *Interpreter) primitiveAtPut() {
 	value := interp.popStack()
-	index := interp.popInteger()
+	index := interp.popPositiveInteger()
 	rcvr := interp.popStack()
 	if !interp.success {
 		interp.unPop(3)
@@ -1166,7 +1176,7 @@ func (interp *Interpreter) primitiveSize() {
 }
 
 func (interp *Interpreter) primitiveStringAt() {
-	index := interp.popInteger()
+	index := interp.popPositiveInteger()
 	rcvr := interp.popStack()
 	if !interp.success {
 		interp.unPop(2)
@@ -1193,7 +1203,7 @@ func (interp *Interpreter) primitiveStringAt() {
 
 func (interp *Interpreter) primitiveStringAtPut() {
 	value := interp.popStack()
-	index := interp.popInteger()
+	index := interp.popPositiveInteger()
 	rcvr := interp.popStack()
 	if !interp.success {
 		interp.unPop(3)
@@ -1273,7 +1283,7 @@ func (interp *Interpreter) subscriptStoring(array uint16, index int, class uint1
 func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 	switch interp.primitiveIndex {
 	case 68: // objectAt:
-		index := interp.popInteger()
+		index := interp.popPositiveInteger()
 		rcvr := interp.popStack()
 		if interp.success {
 			interp.push(interp.fetchPointer(index-1, rcvr))
@@ -1282,7 +1292,7 @@ func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 		}
 	case 69: // objectAt:put:
 		value := interp.popStack()
-		index := interp.popInteger()
+		index := interp.popPositiveInteger()
 		rcvr := interp.popStack()
 		if interp.success {
 			interp.storePointer(index-1, rcvr, value)
@@ -1304,14 +1314,8 @@ func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 		}
 		interp.push(result)
 	case 71: // basicNew:, new:
-		sizePointer := interp.popStack()
+		sz := interp.popPositiveInteger()
 		class := interp.popStack()
-		sz, ok := interp.positiveIntegerValueOf(sizePointer)
-		if !ok {
-			interp.unPop(2)
-			interp.primitiveFail()
-			return
-		}
 		if interp.success {
 			size := sz + interp.fixedFieldsOf(class)
 			var result uint16
@@ -1335,7 +1339,7 @@ func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 		interp.memory.SwapPointersOf(thisReceiver, otherPointer)
 		interp.push(thisReceiver)
 	case 73: // instVarAt:
-		index := interp.popInteger()
+		index := interp.popPositiveInteger()
 		rcvr := interp.popStack()
 		if interp.success {
 			interp.push(interp.fetchPointer(index-1, rcvr))
@@ -1344,7 +1348,7 @@ func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 		}
 	case 74: // instVarAt:put:
 		value := interp.popStack()
-		index := interp.popInteger()
+		index := interp.popPositiveInteger()
 		rcvr := interp.popStack()
 		if interp.success {
 			interp.storePointer(index-1, rcvr, value)

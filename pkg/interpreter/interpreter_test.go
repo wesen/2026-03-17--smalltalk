@@ -175,6 +175,30 @@ func runInterpreterCycles(t *testing.T, interp *Interpreter, cycles uint64) {
 	}
 }
 
+func TestPositiveIntegerValueOfLargePositiveInteger(t *testing.T) {
+	interp := loadTestInterpreter(t)
+
+	value := interp.instantiateClassWithBytes(om.ClassLargePositiveIntegerPointer, 2)
+	interp.memory.StoreByte(0, value, 0x00)
+	interp.memory.StoreByte(1, value, 0x4B)
+
+	got, ok := interp.positiveIntegerValueOf(value)
+	if !ok {
+		t.Fatalf("expected LargePositiveInteger decode to succeed")
+	}
+	if got != 19200 {
+		t.Fatalf("expected 19200, got %d", got)
+	}
+}
+
+func TestPositiveIntegerValueOfRejectsNegativeSmallInteger(t *testing.T) {
+	interp := loadTestInterpreter(t)
+
+	if got, ok := interp.positiveIntegerValueOf(om.SmallIntegerOop(-1)); ok {
+		t.Fatalf("expected negative SmallInteger decode to fail, got %d", got)
+	}
+}
+
 func assertTraceSendSelectorsMatchUpTo(t *testing.T, relativePath string, maxAllowedCycle uint64) {
 	t.Helper()
 
