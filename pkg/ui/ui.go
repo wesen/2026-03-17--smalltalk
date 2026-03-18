@@ -16,6 +16,7 @@ type Options struct {
 	Scale          int32
 	WindowTitle    string
 	InputDebug     bool
+	EventDebug     bool
 }
 
 // Run boots the image, advances the interpreter in chunks, and displays the
@@ -164,7 +165,7 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 			copyDisplayBits(pixels, snapshot, hasCursor, cursor)
 		}
 
-		quit, err := processEventsAndPresent(interp, window, renderer, texture, pixels, textureWidth, textureHeight)
+		quit, err := processEventsAndPresent(interp, window, renderer, texture, pixels, textureWidth, textureHeight, opts.EventDebug)
 		if err != nil {
 			return err
 		}
@@ -189,19 +190,30 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 	}
 }
 
-func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window, renderer *sdl.Renderer, texture *sdl.Texture, pixels []uint32, width int, height int) (bool, error) {
+func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window, renderer *sdl.Renderer, texture *sdl.Texture, pixels []uint32, width int, height int, eventDebug bool) (bool, error) {
 	quit := false
 	err := doSDL(func() error {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch e := event.(type) {
 			case *sdl.QuitEvent:
+				if eventDebug {
+					fmt.Printf("[event-debug cycle=%d] quit\n", interp.CycleCount())
+				}
 				quit = true
 			case *sdl.MouseMotionEvent:
+				if eventDebug {
+					fmt.Printf("[event-debug cycle=%d] mouse-motion x=%d y=%d state=0x%X ts=%d\n",
+						interp.CycleCount(), e.X, e.Y, e.State, e.Timestamp)
+				}
 				logicalX, logicalY, ok := mapWindowToLogicalPoint(window, width, height, e.X, e.Y)
 				if ok {
 					interp.RecordMouseMotion(logicalX, logicalY, e.Timestamp)
 				}
 			case *sdl.MouseButtonEvent:
+				if eventDebug {
+					fmt.Printf("[event-debug cycle=%d] mouse-button button=%d state=%d x=%d y=%d ts=%d\n",
+						interp.CycleCount(), e.Button, e.State, e.X, e.Y, e.Timestamp)
+				}
 				logicalX, logicalY, ok := mapWindowToLogicalPoint(window, width, height, e.X, e.Y)
 				if ok {
 					interp.SetMousePoint(logicalX, logicalY)
@@ -210,6 +222,10 @@ func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window
 					}
 				}
 			case *sdl.TextInputEvent:
+				if eventDebug {
+					fmt.Printf("[event-debug cycle=%d] text-input text=%q ts=%d\n",
+						interp.CycleCount(), e.GetText(), e.Timestamp)
+				}
 				for _, r := range e.GetText() {
 					if r < 0 || r > 0x7F {
 						continue
@@ -217,6 +233,10 @@ func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window
 					interp.RecordDecodedKey(uint16(r), e.Timestamp)
 				}
 			case *sdl.KeyboardEvent:
+				if eventDebug {
+					fmt.Printf("[event-debug cycle=%d] keyboard type=%d repeat=%d sym=%d ts=%d\n",
+						interp.CycleCount(), e.Type, e.Repeat, e.Keysym.Sym, e.Timestamp)
+				}
 				if e.Type == sdl.KEYDOWN && e.Repeat == 0 {
 					if parameter, ok := specialKeyParameter(e.Keysym.Sym); ok {
 						interp.RecordDecodedKey(parameter, e.Timestamp)
