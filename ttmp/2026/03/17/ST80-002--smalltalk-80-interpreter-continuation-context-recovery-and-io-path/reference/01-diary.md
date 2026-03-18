@@ -435,3 +435,160 @@ go test ./...
 go run ./cmd/st80 data/VirtualImage 2000000
 git commit -m "Implement become and typed object allocation"
 ```
+
+## Step 4: Block/Value Register Repair, String Write Primitive, and Method-Context Recycling
+
+This step started from the LargePositiveInteger frontier exposed in Step 3, but the useful change here was not “more integer math.” The real progress came from treating the failing multiply as a control-flow bug, tracing block/value sends in detail, and then repairing multiple Blue Book mismatches in the interpreter’s block and string primitive paths. That moved the runtime much farther: the VM now survives the former display/large-integer startup failures, passes the normal Go test suite, and runs `700000` interpreter cycles cleanly.
+
+The runtime is still not done. The current long-run frontier is later and more specific: around cycle `708768`, `Behavior>>selectorAtMethod:setClass:` reaches a `Number>>to:do:` loop where the receiver for `value:` is no longer a valid block object. I preserved that state with diagnostic tests kept in skipped/manual mode so the next continuation can resume directly from the new boundary instead of reopening the older LargePositiveInteger work.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 1)
+
+**Assistant interpretation:** Continue the interpreter work without stopping at the first green test run, keep the diary dense, and commit intermediate fixes while pushing the runtime farther into the image.
+
+**Inferred user intent:** Recover the VM incrementally but rigorously: fix one concrete runtime invariant at a time, validate it, record the real bug path in the ticket, and preserve working checkpoints frequently.
+
+**Commit (code):** 1a02e02 — "Fix block/value context handling and string writes"
+
+### What I did
+- Turned the `LargePositiveInteger` failure into a sender/bytecode investigation instead of assuming the remaining bug was still “integer sizing.”
+- Added a temporary send decoder plus targeted diagnostics in `pkg/interpreter/interpreter_test.go` to log:
+  - message sends around the failing `digitMultiply:neg:` window
+  - frame temporaries / stack contents near the bad `digitAt:put:`
+  - late invalid-context transitions near the first long-run crash
+  - the first recursive `doesNotUnderstand:` after the new fixes
+- Used those diagnostics to prove that the previous `LargePositiveInteger>>digitAt:put:` crash was actually downstream of a stale block caller/sender state:
+  - `primitiveValue` switched to the block context without first storing the current context registers
+  - after a block invocation returned, the sender resumed from stale IP/SP state and re-entered the wrong part of the multiply path
+- Fixed `primitiveValue` to use `newActiveContext(blockContext)` so the sender context is stored exactly as the Blue Book requires before the block becomes active.
+- Fixed `primitiveBlockCopy` to size new block contexts from the enclosing method context’s word length instead of hardcoding a small block size.
+- Implemented primitive `64` (`String>>at:put:` path) so byte objects can accept `Character` arguments and store their byte code directly instead of falling back into the generic `Object>>at:put:` error path.
+- Traced the next long-run failure and found OOP-table exhaustion around cycle `495998`:
+  - new contexts eventually wrapped the 16-bit OOP space and produced `activeContext = 0x0002`
+  - this was not another sender-chain bug; it was object-table slot exhaustion
+- Added minimal object-table slot reuse for dead `MethodContext` objects:
+  - `ObjectMemory.FreeObject(...)` marks a slot reusable
+  - `returnToActiveContext(...)` now calls `maybeRecycleContext(...)`
+  - recycling is guarded by a reachability scan rooted in the live context graph
+  - only `MethodContext` objects are recycled; `BlockContext` objects are left persistent because the image reuses block objects after returns
+- Investigated a later recursive `doesNotUnderstand:` and found another Blue Book mismatch in the special-selector fast path:
+  - `commonSelectorPrimitive()` was invoking `primitiveValue()` without updating the interpreter register `argumentCount`
+  - `primitiveValue()` therefore read stale arity, failed, and the `value:` send fell through to normal lookup / DNU
+- Fixed `commonSelectorPrimitive()` so the interpreter register `argumentCount` matches the current special selector before executing fast-path primitives.
+- Switched block/method-context recognition in the common-selector path from brittle class-OOP equality to structural checks:
+  - `isBlockContext(...)`
+  - `isMethodContext(...)`
+- Restored the deep diagnostics to `t.Skip(...)` so `go test ./...` stays green while the investigation tools remain in the file for manual runs.
+- Revalidated with:
+  - `go test ./...`
+  - `go run ./cmd/st80 data/VirtualImage 700000`
+  - `go run ./cmd/st80 data/VirtualImage 800000`
+
+### Why
+- The LargePositiveInteger sender trace clearly showed a control-flow fork from the saved local trace, so continuing to patch integer storage blindly would have been the wrong level of abstraction.
+- `primitiveValue` is part of the core block semantics. Once the traced multiply proved that the same block body was being re-entered from the wrong state, fixing sender IP/SP storage became higher priority than any further arithmetic work.
+- `String>>at:put:` was the next concrete missing primitive on the actual runtime path after the block/value fix.
+- The later `activeContext = nil` failure did not look like a normal message-send bug. The OOP value and cycle count strongly suggested object-table exhaustion, which the diagnostics confirmed.
+- The `value:` late DNU required looking at the interpreter register state, not just the receiver object. The bug was in the VM’s fast-path register bookkeeping.
+
+### What worked
+- The `LargePositiveInteger>>digitAt:put:` startup failure is no longer the immediate frontier.
+- The old `String>>at:put:` fallback/error path is gone once primitive `64` exists.
+- The interpreter now survives well beyond the previous context-wrap point because dead method-context OOP slots are reused.
+- Structural context checks are good enough to keep the common block/value fast path working even after class-identity assumptions became unreliable later in the run.
+- The current ordinary validation set is green:
+  - `go test ./...`
+- The standalone VM now runs cleanly through:
+  - `go run ./cmd/st80 data/VirtualImage 700000`
+
+### What didn't work
+- Recycling all returned contexts was wrong. My first pass reused both method and block contexts, and that immediately corrupted live sender/home relationships and block reuse. I backed that out conceptually by narrowing recycling to `MethodContext` only.
+- Structural block/method detection alone did not remove the later `value:` failure, because the deeper issue there was stale `argumentCount` in the special-selector fast path.
+- The interpreter still does not reach a stable idle loop. The current long-run crash remains:
+
+```text
+Interpreter panic: Recursive not understood error encountered
+```
+
+- The current late frontier is around cycle `708768`, in this shape:
+  - active method: `<Number>to:do:`
+  - sender chain: `<IdentityDictionary>keyAtValue:ifAbsent:` → repeated `<Behavior>selectorAtMethod:setClass:`
+  - the receiver for special-selector `value:` is no longer a valid block object
+  - the object at that OOP currently looks context-like / corrupted, which means there is still a remaining context or block-identity problem after the fixes in this step
+
+### What I learned
+- The LargePositiveInteger/display crash was a symptom of a deeper block/value register bug, not the final bug itself.
+- `primitiveValue` is very sensitive to the interpreter register contract. If `activeContext`, `instructionPointer`, `stackPointer`, or `argumentCount` are even slightly stale, the image can continue for a while and then fail in a completely different subsystem.
+- Long-run failures around class or block identity are not always “bad lookup” bugs. They can be downstream of:
+  - stale special-selector register state
+  - OOP-slot reuse
+  - assumptions that class OOP identities are stable forever
+- Method-context recycling is useful, but block contexts are semantically different: they are often reusable objects, not one-shot activations.
+
+### What was tricky to build
+- The hardest part of this slice was separating “the failing object” from “the thing that made the failing object wrong.” The first instinct was to keep chasing LargePositiveInteger internals, but the sender trace only made sense once I accepted that the multiply loop itself had resumed from the wrong point.
+- Method-context recycling is tricky because the naive “free on return” rule is false. A returned context may still be referenced indirectly through live block objects or other active contexts. I had to add a reachability guard and then narrow the policy further to method contexts only.
+- The common-selector fast path is easy to overlook because it bypasses the usual `sendSelector(...)` path. That means it also bypasses the normal register setup unless the VM does it explicitly.
+
+### What warrants a second pair of eyes
+- The method-context recycler should be reviewed carefully. It is intentionally minimal and guarded, but it is still a VM-level lifetime policy layered on top of a system that does not yet implement the full Blue Book memory-management story.
+- The long-run `value:` receiver corruption around `Behavior>>selectorAtMethod:setClass:` still needs another focused pass. The remaining bug may be in:
+  - context/block lifetime handling
+  - a still-missing reference/liveness rule
+  - a context identity/class assumption that only breaks later in the image
+- The structural `isMethodContext` / `isBlockContext` usage in common-selector primitives should be reviewed against the exact Blue Book contracts, especially if later work restores or tightens class-identity invariants.
+
+### What should be done in the future
+- Re-open the late diagnostic around cycle `708768` and determine exactly where the `value:` receiver stops being a valid block object.
+- Check whether the current remaining corruption is caused by:
+  - method-context recycling missing a reachable root
+  - a block object stored outside the currently scanned live context graph
+  - another special-selector fast-path register mismatch
+- Once the late `Behavior>>selectorAtMethod:setClass:` path is stable, rerun:
+  - `go run ./cmd/st80 data/VirtualImage 800000`
+  - `go run ./cmd/st80 data/VirtualImage 2000000`
+- Only after the runtime can run long enough to settle into the expected scheduler/idle behavior should the separate graphical-UI ticket be opened.
+
+### Code review instructions
+- Start in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `primitiveValue`
+  - `primitiveBlockCopy`
+  - `primitiveStringAtPut`
+  - `commonSelectorPrimitive`
+  - `isBlockContext`
+  - `isMethodContext`
+  - `maybeRecycleContext`
+- Then review [objectmemory.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go):
+  - `FreeObject`
+- Use the skipped diagnostics in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go) if you need to replay the same reasoning:
+  - `TestTraceSendsAroundLargePositiveIntegerFailure`
+  - `TestDetectInvalidActiveContextAtScale`
+  - `TestTraceAroundLateInvalidActiveContext`
+  - `TestDiagnoseRecursiveNotUnderstood`
+- Validate with:
+  - `go test ./...`
+  - `go run ./cmd/st80 data/VirtualImage 700000`
+  - `go run ./cmd/st80 data/VirtualImage 800000`
+
+### Technical details
+- Key observed runtime milestones in this step:
+  - old startup `LargePositiveInteger>>digitAt:put:` crash removed
+  - old `String>>at:put:` fallback error removed
+  - old context-OOP wrap around cycle `495998` removed
+  - current panic frontier moved to about cycle `708768`
+- Manual commands used during this step:
+
+```bash
+go test ./pkg/interpreter -run TestFindLargePositiveIntegerAllocation -v
+go test ./pkg/interpreter -run TestTraceSendsAroundLargePositiveIntegerFailure -v
+go test ./pkg/interpreter -run TestFindFirstSubscriptError -v
+go test ./pkg/interpreter -run TestTraceAroundLateInvalidActiveContext -v
+go test ./pkg/interpreter -run TestDiagnoseRecursiveNotUnderstood -v
+go test ./pkg/interpreter -run TestDetectInvalidActiveContextAtScale -v
+go test ./...
+go run ./cmd/st80 data/VirtualImage 700000
+go run ./cmd/st80 data/VirtualImage 800000
+git commit -m "Fix block/value context handling and string writes"
+```

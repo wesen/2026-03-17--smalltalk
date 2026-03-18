@@ -46,3 +46,14 @@ Step 3: Implemented become:, added typed pointer/word/byte allocation for new/ne
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go — swapPointersOf plus typed allocation helpers
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/reference/01-diary.md — Step 3 investigation and outcomes
 
+
+## 2026-03-18
+
+Step 4: Fixed block/value register handling, implemented String at:put:, added guarded MethodContext slot recycling, and moved the runtime frontier from the display LargePositiveInteger crash to a later value:/block corruption around cycle 708768 (commit 1a02e02).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Block/value
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Retained skipped diagnostics documenting the investigation path (commit 1a02e02)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go — MethodContext OOP-slot recycling support (commit 1a02e02)
+
