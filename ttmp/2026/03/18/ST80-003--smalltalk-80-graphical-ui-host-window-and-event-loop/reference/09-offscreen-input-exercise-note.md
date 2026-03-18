@@ -104,3 +104,17 @@ Then rerun the exact same script and compare:
 - were words queued?
 - were words drained?
 - did any visible UI state change?
+
+# Updated follow-up result
+
+I later revisited this with two stronger host-side experiments:
+
+1. a direct interpreter-side input harness that bypasses SDL/X11 entirely
+2. an off-screen `Xvfb` run with `openbox`, `xdotool windowfocus`, and raw SDL event logging (`-event-debug`)
+
+The direct interpreter-side harness eventually produced a real framebuffer change after a longer post-input run. That means the image-side input path is alive when delivery is guaranteed.
+
+The stronger off-screen host-side run still produced no `input-debug` lines and no `event-debug` lines beyond startup. So the current diagnosis is now much sharper than when this note was first written:
+
+- the remaining blocker is not “does the image react to input at all?”
+- the remaining blocker is “why does this off-screen Xvfb/xdotool path fail to deliver any usable input events to SDL?”

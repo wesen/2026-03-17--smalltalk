@@ -203,3 +203,14 @@ Step 17: added a direct interpreter-side input-exercise harness and used it to p
 - /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-exercise-snapshot/main.go — Added a CLI for direct interpreter-side input injection and snapshot comparison (commit 89c742b)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-direct-input-snapshot.sh — Ticket-local wrapper for the new direct input exercise tool (commit 89c742b)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/12-direct-input-exercise-note.md — Recorded the direct-input results and the narrowed diagnosis
+
+
+## 2026-03-18
+
+Step 18: added raw SDL event-debug logging and confirmed that even an off-screen `Xvfb` run with `openbox`, explicit `windowfocus`, and the same `xdotool` sequence still produced no observable SDL input events, strengthening the diagnosis that the remaining blocker is host-side event delivery (commit 342e7d3).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — Added raw SDL event-debug logging around `sdl.PollEvent` handling (commit 342e7d3)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go — Added the `-event-debug` flag for host-side input diagnostics (commit 342e7d3)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/09-offscreen-input-exercise-note.md — Updated with the stronger openbox/raw-event-debug result

@@ -1920,3 +1920,99 @@ beforeCycles=50000 afterCycles=500000 changedPixels=10319 beforeHash=0162f0db51d
   - different raw display hash
   - `beforeBlack=112228`
   - `afterBlack=111072`
+
+## Step 18: Raw SDL Event Debug And The Stronger Host-Side Negative Result
+
+The direct interpreter-side harness was a useful narrowing step, but it still left one host-side question open: was SDL receiving raw input events under the off-screen setup and simply failing to map them, or was it not receiving them at all? That distinction matters. If `sdl.PollEvent()` is getting nothing, the next fix is environmental. If it is getting events that our mapping ignores, the next fix is in our host loop.
+
+I added a raw SDL event-debug flag and reran the off-screen experiment under a stronger host setup: `Xvfb` plus `openbox`, explicit `windowfocus`, and the same `xdotool` input sequence. The result was still negative. The run log contained only the startup image banner and no raw event-debug lines at all. That is a much stronger result than the earlier “no input-debug lines” outcome, because it says the failure is upstream of our interpreter-side input mapping.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 16)
+
+**Assistant interpretation:** Keep pushing on the active UI blocker and reduce the host-side ambiguity enough that the next debugging step is obvious.
+
+**Inferred user intent:** Continue until the remaining UI problem is much more concrete, rather than stopping after the direct-input harness result.
+
+**Commit (code):** 342e7d3 — "Add SDL raw event debug logging"
+
+### What I did
+- Added `EventDebug` to [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) and [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go) so `st80-ui` can log raw SDL input events as they are polled.
+- Logged these event classes:
+  - quit
+  - mouse motion
+  - mouse button
+  - text input
+  - keyboard
+- Validated the small code slice with:
+
+```bash
+go test ./pkg/ui ./cmd/st80-ui
+```
+
+- Ran an off-screen host-side experiment under:
+  - `Xvfb`
+  - `openbox`
+  - `xdotool windowfocus`
+  - `st80-ui -input-debug -event-debug`
+- Injected the same sequence:
+  - mouse move
+  - left click
+  - type `a`
+  - `Return`
+- Inspected the resulting run log.
+
+### Why
+- The direct interpreter-side harness had already shown that the image reacts once delivery is guaranteed.
+- So the next highest-value question was whether SDL was seeing any raw events at all in the off-screen environment.
+- A tiny raw-event logger is cheaper and more decisive than continuing to infer from unchanged screenshots.
+
+### What worked
+- The raw-event logger builds cleanly and can now be reused in future host-side debugging runs.
+- The openbox-backed off-screen experiment ran to completion, located the window, focused it, injected the same sequence, and produced a reproducible run log.
+- The result narrows the diagnosis further:
+  - still no `input-debug` lines
+  - still no `event-debug` lines
+
+### What didn't work
+- Even with a real window manager (`openbox`) and explicit `windowfocus`, the off-screen run log still contained only:
+
+```text
+Image: 596128 bytes, objectSpace=258880 words @512, objectTable=38736 words @518656
+```
+
+- So the stronger host-side setup still did not produce observable SDL input events in this environment.
+
+### What I learned
+- The current off-screen problem is now very likely before or at SDL event acquisition, not in the interpreter-side mapping logic.
+- The direct harness and the raw-event logger complement each other well:
+  - direct harness proves image-side reaction exists
+  - raw-event logger proves the current off-screen SDL path still sees nothing useful
+
+### What was tricky to build
+- The tricky part here was not code complexity. It was experimental hygiene. The earlier no-input-debug result could still be argued away as “maybe SDL got events but they did not change counters.” The raw-event logger removes that escape hatch.
+- The first attempt at the `openbox` experiment also hit a shell/glob issue in `zsh` while clearing an output directory. I reran it with `find ... -delete` to avoid turning a shell quirk into a false debugging trail.
+
+### What warrants a second pair of eyes
+- Review whether there is any SDL/X11 setup detail missing from the off-screen experiment beyond window manager and focus.
+- Review whether the next host-side experiment should bypass `xdotool` entirely in favor of another X input injection mechanism.
+- Review whether I should capture X-level diagnostics next, such as pointer/focus state or XTest behavior, before changing more VM code.
+
+### What should be done in the future
+- Keep the host-side diagnosis task open.
+- Use the direct harness as the main fast iteration path for image-side input experiments.
+- Treat the off-screen SDL/X delivery problem as a separate environment/debugging slice rather than a VM/input-semantics slice.
+
+### Code review instructions
+- Start with [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) and [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go) for the `-event-debug` addition.
+- Then read the updated [09-offscreen-input-exercise-note.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/09-offscreen-input-exercise-note.md).
+- Reproduce with an off-screen session that includes:
+  - `openbox`
+  - `windowfocus`
+  - `-input-debug`
+  - `-event-debug`
+
+### Technical details
+- Host-side run log still contained only the startup image line and no event-debug output.
+- That means the current experiment did not reach even the raw SDL event logging branch for the injected sequence.
