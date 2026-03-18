@@ -374,6 +374,142 @@ func TestPrimitiveCursorLocPutUpdatesMouseWhenLinked(t *testing.T) {
 	}
 }
 
+func TestPrimitiveInputSemaphoreStoresSemaphoreAndReturnsReceiver(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	semaphore := interp.instantiateClassWithPointers(om.ClassSemaphorePointer, 3)
+
+	interp.push(om.NilPointer)
+	interp.push(semaphore)
+	interp.primitiveInputSemaphore()
+
+	if interp.inputSemaphore != semaphore {
+		t.Fatalf("expected input semaphore 0x%04X, got 0x%04X", semaphore, interp.inputSemaphore)
+	}
+	if interp.stackTop() != om.NilPointer {
+		t.Fatalf("expected primitiveInputSemaphore to return receiver, got 0x%04X", interp.stackTop())
+	}
+}
+
+func TestPrimitiveSampleIntervalStoresMillisecondsAndReturnsReceiver(t *testing.T) {
+	interp := loadTestInterpreter(t)
+
+	interp.push(om.NilPointer)
+	interp.push(om.SmallIntegerOop(25))
+	interp.primitiveSampleInterval()
+
+	if interp.inputSampleIntervalMS != 25 {
+		t.Fatalf("expected sample interval 25ms, got %d", interp.inputSampleIntervalMS)
+	}
+	if interp.stackTop() != om.NilPointer {
+		t.Fatalf("expected primitiveSampleInterval to return receiver, got 0x%04X", interp.stackTop())
+	}
+}
+
+func TestPrimitiveInputWordReturnsQueuedWord(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	expected := inputEventWord(inputWordTypeDeviceOff, 130)
+	if !interp.enqueueInputWords(expected) {
+		t.Fatalf("expected enqueueInputWords to succeed")
+	}
+
+	interp.push(om.NilPointer)
+	interp.primitiveInputWord()
+
+	got, ok := interp.positiveIntegerValueOf(interp.stackTop())
+	if !ok {
+		t.Fatalf("expected positive integer result from primitiveInputWord, got 0x%04X", interp.stackTop())
+	}
+	if uint16(got) != expected {
+		t.Fatalf("expected queued word 0x%04X, got 0x%04X", expected, uint16(got))
+	}
+	if interp.inputWordCount != 0 {
+		t.Fatalf("expected input buffer to be empty after primitiveInputWord, got %d words", interp.inputWordCount)
+	}
+}
+
+func TestRecordMouseMotionQueuesTimedCoordinatesAndSignalsSemaphore(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	semaphore := interp.instantiateClassWithPointers(om.ClassSemaphorePointer, 3)
+	interp.inputSemaphore = semaphore
+
+	interp.RecordMouseMotion(12, 34, 100)
+
+	if interp.inputWordCount != 3 {
+		t.Fatalf("expected 3 queued input words, got %d", interp.inputWordCount)
+	}
+	if interp.semaphoreIndex != 3 {
+		t.Fatalf("expected 3 deferred semaphore signals, got %d", interp.semaphoreIndex)
+	}
+	want := []uint16{
+		inputEventWord(inputWordTypeDeltaTime, 0),
+		inputEventWord(inputWordTypeMouseX, 12),
+		inputEventWord(inputWordTypeMouseY, 34),
+	}
+	for i, expected := range want {
+		got, ok := interp.dequeueInputWord()
+		if !ok {
+			t.Fatalf("missing queued word %d", i)
+		}
+		if got != expected {
+			t.Fatalf("expected queued word[%d]=0x%04X, got 0x%04X", i, expected, got)
+		}
+	}
+}
+
+func TestRecordMouseMotionRespectsSampleInterval(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	interp.inputSampleIntervalMS = 50
+
+	interp.RecordMouseMotion(10, 20, 100)
+	interp.RecordMouseMotion(11, 21, 120)
+	interp.RecordMouseMotion(12, 22, 160)
+
+	if interp.inputWordCount != 6 {
+		t.Fatalf("expected 2 movement events / 6 words, got %d words", interp.inputWordCount)
+	}
+	want := []uint16{
+		inputEventWord(inputWordTypeDeltaTime, 0),
+		inputEventWord(inputWordTypeMouseX, 10),
+		inputEventWord(inputWordTypeMouseY, 20),
+		inputEventWord(inputWordTypeDeltaTime, 60),
+		inputEventWord(inputWordTypeMouseX, 12),
+		inputEventWord(inputWordTypeMouseY, 22),
+	}
+	for i, expected := range want {
+		got, ok := interp.dequeueInputWord()
+		if !ok {
+			t.Fatalf("missing queued word %d", i)
+		}
+		if got != expected {
+			t.Fatalf("expected queued word[%d]=0x%04X, got 0x%04X", i, expected, got)
+		}
+	}
+}
+
+func TestRecordDecodedKeyQueuesOnAndOffWords(t *testing.T) {
+	interp := loadTestInterpreter(t)
+
+	interp.RecordDecodedKey(uint16('A'), 250)
+
+	if interp.inputWordCount != 3 {
+		t.Fatalf("expected 3 queued words for decoded keypress, got %d", interp.inputWordCount)
+	}
+	want := []uint16{
+		inputEventWord(inputWordTypeDeltaTime, 0),
+		inputEventWord(inputWordTypeDeviceOn, uint16('A')),
+		inputEventWord(inputWordTypeDeviceOff, uint16('A')),
+	}
+	for i, expected := range want {
+		got, ok := interp.dequeueInputWord()
+		if !ok {
+			t.Fatalf("missing queued word %d", i)
+		}
+		if got != expected {
+			t.Fatalf("expected queued word[%d]=0x%04X, got 0x%04X", i, expected, got)
+		}
+	}
+}
+
 func TestDiagnoseRecursiveNotUnderstood(t *testing.T) {
 	t.Skip("diagnostic test retained for manual investigation")
 	classNames := loadOopNames(t, "data/class.oops")

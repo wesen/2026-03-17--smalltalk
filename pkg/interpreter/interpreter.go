@@ -98,6 +98,17 @@ const (
 // Method cache size (must be power of 2 * 4)
 const methodCacheSize = 1024
 
+const (
+	inputBufferSize = 1024
+
+	inputWordTypeDeltaTime    = 0
+	inputWordTypeMouseX       = 1
+	inputWordTypeMouseY       = 2
+	inputWordTypeDeviceOn     = 3
+	inputWordTypeDeviceOff    = 4
+	inputWordTypeAbsoluteTime = 5
+)
+
 // Interpreter is the Smalltalk-80 bytecode interpreter.
 type Interpreter struct {
 	memory *om.ObjectMemory
@@ -139,6 +150,17 @@ type Interpreter struct {
 	mouseY        int
 	cursorX       int
 	cursorY       int
+
+	inputSemaphore         uint16
+	inputSampleIntervalMS  uint32
+	inputWords             [inputBufferSize]uint16
+	inputReadIndex         int
+	inputWriteIndex        int
+	inputWordCount         int
+	lastInputEventTick     uint32
+	lastMouseEventTick     uint32
+	haveLastInputEventTick bool
+	haveLastMouseEventTick bool
 
 	// Cycle counter for tracing
 	cycleCount uint64
@@ -803,6 +825,20 @@ func (interp *Interpreter) positiveIntegerValueOf(oop uint16) (int, bool) {
 		value |= valuePart
 	}
 	return value, true
+}
+
+func (interp *Interpreter) positive16BitIntegerFor(integerValue int) uint16 {
+	if integerValue < 0 || integerValue > 0xFFFF {
+		interp.primitiveFail()
+		return 0
+	}
+	if integerValue <= 16383 {
+		return om.SmallIntegerOop(int16(integerValue))
+	}
+	newLargeInteger := interp.instantiateClassWithBytes(om.ClassLargePositiveIntegerPointer, 2)
+	interp.memory.StoreByte(0, newLargeInteger, byte(integerValue&0xFF))
+	interp.memory.StoreByte(1, newLargeInteger, byte((integerValue>>8)&0xFF))
+	return newLargeInteger
 }
 
 func (interp *Interpreter) pushInteger(integerValue int) {
@@ -1604,6 +1640,12 @@ func (interp *Interpreter) dispatchInputOutputPrimitives() {
 		interp.primitiveCursorLocPut()
 	case 92: // cursorLink:
 		interp.primitiveCursorLink()
+	case 93: // inputSemaphore:
+		interp.primitiveInputSemaphore()
+	case 94: // sampleInterval:
+		interp.primitiveSampleInterval()
+	case 95: // inputWord
+		interp.primitiveInputWord()
 	case 96: // copyBits
 		interp.primitiveCopyBits()
 	case 101: // beCursor
@@ -1657,6 +1699,51 @@ func (interp *Interpreter) primitiveCursorLocPut() {
 	interp.push(rcvr)
 }
 
+func inputEventWord(typeCode uint16, parameter uint16) uint16 {
+	return (typeCode << 12) | (parameter & 0x0FFF)
+}
+
+func (interp *Interpreter) primitiveInputSemaphore() {
+	semaphore := interp.popStack()
+	rcvr := interp.popStack()
+	if semaphore != om.NilPointer {
+		if om.IsSmallInteger(semaphore) || !interp.memory.ValidOop(semaphore) || interp.fetchClassOf(semaphore) != om.ClassSemaphorePointer {
+			interp.unPop(2)
+			interp.primitiveFail()
+			return
+		}
+	}
+	interp.inputSemaphore = semaphore
+	interp.push(rcvr)
+}
+
+func (interp *Interpreter) primitiveSampleInterval() {
+	interval := interp.popPositiveInteger()
+	rcvr := interp.popStack()
+	if !interp.success {
+		interp.unPop(2)
+		return
+	}
+	if uint64(interval) > 0xFFFFFFFF {
+		interp.unPop(2)
+		interp.primitiveFail()
+		return
+	}
+	interp.inputSampleIntervalMS = uint32(interval)
+	interp.push(rcvr)
+}
+
+func (interp *Interpreter) primitiveInputWord() {
+	_ = interp.popStack()
+	word, ok := interp.dequeueInputWord()
+	if !ok {
+		interp.unPop(1)
+		interp.primitiveFail()
+		return
+	}
+	interp.push(interp.positive16BitIntegerFor(int(word)))
+}
+
 func (interp *Interpreter) primitiveBeCursor() {
 	cursor := interp.popStack()
 	interp.cursorForm = cursor
@@ -1677,6 +1764,59 @@ func (interp *Interpreter) primitiveCursorLink() {
 		return
 	}
 	interp.push(rcvr)
+}
+
+func (interp *Interpreter) enqueueInputWords(words ...uint16) bool {
+	if len(words) == 0 {
+		return true
+	}
+	if interp.inputWordCount+len(words) > len(interp.inputWords) {
+		return false
+	}
+	for _, word := range words {
+		interp.inputWords[interp.inputWriteIndex] = word
+		interp.inputWriteIndex = (interp.inputWriteIndex + 1) % len(interp.inputWords)
+		interp.inputWordCount++
+		if interp.inputSemaphore != om.NilPointer {
+			interp.asynchronousSignal(interp.inputSemaphore)
+		}
+	}
+	return true
+}
+
+func (interp *Interpreter) dequeueInputWord() (uint16, bool) {
+	if interp.inputWordCount == 0 {
+		return 0, false
+	}
+	word := interp.inputWords[interp.inputReadIndex]
+	interp.inputReadIndex = (interp.inputReadIndex + 1) % len(interp.inputWords)
+	interp.inputWordCount--
+	return word, true
+}
+
+func (interp *Interpreter) queueInputEvent(timestamp uint32, eventWords ...uint16) bool {
+	words := make([]uint16, 0, len(eventWords)+3)
+	if interp.haveLastInputEventTick {
+		delta := timestamp - interp.lastInputEventTick
+		if delta <= 0x0FFF {
+			words = append(words, inputEventWord(inputWordTypeDeltaTime, uint16(delta)))
+		} else {
+			words = append(words,
+				inputEventWord(inputWordTypeAbsoluteTime, 0),
+				uint16(timestamp>>16),
+				uint16(timestamp),
+			)
+		}
+	} else {
+		words = append(words, inputEventWord(inputWordTypeDeltaTime, 0))
+	}
+	words = append(words, eventWords...)
+	if !interp.enqueueInputWords(words...) {
+		return false
+	}
+	interp.lastInputEventTick = timestamp
+	interp.haveLastInputEventTick = true
+	return true
 }
 
 type formWords struct {
@@ -2652,20 +2792,66 @@ func (interp *Interpreter) CycleCount() uint64 {
 	return interp.cycleCount
 }
 
-// SetMousePoint updates the current host pointing-device location.
-func (interp *Interpreter) SetMousePoint(x int, y int) {
+func (interp *Interpreter) updateMousePointState(x int, y int) bool {
 	if x < 0 {
 		x = 0
 	}
 	if y < 0 {
 		y = 0
 	}
+	changed := x != interp.mouseX || y != interp.mouseY
 	interp.mouseX = x
 	interp.mouseY = y
 	if interp.cursorLinked {
 		interp.cursorX = x
 		interp.cursorY = y
 	}
+	return changed
+}
+
+// SetMousePoint updates the current host pointing-device location.
+func (interp *Interpreter) SetMousePoint(x int, y int) {
+	interp.updateMousePointState(x, y)
+}
+
+// RecordMouseMotion updates the pointing-device location and, if the active
+// input buffer is configured, queues a movement event respecting the current
+// sample interval.
+func (interp *Interpreter) RecordMouseMotion(x int, y int, timestamp uint32) {
+	if !interp.updateMousePointState(x, y) {
+		return
+	}
+	if interp.haveLastMouseEventTick && timestamp-interp.lastMouseEventTick < interp.inputSampleIntervalMS {
+		return
+	}
+	if interp.queueInputEvent(timestamp,
+		inputEventWord(inputWordTypeMouseX, uint16(interp.mouseX)),
+		inputEventWord(inputWordTypeMouseY, uint16(interp.mouseY)),
+	) {
+		interp.lastMouseEventTick = timestamp
+		interp.haveLastMouseEventTick = true
+	}
+}
+
+// RecordMouseButton updates the pointing-device location and queues a button
+// transition in the active input buffer.
+func (interp *Interpreter) RecordMouseButton(buttonParameter uint16, down bool, x int, y int, timestamp uint32) {
+	interp.updateMousePointState(x, y)
+	typeCode := uint16(inputWordTypeDeviceOff)
+	if down {
+		typeCode = inputWordTypeDeviceOn
+	}
+	_ = interp.queueInputEvent(timestamp, inputEventWord(typeCode, buttonParameter))
+}
+
+// RecordDecodedKey queues an ASCII-like keypress using the decoded-keyboard
+// convention from the Blue Book: a type-3 on word immediately followed by a
+// type-4 off word.
+func (interp *Interpreter) RecordDecodedKey(parameter uint16, timestamp uint32) {
+	_ = interp.queueInputEvent(timestamp,
+		inputEventWord(inputWordTypeDeviceOn, parameter),
+		inputEventWord(inputWordTypeDeviceOff, parameter),
+	)
 }
 
 // Run starts the interpreter from the active process in the image.

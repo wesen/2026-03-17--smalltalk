@@ -55,10 +55,17 @@ func runLoop(interp *interpreter.Interpreter, opts Options) error {
 	}
 	defer func() {
 		_ = doSDL(func() error {
+			sdl.StopTextInput()
 			sdl.Quit()
 			return nil
 		})
 	}()
+	if err := doSDL(func() error {
+		sdl.StartTextInput()
+		return nil
+	}); err != nil {
+		return err
+	}
 
 	var window *sdl.Window
 	var renderer *sdl.Renderer
@@ -171,9 +178,31 @@ func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window
 			case *sdl.QuitEvent:
 				quit = true
 			case *sdl.MouseMotionEvent:
-				updateMousePoint(interp, window, width, height, e.X, e.Y)
+				logicalX, logicalY, ok := mapWindowToLogicalPoint(window, width, height, e.X, e.Y)
+				if ok {
+					interp.RecordMouseMotion(logicalX, logicalY, e.Timestamp)
+				}
 			case *sdl.MouseButtonEvent:
-				updateMousePoint(interp, window, width, height, e.X, e.Y)
+				logicalX, logicalY, ok := mapWindowToLogicalPoint(window, width, height, e.X, e.Y)
+				if ok {
+					interp.SetMousePoint(logicalX, logicalY)
+					if parameter, ok := mouseButtonParameter(e.Button); ok {
+						interp.RecordMouseButton(parameter, e.State == sdl.PRESSED, logicalX, logicalY, e.Timestamp)
+					}
+				}
+			case *sdl.TextInputEvent:
+				for _, r := range e.GetText() {
+					if r < 0 || r > 0x7F {
+						continue
+					}
+					interp.RecordDecodedKey(uint16(r), e.Timestamp)
+				}
+			case *sdl.KeyboardEvent:
+				if e.Type == sdl.KEYDOWN && e.Repeat == 0 {
+					if parameter, ok := specialKeyParameter(e.Keysym.Sym); ok {
+						interp.RecordDecodedKey(parameter, e.Timestamp)
+					}
+				}
 			}
 		}
 		if renderer == nil || texture == nil || width <= 0 || height <= 0 || len(pixels) == 0 {
@@ -194,13 +223,13 @@ func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window
 	return quit, err
 }
 
-func updateMousePoint(interp *interpreter.Interpreter, window *sdl.Window, logicalWidth int, logicalHeight int, x int32, y int32) {
-	if interp == nil || window == nil || logicalWidth <= 0 || logicalHeight <= 0 {
-		return
+func mapWindowToLogicalPoint(window *sdl.Window, logicalWidth int, logicalHeight int, x int32, y int32) (int, int, bool) {
+	if window == nil || logicalWidth <= 0 || logicalHeight <= 0 {
+		return 0, 0, false
 	}
 	windowWidth, windowHeight := window.GetSize()
 	if windowWidth <= 0 || windowHeight <= 0 {
-		return
+		return 0, 0, false
 	}
 	logicalX := int(int64(x) * int64(logicalWidth) / int64(windowWidth))
 	logicalY := int(int64(y) * int64(logicalHeight) / int64(windowHeight))
@@ -210,7 +239,37 @@ func updateMousePoint(interp *interpreter.Interpreter, window *sdl.Window, logic
 	if logicalY >= logicalHeight {
 		logicalY = logicalHeight - 1
 	}
-	interp.SetMousePoint(logicalX, logicalY)
+	return logicalX, logicalY, true
+}
+
+func mouseButtonParameter(button sdl.Button) (uint16, bool) {
+	switch button {
+	case sdl.ButtonLeft:
+		return 128, true
+	case sdl.ButtonMiddle:
+		return 129, true
+	case sdl.ButtonRight:
+		return 130, true
+	default:
+		return 0, false
+	}
+}
+
+func specialKeyParameter(sym sdl.Keycode) (uint16, bool) {
+	switch sym {
+	case sdl.K_BACKSPACE:
+		return 8, true
+	case sdl.K_TAB:
+		return 9, true
+	case sdl.K_RETURN, sdl.K_RETURN2:
+		return 13, true
+	case sdl.K_ESCAPE:
+		return 27, true
+	case sdl.K_DELETE:
+		return 127, true
+	default:
+		return 0, false
+	}
 }
 
 func copyDisplayBits(dst []uint32, snapshot interpreter.DisplaySnapshot) (blackPixels int, whitePixels int) {
