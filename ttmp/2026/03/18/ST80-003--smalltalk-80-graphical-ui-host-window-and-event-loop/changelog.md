@@ -191,3 +191,15 @@ Step 16: implemented Blue Book primitive `97` (`snapshotPrimitive`) by adding im
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — Configures the interpreter snapshot path from the loaded image path (commit fec10f5)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/snapshot.go — Configures the interpreter snapshot path for headless snapshot runs (commit fec10f5)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/11-snapshot-primitive-97-support-writeup.md — Detailed writeup of the primitive-97 bug and fix
+
+
+## 2026-03-18
+
+Step 17: added a direct interpreter-side input-exercise harness and used it to prove that the image does respond to the injected mouse/key sequence once delivery is guaranteed and enough post-input cycles are allowed, narrowing the remaining problem back to host-side SDL/X event delivery (commit 89c742b).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/exercise.go — Added a direct input-exercise API that captures before/after snapshots without SDL/X11 (commit 89c742b)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-exercise-snapshot/main.go — Added a CLI for direct interpreter-side input injection and snapshot comparison (commit 89c742b)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-direct-input-snapshot.sh — Ticket-local wrapper for the new direct input exercise tool (commit 89c742b)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/12-direct-input-exercise-note.md — Recorded the direct-input results and the narrowed diagnosis

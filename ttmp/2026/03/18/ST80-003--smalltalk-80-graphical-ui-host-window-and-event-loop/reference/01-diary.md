@@ -37,6 +37,8 @@ RelatedFiles:
       Note: New OCR-backed verification checkpoint recorded in Step 15
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/11-snapshot-primitive-97-support-writeup.md
       Note: Primitive 97 checkpoint documented in Step 16
+    - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/12-direct-input-exercise-note.md
+      Note: Direct input checkpoint documented in Step 17
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh
       Note: Reusable off-screen screenshot helper for the SDL UI
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh
@@ -57,6 +59,7 @@ LastUpdated: 2026-03-18T09:33:46.413235314-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 
 
@@ -1795,3 +1798,125 @@ ok  	github.com/wesen/st80/pkg/ui	0.011s [no tests to run]
 - New test coverage added:
   - `TestWriteImageRoundTripsObjectMemory`
   - `TestPrimitiveSnapshotWritesImageAndReturnsReceiver`
+
+## Step 17: Direct Input Exercise Harness To Bypass SDL And X11
+
+The primitive-97 slice closed the OCR audit gap, but it did not move the active UI blocker. That blocker is still “why does the off-screen `Xvfb` exercise produce no observable SDL events?” At this point the right next move was not more guessing about `xdotool` or window-manager focus. It was to remove SDL and X11 from the loop entirely and ask a simpler question: if I inject the same style of mouse/key input directly into the interpreter, does the image eventually react?
+
+I added a direct input-exercise harness for exactly that reason. This gives me a fast iteration path that captures before/after framebuffer snapshots around an injected input sequence without relying on host event delivery. The long run produced a decisive result: with guaranteed delivery and enough cycles afterward, the raw display hash changed substantially. That means the image-side input path is alive, and the remaining problem is narrowed back to host-side SDL/X delivery.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 16)
+
+**Assistant interpretation:** Keep moving through the next bottleneck rather than stopping after the primitive-97 fix, and convert the off-screen UI ambiguity into a more precise diagnosis.
+
+**Inferred user intent:** Continue with concrete engineering steps that reduce uncertainty and make the remaining UI problem smaller and more specific.
+
+**Commit (code):** 89c742b — "Add direct input exercise snapshot tool"
+
+### What I did
+- Added [exercise.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/exercise.go) with:
+  - `InputExerciseOptions`
+  - `InputExerciseDiagnostic`
+  - `ExerciseInputAndCapture`
+- Added [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-exercise-snapshot/main.go) as a direct input-exercise CLI.
+- Added ticket-local wrapper [exercise-direct-input-snapshot.sh](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-direct-input-snapshot.sh).
+- The harness now:
+  - loads the image
+  - runs `before` cycles
+  - captures a baseline framebuffer snapshot
+  - injects direct mouse/key events via interpreter calls
+  - runs `after` cycles
+  - captures an `after` framebuffer snapshot
+  - reports changed pixels plus before/after display hashes
+- Validated the new toolchain with:
+
+```bash
+go test ./pkg/ui ./cmd/st80-exercise-snapshot ./cmd/st80-snapshot
+```
+
+- Ran the short exercise:
+
+```bash
+ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-direct-input-snapshot.sh
+```
+
+which reported:
+
+```text
+beforeCycles=50000 afterCycles=50000 changedPixels=28 beforeHash=0162f0db51d0f337b9c13722d5b2dc815344aa4f9b2b9b4f79507aeb1e63586b afterHash=0162f0db51d0f337b9c13722d5b2dc815344aa4f9b2b9b4f79507aeb1e63586b
+```
+
+- Then ran the longer exercise:
+
+```bash
+BEFORE_CYCLES=50000 AFTER_CYCLES=500000 \
+ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-direct-input-snapshot.sh
+```
+
+which reported:
+
+```text
+beforeCycles=50000 afterCycles=500000 changedPixels=10319 beforeHash=0162f0db51d0f337b9c13722d5b2dc815344aa4f9b2b9b4f79507aeb1e63586b afterHash=b680477060f52bcc2a95142d83f17e0f6405822fa4537df0b3dfb2a97b2ff13c beforeBlack=112228 afterBlack=111072
+```
+
+### Why
+- The off-screen SDL path had stopped being a productive source of truth.
+- A direct interpreter-side harness is a better diagnostic because it isolates the image/VM input path from the host-event delivery path.
+- This creates a faster non-X iteration loop for future input experiments.
+
+### What worked
+- The new direct harness builds and runs cleanly.
+- The short run already showed a tiny visible delta, consistent with cursor-only change.
+- The longer run showed a real framebuffer change:
+  - different display hash
+  - `10319` changed pixels
+  - different black-pixel count
+- That is the key result of this step: the image does react to the injected input sequence once delivery is guaranteed and enough time passes.
+
+### What didn't work
+- The harness did not magically fix SDL/X delivery, and it was not meant to.
+- The short `after` run (`50000` cycles) was not enough to prove image-side consumption because it only produced:
+  - `28` changed pixels
+  - identical display hashes
+- That shorter result was ambiguous until I extended the `after` run.
+
+### What I learned
+- The active UI/input blocker is narrower than before. It is not “does the image respond to input at all?” It is “why are the injected Xvfb events not reaching SDL in the current host setup?”
+- A fast direct harness is more valuable than repeatedly tweaking `xdotool` blindly.
+- The image may need a fairly large number of post-input cycles before a meaningful framebuffer change shows up.
+
+### What was tricky to build
+- The tricky part was interpreting the first direct-input result correctly. `changedPixels=28` with identical display hashes was not enough. That could still be just cursor overlay movement rather than a real framebuffer update.
+- The second subtle point was choosing where to inject. I kept the injection at the interpreter boundary using the same public input-recording methods the SDL host loop uses so the harness exercises the same VM-facing behavior without the SDL/X transport layer.
+
+### What warrants a second pair of eyes
+- Review whether the current direct input sequence is the right canonical one for future debugging.
+- Review whether the longer post-input run should become the default in the script, since `50000` cycles is too ambiguous.
+- Review whether the next host-side experiment should use:
+  - `windowfocus` instead of `windowactivate`
+  - a lightweight X window manager
+  - a different event-injection tool
+
+### What should be done in the future
+- Return to the `Xvfb`/SDL delivery problem with this narrower hypothesis: image-side input works, host-side delivery is the remaining suspect.
+- Consider increasing the default `AFTER_CYCLES` in the direct exercise wrapper so the first result is less likely to be ambiguous.
+
+### Code review instructions
+- Start with [12-direct-input-exercise-note.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/12-direct-input-exercise-note.md).
+- Then inspect:
+  - [exercise.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/exercise.go)
+  - [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-exercise-snapshot/main.go)
+  - [exercise-direct-input-snapshot.sh](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-direct-input-snapshot.sh)
+- Validate with the two direct exercise commands listed above.
+
+### Technical details
+- Short run result:
+  - `changedPixels=28`
+  - same raw display hash
+- Long run result:
+  - `changedPixels=10319`
+  - different raw display hash
+  - `beforeBlack=112228`
+  - `afterBlack=111072`
