@@ -19,6 +19,8 @@ package objectmemory
 
 import "fmt"
 
+const maxObjectTableEntries = 1 << 15
+
 // Well-known object pointers from the Blue Book specification (p.576).
 // initializeSmallIntegers
 const (
@@ -397,6 +399,9 @@ func (om *ObjectMemory) instantiate(classPointer uint16, bodySize int, pointerFi
 		if !om.IsFree(oop) {
 			continue
 		}
+		if isReservedSingletonOop(oop) {
+			panic(fmt.Sprintf("reserved singleton marked free: oop=0x%04X class=0x%04X bodySize=%d", oop, classPointer, bodySize))
+		}
 		reusable, ok := om.reusableBodies[oop]
 		if !ok || reusable.size != bodySize {
 			continue
@@ -439,6 +444,9 @@ func (om *ObjectMemory) instantiate(classPointer uint16, bodySize int, pointerFi
 	for i := 0; i < om.otEntryCount; i++ {
 		oop := uint16(i * 2)
 		if om.IsFree(oop) {
+			if isReservedSingletonOop(oop) {
+				panic(fmt.Sprintf("reserved singleton marked free: oop=0x%04X class=0x%04X bodySize=%d", oop, classPointer, bodySize))
+			}
 			if _, tracked := om.reusableBodies[oop]; tracked {
 				continue
 			}
@@ -449,10 +457,38 @@ func (om *ObjectMemory) instantiate(classPointer uint16, bodySize int, pointerFi
 		}
 	}
 	// No free entry — extend the OT
+	if om.otEntryCount >= maxObjectTableEntries {
+		panic(fmt.Sprintf("object table exhausted: otEntryCount=%d class=0x%04X bodySize=%d", om.otEntryCount, classPointer, bodySize))
+	}
 	newOop := uint16(om.otEntryCount * 2)
 	om.otEntryCount++
 	om.objectTable = append(om.objectTable, flags, uint16(locationInSegment))
 	return newOop
+}
+
+func isReservedSingletonOop(oop uint16) bool {
+	switch oop {
+	case NilPointer,
+		FalsePointer,
+		TruePointer,
+		SchedulerAssociationPointer,
+		ClassStringPointer,
+		ClassArrayPointer,
+		ClassMethodContextPointer,
+		ClassBlockContextPointer,
+		ClassPointPointer,
+		ClassLargePositiveIntegerPointer,
+		ClassMessagePointer,
+		ClassCharacterPointer,
+		DoesNotUnderstandSelector,
+		CannotReturnSelector,
+		SpecialSelectorsPointer,
+		CharacterTablePointer,
+		MustBeBooleanSelector:
+		return true
+	default:
+		return false
+	}
 }
 
 // InstantiateClass creates a new pointer or word object with the given word length.

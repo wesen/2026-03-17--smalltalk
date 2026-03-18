@@ -2550,3 +2550,119 @@ ok  	github.com/wesen/st80/pkg/ui	0.038s
 ### Technical details
 - The key semantic clue was that `fetchClassOf(true)` returned method OOP `0x6458` (`<True>not`) instead of a class OOP.
 - That points strongly at a class-word overwrite, which is exactly what a negative field index can do.
+
+## Step 23: Catch object-table OOP wrap explicitly
+
+### Prompt / goal
+After the next live run failed in `primitiveMakePoint` with:
+
+```text
+panic: StorePointer: OOP 0x0002 field 0 out of bounds (wordLen=0, loc=0, value=0x005F)
+```
+
+determine how a fresh `Point` allocation could possibly return `nil`, and hard-stop the allocator if the root cause is OOP-space wrap.
+
+### Why this failure matters
+The relevant code in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) is straightforward:
+
+```go
+pointResult := interp.instantiateClassWithPointers(om.ClassPointPointer, 2)
+interp.storePointer(0, pointResult, rcvr)
+interp.storePointer(1, pointResult, arg)
+```
+
+So if `StorePointer` reports `OOP 0x0002`, then `instantiateClassWithPointers` returned `0x0002`.
+
+That should never happen for a live allocated object.
+
+### Reasoning
+There were two plausible explanations:
+
+1. a reserved/free singleton OOP such as `nil` had somehow been marked reusable
+2. the allocator extended past the 15-bit OOP space, so `uint16(otEntryCount * 2)` wrapped around to `0x0002`
+
+The second explanation fits this crash very well:
+
+- initial image OT size is finite
+- live UI/display work allocates real `Point`s via primitive `18` (`@`)
+- there is still no general GC / compacting storage manager
+- once `otEntryCount` crosses the 15-bit object-pointer limit, `newOop := uint16(om.otEntryCount * 2)` can wrap into reserved low OOPs like `0x0002`
+
+That would make `primitiveMakePoint` "allocate" `nil` even though the nil entry itself was never updated.
+
+### What I changed
+- Added:
+
+```go
+const maxObjectTableEntries = 1 << 15
+```
+
+to [objectmemory.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go).
+
+- Hardened `instantiate` so it now panics explicitly instead of wrapping:
+
+```go
+if om.otEntryCount >= maxObjectTableEntries {
+    panic(fmt.Sprintf("object table exhausted: otEntryCount=%d class=0x%04X bodySize=%d", ...))
+}
+```
+
+before computing `newOop := uint16(om.otEntryCount * 2)`.
+- Added an allocator trap for the other plausible route: if any reserved singleton/root OOP (`nil`, `true`, `false`, scheduler association, special selectors, etc.) is ever observed as a free OT entry during allocation, `instantiate` now panics immediately with:
+
+```text
+reserved singleton marked free: oop=...
+```
+
+instead of silently reusing it.
+
+### Why
+- Wrapping into `0x0002`, `0x0004`, `0x0006`, or other reserved singleton/root OOPs is catastrophic and very hard to diagnose after the fact.
+- If the live UI path is now hitting real object-table exhaustion, that is the true frontier and should be reported directly.
+
+### Tests added
+In [objectmemory_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory_test.go):
+
+- `TestInstantiatePanicsWhenObjectTableWouldOverflow15BitOopSpace`
+- `TestInstantiatePanicsWhenReservedSingletonIsMarkedFree`
+
+### Validation
+Ran:
+
+```bash
+gofmt -w pkg/objectmemory/objectmemory.go pkg/objectmemory/objectmemory_test.go
+go test ./pkg/objectmemory ./pkg/ui ./cmd/st80-ui ./cmd/ebiten-hello -run 'TestInstantiatePanicsWhenObjectTableWouldOverflow15BitOopSpace|TestInstantiatePanicsWhenReservedSingletonIsMarkedFree|TestStorePointerPanicsWhenFieldIndexIsNegative|TestStorePointerPanicsWhenFieldIndexExceedsObjectLength|TestStoreBytePanicsWhenByteIndexExceedsObjectLength|TestCopyDisplayBitsOverlaysCursorBits'
+```
+
+Result:
+
+```text
+ok  	github.com/wesen/st80/pkg/objectmemory	0.009s
+ok  	github.com/wesen/st80/pkg/ui	0.021s
+?   	github.com/wesen/st80/cmd/st80-ui	[no test files]
+?   	github.com/wesen/st80/cmd/ebiten-hello	[no test files]
+```
+
+### What I learned
+- The earlier singleton-corruption trap and the new `primitiveMakePoint` crash fit together cleanly:
+  - first, we removed silent adjacent-object corruption
+  - then the allocator surfaced a cleaner invariant violation
+- The live graphical path is now likely pushing the VM into a resource frontier that the idle/headless path did not hit.
+
+### What should happen next
+- Re-run `st80-ui`.
+- If the next panic is:
+  - `object table exhausted ...`
+  then the project has reached the expected no-GC/no-general-reclamation frontier under real UI load
+- If the next panic is:
+  - `reserved singleton marked free ...`
+  then a lower-level OT-entry corruption path still exists and the allocator is now surfacing it at the first safe point
+- If the next panic is different, it will at least no longer be hidden behind a wrapped singleton OOP
+
+### Code review instructions
+- Review [objectmemory.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go) around `maxObjectTableEntries` and `instantiate`.
+- Review [objectmemory_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory_test.go) for the new overflow regression.
+
+### Technical details
+- `primitiveMakePoint` was the first primitive to expose the allocator problem clearly because `@` allocates a fresh `Point` and immediately stores into it.
+- Returning `0x0002` from that path is an unmistakable OOP-space invariant violation.

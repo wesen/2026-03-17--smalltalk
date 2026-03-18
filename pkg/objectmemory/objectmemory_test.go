@@ -67,6 +67,33 @@ func TestInstantiatePanicsWhenObjectSpaceWouldWrapPastSegmentLimit(t *testing.T)
 	om.InstantiateClass(ClassArrayPointer, 1, true)
 }
 
+func TestInstantiatePanicsWhenObjectTableWouldOverflow15BitOopSpace(t *testing.T) {
+	om := New(make([]uint16, maxObjectTableEntries*2), nil)
+	om.otEntryCount = maxObjectTableEntries
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected object-table exhaustion panic, got none")
+		}
+	}()
+
+	om.InstantiateClass(ClassArrayPointer, 1, true)
+}
+
+func TestInstantiatePanicsWhenReservedSingletonIsMarkedFree(t *testing.T) {
+	om := New(make([]uint16, MustBeBooleanSelector+2), nil)
+	om.objectTable[otIndex(NilPointer)] = otFreeBit
+	om.otEntryCount = len(om.objectTable) / 2
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected reserved-singleton-free panic, got none")
+		}
+	}()
+
+	om.InstantiateClass(ClassArrayPointer, 1, true)
+}
+
 func TestStorePointerPanicsWhenFieldIndexIsNegative(t *testing.T) {
 	om := New(nil, nil)
 	oop := om.InstantiateClass(ClassArrayPointer, 2, true)

@@ -262,3 +262,14 @@ Step 22: used the richer panic to identify that `true`'s class word had been sil
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added reflective primitive bounds checks for `objectAt:` / `objectAt:put:` / `instVarAt:` / `instVarAt:put:`
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Added regressions proving the reflective primitives no longer accept corrupting zero/oversized indices
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Recorded the new diagnosis and defensive fix path
+
+
+## 2026-03-18
+
+Step 23: after a new early `primitiveMakePoint` failure showed allocation apparently returning `nil`, added an explicit 15-bit object-table exhaustion guard plus a reserved-singleton-free trap and regressions so the allocator can no longer silently wrap `otEntryCount*2` or reuse corrupted singleton OT entries; this narrows the next live-run result toward either explicit OT exhaustion or a specific lower-level OT corruption path.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go — Added `maxObjectTableEntries`, explicit object-table exhaustion panic, and a reserved-singleton-free guard in `instantiate`
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory_test.go — Added regressions for 15-bit OOP-space exhaustion and reserved-singleton reuse
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Recorded why the `primitiveMakePoint` crash points at allocator wrap / OT exhaustion
