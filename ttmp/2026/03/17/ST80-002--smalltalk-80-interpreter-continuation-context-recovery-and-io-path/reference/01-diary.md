@@ -1011,3 +1011,111 @@ go test ./pkg/interpreter -run 'TestTrace2SendSelectorsMatch|TestTrace3SendSelec
 go test ./...
 git commit -m "Implement perform and cursor primitives"
 ```
+
+## Step 9: Tactical Headless copyBits Success Path and Quiescent Scheduler Loop
+
+This step was intentionally tactical rather than final. After the notifier/debugger path was pushed through `perform:`, cursor primitives, and `asOop`, the two-million-cycle probe still bottomed out in `BitBlt>>copyBits`. That was the first point where the remaining blocker clearly belonged to the display subsystem rather than the general interpreter/runtime.
+
+Before committing to a full BitBlt engine, I wanted one answer: if `copyBits` simply succeeds in headless mode, does the image settle into a stable scheduler loop or does it immediately expose another non-display correctness problem? The answer was clear. A temporary headless `primitiveCopyBits` success path moved the image out of the notifier/debugger chain and into a stable low-priority ProcessorScheduler loop that repeated consistently through five million cycles.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 7)
+
+**Assistant interpretation:** Keep pushing past the primitive-gap checkpoint and determine whether the remaining frontier is now truly graphical/display work or whether more core runtime failures are still hiding behind `copyBits`.
+
+**Inferred user intent:** Separate “the interpreter now settles” from “graphics are fully correct” so later work can attack the real BitBlt/UI problem without confusion.
+
+**Commit (code):** c1384ff — "Add headless copyBits success path"
+
+### What I did
+- Added a temporary `primitiveCopyBits` implementation in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - pop the BitBlt receiver
+  - push it back
+  - report primitive success
+- Made sure the zero-argument primitive stack shape stayed correct. The first draft would have duplicated the receiver; I corrected that immediately before validation.
+- Re-ran the long-run state probe:
+  - `go test ./pkg/interpreter -run TestLogStateAtTwoMillionCycles -v`
+- Re-ran the full suite:
+  - `go test ./...`
+- Ran a longer command-line integration run:
+  - `go run ./cmd/st80 data/VirtualImage 5000000`
+- Inspected the resulting long-run state:
+  - receiver class `0x6626` = `ProcessorScheduler`
+  - active process priority `1`
+  - sender chain depth `1`
+  - repeating bytecode/IP/SP pattern over millions of cycles
+
+### Why
+- `copyBits` was the next real display blocker, but I did not yet know whether a fully correct BitBlt implementation was necessary just to reach quiescence.
+- A tactical headless success path is a fast and informative experiment:
+  - if the image still falls into errors, there are deeper non-display problems
+  - if the image settles, the remaining work is more honestly “rendering/display correctness”
+- That distinction matters before creating any UI ticket or claiming the runtime is effectively stable.
+
+### What worked
+- The notifier/debugger chain rooted in `BitBlt>>copyBits` disappeared.
+- `go test ./...` stayed green.
+- `go run ./cmd/st80 data/VirtualImage 5000000` completed cleanly.
+- The long-run state is now highly regular:
+
+```text
+[cycle 500000]  ctx=0x6664 ip=12 sp=5 bc=153 method=0x666E rcvr=0x6626
+[cycle 1000000] ctx=0x6664 ip=11 sp=6 bc=113 method=0x666E rcvr=0x6626
+[cycle 1500000] ctx=0x6664 ip=10 sp=5 bc=163 method=0x666E rcvr=0x6626
+```
+
+- That repeating pattern continued through `5000000` cycles, which is strong evidence of a quiescent scheduler loop rather than another hidden error path.
+
+### What didn't work
+- This is not a real BitBlt implementation. It does not:
+  - copy pixels
+  - clip
+  - apply combination rules
+  - update any host-visible display
+- So it would be incorrect to treat this step as “graphics done” or “display support complete.”
+
+### What I learned
+- The remaining frontier after this step is much clearer:
+  - core interpreter/runtime stability has improved enough that the image can settle
+  - real remaining display work is now mostly about replacing the tactical headless `copyBits` path with real semantics
+- The two-million-cycle probe is now valuable not just for catching failures but for characterizing whether the VM is quiescent.
+- The active process priority dropping to `1` with a one-frame sender chain rooted in `ProcessorScheduler` is a much better sign than the earlier notifier/debugger chains.
+
+### What was tricky to build
+- The tricky part was discipline, not complexity. A temporary `copyBits` success path is useful, but only if it is documented explicitly as tactical so nobody later mistakes it for a final display implementation.
+- Even the primitive body itself had a small sharp edge: for a zero-argument primitive, returning the receiver means replacing the stack top, not duplicating it.
+
+### What warrants a second pair of eyes
+- Reviewers should explicitly verify that this step is being treated as a tactical headless display stopgap, not as the final BitBlt engine.
+- The current quiescent loop state should be reviewed alongside the scheduler/process objects if we later want to claim the image is truly idling exactly as expected.
+
+### What should be done in the future
+- Replace the temporary headless `primitiveCopyBits` path with real BitBlt/display semantics.
+- Decide whether additional display/input primitives are still needed once real BitBlt work starts.
+- Only open the separate graphical UI ticket after the temporary headless path has been replaced with something suitable for actual rendering.
+
+### Code review instructions
+- Start in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `primitiveCopyBits`
+- Then review the long-run validation in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestLogStateAtTwoMillionCycles`
+- Validate with:
+  - `go test ./...`
+  - `go test ./pkg/interpreter -run TestLogStateAtTwoMillionCycles -v`
+  - `go run ./cmd/st80 data/VirtualImage 5000000`
+
+### Technical details
+- Important post-fix long-run identifiers:
+  - receiver class `0x6626` = `ProcessorScheduler`
+  - active context `0x6664`
+  - active process `0x6662`
+  - priority `1`
+- Commands used in this step:
+
+```bash
+go test ./pkg/interpreter -run TestLogStateAtTwoMillionCycles -v
+go test ./...
+go run ./cmd/st80 data/VirtualImage 5000000
+git commit -m "Add headless copyBits success path"
+```

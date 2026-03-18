@@ -95,3 +95,12 @@ Step 8: Implemented `perform:` / `perform:withArguments:`, `beCursor`, `cursorLi
 
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Control/input/system primitive fixes for the long-run notifier path (commit d0346da)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — `trace2` selector regression and 2,000,000-cycle state probe (commit d0346da)
+
+
+## 2026-03-18
+
+Step 9: Added a temporary headless `primitiveCopyBits` success path; this removed the immediate `BitBlt>>copyBits` notifier/debugger chain and let the image settle into a stable low-priority ProcessorScheduler loop through 5,000,000 cycles, while making it explicit that real BitBlt/display semantics are still pending (commit c1384ff).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Tactical headless `primitiveCopyBits` implementation (commit c1384ff)
