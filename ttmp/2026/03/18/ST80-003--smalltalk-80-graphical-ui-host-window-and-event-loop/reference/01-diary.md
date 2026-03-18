@@ -33,6 +33,8 @@ RelatedFiles:
       Note: |-
         SDL host window, render loop, and bitmap conversion (commit 8e85254)
         SDL host window and display bitmap presentation loop (commit 8e85254)
+    - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/10-blue-book-ocr-verification-pass.md
+      Note: New OCR-backed verification checkpoint recorded in Step 15
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh
       Note: Reusable off-screen screenshot helper for the SDL UI
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh
@@ -53,6 +55,7 @@ LastUpdated: 2026-03-18T09:33:46.413235314-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 
 
@@ -1565,3 +1568,122 @@ go test ./pkg/ui ./pkg/interpreter ./cmd/st80-ui -run 'TestCopyDisplayBitsOverla
   - pixel-level compare reported zero changed pixels
   - the UI run log contained no input-debug lines
 - That combination is consistent with metadata/capture variation, not real screen-content change.
+
+## Step 15: OCR Verification Pass Against The Live VM And Test Surface
+
+The intern OCR handoff is now in the useful state: it is not just a pile of text, it is structured enough to audit against the VM. So this step was a verification pass, not another implementation pass. I used the extracted class-layout and primitive-audit material as the source of expected field order and primitive surface, then compared that against the current interpreter, UI code, and image-side selector inventory.
+
+This was worth doing now because the project has accumulated enough bug-fix history that “it seems consistent” is no longer a good standard. I wanted a concrete answer to two questions: does the OCR-backed Blue Book data actually agree with the current UI/display/input/timer implementation, and if not, where are the remaining mismatches? The pass found mostly good news and one real gap: primitive `97` is in the audit and still absent from the VM's I/O dispatch table.
+
+### Prompt Context
+
+**User prompt (verbatim):** "I think our intern now finished with their OCR, you can commit and do a big verification pass."
+
+**Assistant interpretation:** Treat the OCR pack as a serious audit source, compare it against the live VM and current tests, record the verification results in the ticket, and commit the checkpoint.
+
+**Inferred user intent:** Use the intern's OCR work to raise confidence in the interpreter/UI implementation and surface any remaining discrepancies systematically instead of continuing on assumptions.
+
+### What I did
+- Read the ticket-local OCR outputs, especially:
+  - `reference/ocr-bluebook/02-class-layouts.csv`
+  - `reference/ocr-bluebook/04-primitive-audit.csv`
+  - `reference/ocr-bluebook/05-display-and-bitblt-audit.md`
+  - `reference/ocr-bluebook/07-open-questions.md`
+- Cross-checked the extracted field orders against `pkg/interpreter/interpreter.go`, focusing on:
+  - `Point`
+  - `Rectangle`
+  - `Form`
+  - `BitBlt`
+- Cross-checked the OCR-audited UI/timer primitive surface against `dispatchInputOutputPrimitives`.
+- Cross-checked the live image selector inventory in `data/method.oops` for the currently relevant input/timer/display selectors.
+- Ran focused verification commands:
+
+```bash
+go test ./pkg/ui ./cmd/st80-ui
+go test ./pkg/interpreter -run 'TestTrace2SendSelectorsMatch|TestTrace3DisplayStartupSendSelectorsMatch|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles|TestPrimitive(MousePointReturnsConfiguredPoint|CursorLocPutUpdatesCursorAndReturnsReceiver|CursorLocPutUpdatesMouseWhenLinked|InputSemaphoreStoresSemaphoreAndReturnsReceiver|SampleIntervalStoresMillisecondsAndReturnsReceiver|InputWordReturnsQueuedWord|SecondClockIntoStoresLittleEndianSeconds|MillisecondClockIntoStoresLittleEndianTicks|SignalAtMillisecondsSignalsImmediatelyWhenPastDue|SignalAtMillisecondsSchedulesFutureSignal)'
+rg -n 'primCursorLocPut|primMousePt|primSampleInterval|primInputWord|primInputSemaphore|secondClockInto|millisecondClockInto|signal:atMilliseconds:|beDisplay|beCursor' data/method.oops
+rg -n 'case 9[0-9]|case 100|case 101|case 102|snapshotPrimitive|dispatchInputOutputPrimitives' pkg/interpreter/interpreter.go
+```
+
+- Created [10-blue-book-ocr-verification-pass.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/10-blue-book-ocr-verification-pass.md).
+- Marked the OCR-pack task complete and added follow-up tasks for:
+  - primitive `97`
+  - the impractical blanket `go test ./pkg/...` path
+
+### Why
+- The OCR pack is only useful if it can survive contact with the code.
+- The display/input/timer path is now large enough that a structured audit is higher value than another ad hoc probe.
+- The project needs a written checkpoint that says what the OCR now proves, what it does not prove, and what concrete work remains.
+
+### What worked
+- The OCR layout tables matched the current interpreter constants for the display/UI-critical classes and structures.
+- The active UI/timer primitive surface matched the audit for primitives `90` through `102` except for `97`.
+- The image-side selector inventory confirmed that the relevant Smalltalk methods exist in the loaded image.
+- Focused verification coverage is green:
+
+```text
+ok  	github.com/wesen/st80/pkg/ui	(cached)
+?   	github.com/wesen/st80/cmd/st80-ui	[no test files]
+ok  	github.com/wesen/st80/pkg/interpreter	0.044s
+```
+
+- The OCR task can now honestly be marked done. It is no longer just “instructions were written”; there is now an actual verification artifact built from the extracted material.
+
+### What didn't work
+- `go test ./pkg/...` is not currently a good blanket verifier. It launched `interpreter.test`, kept consuming CPU, and did not finish promptly enough to treat as a routine verification step.
+- The pass found one concrete audited gap:
+  - primitive `97` (`snapshotPrimitive`) is present in the OCR primitive audit but missing from `dispatchInputOutputPrimitives`
+- The first frontmatter-validation attempt used the wrong path shape for `docmgr validate`:
+
+```text
+Error: open /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/10-blue-book-ocr-verification-pass.md: no such file or directory
+```
+
+  - The fix was to pass the path relative to the docs root (`2026/...`) instead of `ttmp/...`.
+
+### What I learned
+- The intern's OCR is good enough to use for real audits right now.
+- The field-order bugs we fixed earlier were not accidental one-offs; this kind of OCR-backed table is exactly the right defense against future layout/argument-order mistakes.
+- The current implementation gap is not broad UI drift. It is narrow and concrete.
+- The default package test surface needs cleanup if we want “run the whole package tree” to mean something practical during iteration.
+
+### What was tricky to build
+- The tricky part was resisting the temptation to claim more certainty than the pass actually provides. The OCR pack can verify field order, selector expectations, and primitive presence/absence, but it does not automatically prove every method header or every runtime path.
+- The other tricky part was validation hygiene. A slow or sprawling test suite can create fake confidence if I report it loosely. I killed the long-running `go test ./pkg/...` attempt and reran a deliberate focused verification set instead so the ticket reflects what actually passed.
+
+### What warrants a second pair of eyes
+- Review the new verification note for whether the “implemented vs missing” primitive table says enough for future audits.
+- Review whether primitive `97` should be implemented now or deliberately deferred with a written rationale.
+- Review whether the long-running interpreter diagnostics should move behind a build tag, a naming convention, or a separate integration-test command.
+
+### What should be done in the future
+- Implement or explicitly defer primitive `97` with a ticket-local writeup.
+- Make `go test ./pkg/...` practical again by splitting out the heavy interpreter diagnostics from routine package verification.
+- Reuse the OCR tables to audit more primitive families beyond the current UI/display/input/timer slice.
+
+### Code review instructions
+- Start with [10-blue-book-ocr-verification-pass.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/10-blue-book-ocr-verification-pass.md).
+- Then inspect [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - the constant blocks near the top
+  - `dispatchInputOutputPrimitives`
+- Then inspect the OCR source files under `reference/ocr-bluebook/`.
+- Validate with the focused commands listed above instead of relying on `go test ./pkg/...`.
+
+### Technical details
+- Concrete audit finding:
+  - primitives `90`, `91`, `92`, `93`, `94`, `95`, `96`, `98`, `99`, `100`, `101`, `102` are present in the current I/O dispatch path
+  - primitive `97` is the current omission
+- Frontmatter hygiene after correcting the path shape:
+
+```bash
+docmgr validate frontmatter --doc 2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/10-blue-book-ocr-verification-pass.md --suggest-fixes
+docmgr validate frontmatter --doc 2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md --suggest-fixes
+```
+- Concrete selector evidence from `data/method.oops` includes:
+  - `<InputState>primInputSemaphore:`
+  - `<InputState>primInputWord`
+  - `<Time class>secondClockInto:`
+  - `<Time class>millisecondClockInto:`
+  - `<ProcessorScheduler>signal:atMilliseconds:`
+  - `<DisplayScreen>beDisplay`
+  - `<Cursor>beCursor`

@@ -164,3 +164,14 @@ Step 14: added live input-debug counters plus a `-input-debug` UI flag, then rer
 - /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go — Added the `-input-debug` flag
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/exercise-ui-input-and-capture.sh — Exercise script now runs the UI with `-input-debug`
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/09-offscreen-input-exercise-note.md — Updated note with the no-debug-output result
+
+
+## 2026-03-18
+
+Step 15: verified the intern's Blue Book OCR pack against the live VM/UI code, confirmed that the class-layout and active UI/timer primitive mappings match the extraction, and recorded the two remaining audit findings: missing primitive `97` and the impractical blanket `go test ./pkg/...` path for verification.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/10-blue-book-ocr-verification-pass.md — OCR-backed verification results, commands, and concrete discrepancies
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Detailed diary entry for the OCR verification pass
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/tasks.md — Marked the OCR-pack task done and added follow-up tasks for primitive `97` and default test-suite hygiene

@@ -16,8 +16,10 @@
 - [x] Decide how to render or synthesize the Smalltalk cursor on the host side
 - [ ] Verify the UI command visually in a real desktop session and record the result in this ticket
 - [x] Investigate why the corrected 640x480 designated display remains all white and never receives visible drawing
-- [ ] Build a Blue Book OCR extraction pack so we can audit class layouts, method argument order, and primitive expectations systematically
+- [x] Build a Blue Book OCR extraction pack so we can audit class layouts, method argument order, and primitive expectations systematically
 - [ ] Expand the decoded-keyboard host mapping to cover control/meta-key edge cases beyond ASCII text and the main editing keys
 - [ ] Audit live image behavior around the new timer primitives and delayed-process wakeups in a real desktop session
 - [ ] Verify the host-rendered cursor shape/location visually in a real desktop session
 - [ ] Figure out why the off-screen Xvfb exercise is not producing any recorded host events in the SDL loop
+- [ ] Implement or explicitly defer Blue Book primitive `97` (`snapshotPrimitive`) after the OCR verification pass confirmed it is missing from the current I/O dispatch table
+- [ ] Split long-running interpreter diagnostics out of the default `go test ./pkg/...` path so package-wide verification is practical
