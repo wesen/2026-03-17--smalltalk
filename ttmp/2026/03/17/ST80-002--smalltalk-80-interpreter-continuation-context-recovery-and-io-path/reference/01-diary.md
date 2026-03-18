@@ -11,16 +11,21 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
-    - Path: /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go
-      Note: Decode SmallInteger-backed method headers, header extensions, and class specs before bit extraction (commit dd8e4ba)
-    - Path: /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go
-      Note: Regression test for startup execution past the former context overflow (commit dd8e4ba)
+    - Path: pkg/interpreter/interpreter.go
+      Note: |-
+        Decode SmallInteger-backed method headers, header extensions, and class specs before bit extraction (commit dd8e4ba)
+        Real BitBlt copy loop and WordArray-backed form acceptance (commit ea9ea41)
+    - Path: pkg/interpreter/interpreter_test.go
+      Note: |-
+        Regression test for startup execution past the former context overflow (commit dd8e4ba)
+        Graphics diagnostics and long-run validation for the real BitBlt path (commit ea9ea41)
 ExternalSources: []
 Summary: Continuation diary for finishing the Smalltalk-80 VM after the initial handoff ticket.
 LastUpdated: 2026-03-18T00:18:00-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 # Diary
 
@@ -1118,4 +1123,174 @@ go test ./pkg/interpreter -run TestLogStateAtTwoMillionCycles -v
 go test ./...
 go run ./cmd/st80 data/VirtualImage 5000000
 git commit -m "Add headless copyBits success path"
+```
+
+## Step 10: Real BitBlt Copy Loop, WordArray Source-Form Fix, and Stable Long-Run Recovery
+
+This step replaced the temporary headless `copyBits` success path with an actual in-memory BitBlt implementation. I treated the earlier headless milestone as strictly tactical and used the Blue Book BitBlt simulation structure as the implementation plan: clip the transfer, compute masks and skew, handle overlap direction, calculate per-line deltas, then run the copy loop with merge rules.
+
+The first implementation pass was close but not yet correct enough for the live image. It compiled, preserved the early `trace2` regression, and immediately exposed the exact remaining mismatch: around cycle `1,972,594`, `BitBlt>>copyBitsAgain` still hit `primitiveFailed`. The added primitive-level diagnostics showed the failure was not in mask arithmetic or word indices; it was a form-shape assumption. The image was legally using `WordArray` storage for cursor and halftone source forms, while my helper only accepted `DisplayBitmap`. Once I widened that check to accept any non-pointer word object, the failure disappeared and the VM returned to the same quiescent scheduler loop through two million and five million cycles.
+
+### Prompt Context
+
+**User prompt (verbatim):** "alright, do it, no questions asked, go as far as you can until we have a working UI"
+
+**Assistant interpretation:** Replace the tactical display stub with real BitBlt semantics, push the interpreter as far as possible without pausing for planning questions, and only then move into the separate UI work.
+
+**Inferred user intent:** Convert the current “stable but fake graphics” checkpoint into a real display-capable runtime foundation, while keeping the debugging trail and commits detailed enough for later review.
+
+**Commit (code):** ea9ea41 — "Implement in-memory BitBlt copy loop"
+
+### What I did
+- Added explicit graphics field indices to [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) for:
+  - `Form`
+  - `Point`
+  - `Rectangle`
+  - `BitBlt`
+- Added word access wrappers and BitBlt support helpers:
+  - `fetchWord`
+  - `storeWord`
+  - `smallIntegerValueOf`
+  - `formWordsOf`
+  - `rotate16`
+  - `mergeWord`
+- Implemented a real `doPrimitiveCopyBits` path with the Blue Book structure:
+  - clip/adjust source and destination
+  - compute raster size, masks, skew, and word count
+  - detect overlap and reverse copy direction when required
+  - calculate preload/start indices and line deltas
+  - execute the vertical and horizontal copy loops
+  - apply combination rules `0..15`
+- Replaced the old headless `primitiveCopyBits` success stub with the real BitBlt path and primitive-failure propagation.
+- Added retained graphics diagnostics in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestDumpGraphicsClassLayouts`
+  - `TestDumpGraphicsMethodHeaders`
+  - `TestDumpFirstCopyBitsFailureState`
+- Added primitive-level BitBlt failure breadcrumbs on the interpreter:
+  - `lastCopyBitsFailure`
+  - `lastCopyBitsBitBlt`
+  - `lastCopyBitsCycle`
+- Used those breadcrumbs to identify the first real failure:
+
+```text
+lastCopyBitsFailure cycle=1972594 bitBlt=0xF0C4 detail=invalid source form oop=0x0F88
+```
+
+- Ran the focused failure dump and confirmed the critical object-shape mismatch:
+  - destination form bits class: `DisplayBitmap`
+  - source form class: `Cursor`
+  - source form bits class: `WordArray`
+  - halftone form bits class: `WordArray`
+- Relaxed `formWordsOf` so BitBlt accepts any valid non-pointer word object as bitmap backing storage instead of requiring class `DisplayBitmap`.
+- Re-ran validations:
+  - `go test ./pkg/interpreter -run TestTrace2SendSelectorsMatch -v`
+  - `go test ./pkg/interpreter -run TestLogStateAtTwoMillionCycles -v`
+  - `RUN_ST80_DIAGNOSTIC=1 go test ./pkg/interpreter -run TestDumpFirstCopyBitsFailureState -v`
+  - `go test ./...`
+  - `go run ./cmd/st80 data/VirtualImage 5000000`
+
+### Why
+- The headless `copyBits` stub had already done its job. It proved that the remaining frontier was in display semantics rather than core interpreter stability, so leaving it in place would only hide real graphics/runtime bugs.
+- The Blue Book BitBlt simulation is detailed enough to implement directly without consulting third-party code, which stays inside the project’s reference boundary.
+- Adding explicit primitive-level failure diagnostics was cheaper and safer than guessing which part of the copy loop was wrong once the image returned to `primitiveFailed`.
+
+### What worked
+- The first BitBlt implementation pass preserved the early hard regression:
+  - `TestTrace2SendSelectorsMatch` still passed
+- The BitBlt failure breadcrumbs immediately narrowed the bug from “graphics still broken” to “source form rejected by shape validation.”
+- The source-form dump was decisive:
+  - the cursor source form and halftone form both used `WordArray`
+  - those are legal word-backed bit stores for this image
+- Once `formWordsOf` accepted any non-pointer word object, the primitive failure disappeared through the investigated range.
+- Long-run validation is back to the same stable quiescent loop:
+
+```text
+[cycle 500000]  ctx=0x6664 ip=12 sp=5 bc=153 method=0x666E rcvr=0x6626
+[cycle 1000000] ctx=0x6664 ip=11 sp=6 bc=113 method=0x666E rcvr=0x6626
+[cycle 1500000] ctx=0x6664 ip=10 sp=5 bc=163 method=0x666E rcvr=0x6626
+[cycle 2000000] ctx=0x6664 ip=12 sp=5 bc=153 method=0x666E rcvr=0x6626
+```
+
+- `go test ./...` is green with the real BitBlt path active.
+
+### What didn't work
+- The first implementation of `formWordsOf` was too strict:
+  - it assumed all valid form backing stores had class `DisplayBitmap`
+  - the image contradicted that assumption by using `WordArray` for cursor/halftone forms
+- The first two-million-cycle run with the new BitBlt code did not remain quiescent; it went back into `NotifierView` through:
+  - `BitBlt>>copyBitsAgain`
+  - `Object>>primitiveFailed`
+
+### What I learned
+- In this image, “form bits” means “word-addressable backing storage,” not necessarily “instance of `DisplayBitmap`.”
+- The most important BitBlt diagnostic was not the sender chain but the primitive-local failure reason. Without that, it would have been too easy to waste time second-guessing the merge loop.
+- The current runtime foundation is meaningfully stronger now:
+  - `copyBits` is no longer fake
+  - the long-run scheduler loop still survives
+  - the next honest frontier is host-side UI presentation, not another hidden `copyBits` failure
+
+### What was tricky to build
+- The tricky part was not just translating the Blue Book algorithm literally. The real difficulty was making the implementation precise enough for the live image while still leaving enough introspection behind to understand the first failure. A wrong assumption about object shape can look like a deep raster/overlap/math bug for a long time unless the primitive reports exactly what it rejected.
+- The overlap/preload/mask portion of BitBlt is also inherently sharp-edged. The safest way to move was to implement the Blue Book phases in order and validate long-run behavior after each substantial adjustment rather than trying to optimize or simplify the algorithm upfront.
+
+### What warrants a second pair of eyes
+- `doPrimitiveCopyBits` should be reviewed carefully for edge cases outside the currently exercised image paths:
+  - overlap direction reversal
+  - preload behavior
+  - mask handling for narrow one-word transfers
+  - merge rules beyond the ones heavily used during startup and quiescence
+- The retained diagnostics in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go) are useful but should stay diagnostic-only unless they become stable enough to harden.
+
+### What should be done in the future
+- Start the separate UI ticket now that the interpreter/runtime is stable with a real BitBlt path.
+- Expose the display bitmap to a host window and refresh it continuously instead of validating only via long-run quiescence.
+- Revisit whether additional display/input primitives are still missing once a real host window starts driving the image visually.
+- Keep the BitBlt failure breadcrumbs until the UI path is stable; they are cheap insurance against the next display regression.
+
+### Code review instructions
+- Start in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - graphics field constants near the top
+  - `formWordsOf`
+  - `mergeWord`
+  - `doPrimitiveCopyBits`
+  - `primitiveCopyBits`
+- Then review the retained diagnostics and long-run validation in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestTrace2SendSelectorsMatch`
+  - `TestLogStateAtTwoMillionCycles`
+  - `TestDumpGraphicsClassLayouts`
+  - `TestDumpGraphicsMethodHeaders`
+  - `TestDumpFirstCopyBitsFailureState`
+- Validate with:
+  - `go test ./...`
+  - `go test ./pkg/interpreter -run TestLogStateAtTwoMillionCycles -v`
+  - `go run ./cmd/st80 data/VirtualImage 5000000`
+  - `RUN_ST80_DIAGNOSTIC=1 go test ./pkg/interpreter -run TestDumpFirstCopyBitsFailureState -v`
+
+### Technical details
+- Important graphics layout facts confirmed during this step:
+  - `Point` fixed fields = `2`
+  - `Rectangle` fixed fields = `2`
+  - `Form` fixed fields = `4`
+  - `BitBlt` fixed fields = `14`
+- Confirmed `Form` ivar order from method/header diagnostics:
+  - ivar `0` = `bits`
+  - ivar `1` = `width`
+  - ivar `2` = `height`
+  - ivar `3` = `offset`
+- Confirmed first failing source-form shape before the final fix:
+  - source form class `Cursor`
+  - source bits class `WordArray`
+  - halftone bits class `WordArray`
+- Commands used in this step:
+
+```bash
+pdftotext smalltalk-Bluebook.pdf - | sed -n '20960,21280p'
+RUN_ST80_DIAGNOSTIC=1 go test ./pkg/interpreter -run TestDumpGraphicsClassLayouts -v
+RUN_ST80_DIAGNOSTIC=1 go test ./pkg/interpreter -run TestDumpGraphicsMethodHeaders -v
+go test ./pkg/interpreter -run TestTrace2SendSelectorsMatch -v
+go test ./pkg/interpreter -run TestLogStateAtTwoMillionCycles -v
+RUN_ST80_DIAGNOSTIC=1 go test ./pkg/interpreter -run TestDumpFirstCopyBitsFailureState -v
+go test ./...
+go run ./cmd/st80 data/VirtualImage 5000000
+git commit -m "Implement in-memory BitBlt copy loop"
 ```

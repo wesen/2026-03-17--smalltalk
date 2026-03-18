@@ -104,3 +104,14 @@ Step 9: Added a temporary headless `primitiveCopyBits` success path; this remove
 ### Related Files
 
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Tactical headless `primitiveCopyBits` implementation (commit c1384ff)
+
+
+## 2026-03-18
+
+Step 10: Replaced the temporary headless `primitiveCopyBits` stub with a real in-memory BitBlt copy loop, added primitive-local diagnostics to catch the first failing copyBits shape mismatch, fixed the WordArray-backed source-form assumption, and restored the stable 5,000,000-cycle quiescent scheduler loop with real BitBlt semantics active (commit ea9ea41).
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Real BitBlt copy loop, merge rules, source/destination clipping, and WordArray-backed form acceptance (commit ea9ea41)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Graphics diagnostics plus long-run regression coverage for the new BitBlt path (commit ea9ea41)
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/17/ST80-002--smalltalk-80-interpreter-continuation-context-recovery-and-io-path/reference/07-real-bitblt-wordarray-source-form-bug-writeup.md — Detailed bug/fix writeup for later review

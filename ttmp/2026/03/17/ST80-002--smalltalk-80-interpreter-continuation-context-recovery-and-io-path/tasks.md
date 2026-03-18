@@ -11,6 +11,6 @@
 - [x] Design a safe method-context body reuse or equivalent memory-reclamation strategy; OOP-slot recycling alone does not stop late `blockCopy:` allocation corruption
 - [ ] Restore correct small-vs-large context allocation once metadata decoding and runtime stability are trustworthy
 - [ ] Decide whether the current context-only body reuse should remain a tactical stopgap or grow into broader object-memory reclamation
-- [ ] Replace the temporary headless `primitiveCopyBits` success path with real BitBlt/display semantics
-- [ ] Implement the missing runtime pieces needed to reach a stable idle loop again (remaining primitives, I/O, display path)
+- [x] Replace the temporary headless `primitiveCopyBits` success path with real BitBlt/display semantics
+- [x] Implement the missing runtime pieces needed to reach a stable idle loop again (remaining primitives, I/O, display path)
 - [ ] Create a separate UI ticket only after the interpreter/runtime is stable enough to support display work
