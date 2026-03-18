@@ -62,20 +62,22 @@ const (
 )
 
 // Object table entry bit layout (word 0).
-// Bits 15-8: count (reference count)
-// Bit 7: odd length flag
-// Bit 6: pointer fields flag (1 = fields contain OOPs, 0 = raw data)
-// Bit 5: free entry flag
-// Bits 4-1: segment number
-// Bit 0: unused
+// Blue Book p.661-662, Figure 30.5 (bit 0 = MSB in Blue Book):
+//
+//	bits 0-7:   count (reference count)    → standard bits 15-8
+//	bit 8:      odd length (O)             → standard bit 7
+//	bit 9:      pointer fields (P)         → standard bit 6
+//	bit 10:     free entry (F)             → standard bit 5
+//	bit 11:     unused                     → standard bit 4
+//	bits 12-15: segment                    → standard bits 3-0
 const (
 	otCountShift   = 8
 	otCountMask    = 0xFF00
 	otOddLengthBit = 0x0080
 	otPointerBit   = 0x0040
 	otFreeBit      = 0x0020
-	otSegmentShift = 1
-	otSegmentMask  = 0x001E
+	otSegmentShift = 0
+	otSegmentMask  = 0x000F
 )
 
 // ObjectMemory is the Smalltalk-80 object memory.
@@ -163,9 +165,15 @@ func (om *ObjectMemory) Segment(oop uint16) int {
 	return int((om.otEntryWord0(oop) & otSegmentMask) >> otSegmentShift)
 }
 
-// Location returns the location (word offset in object space) of the object body.
+// Location returns the raw location field from the object table entry.
 func (om *ObjectMemory) Location(oop uint16) uint16 {
 	return om.otEntryWord1(oop)
+}
+
+// HeapAddress returns the full word offset in object space, combining segment and location.
+// Address = segment * 65536 + location
+func (om *ObjectMemory) HeapAddress(oop uint16) int {
+	return om.Segment(oop)*65536 + int(om.otEntryWord1(oop))
 }
 
 // CountBits returns the reference count bits from the object table entry.
@@ -179,7 +187,7 @@ func (om *ObjectMemory) FetchClassOf(oop uint16) uint16 {
 	if IsSmallInteger(oop) {
 		return ClassSmallIntegerPointer
 	}
-	loc := om.Location(oop)
+	loc := om.HeapAddress(oop)
 	// Class is at offset 1 from the object body start (word after size).
 	// Object body: [size, class, field0, field1, ...]
 	// But the location points to the size field.
@@ -192,7 +200,7 @@ func (om *ObjectMemory) FetchClassOf(oop uint16) uint16 {
 // FetchWordLengthOf returns the number of indexable words in the object.
 // This is the size field minus the 2-word header (size word + class word).
 func (om *ObjectMemory) FetchWordLengthOf(oop uint16) int {
-	loc := om.Location(oop)
+	loc := om.HeapAddress(oop)
 	size := int(om.objectSpace[loc])
 	return size - 2 // subtract size and class words
 }
@@ -210,26 +218,26 @@ func (om *ObjectMemory) FetchByteLengthOf(oop uint16) int {
 // FetchPointer returns the OOP stored at the given field index in the object.
 // Field index 0 is the first field after the class.
 func (om *ObjectMemory) FetchPointer(fieldIndex int, ofObject uint16) uint16 {
-	loc := om.Location(ofObject)
-	return om.objectSpace[int(loc)+2+fieldIndex]
+	loc := om.HeapAddress(ofObject)
+	return om.objectSpace[loc+2+fieldIndex]
 }
 
 // StorePointer stores an OOP at the given field index in the object.
 func (om *ObjectMemory) StorePointer(fieldIndex int, ofObject uint16, withValue uint16) {
-	loc := om.Location(ofObject)
-	om.objectSpace[int(loc)+2+fieldIndex] = withValue
+	loc := om.HeapAddress(ofObject)
+	om.objectSpace[loc+2+fieldIndex] = withValue
 }
 
 // FetchWord returns the raw 16-bit word at the given word index in the object.
 func (om *ObjectMemory) FetchWord(wordIndex int, ofObject uint16) uint16 {
-	loc := om.Location(ofObject)
-	return om.objectSpace[int(loc)+2+wordIndex]
+	loc := om.HeapAddress(ofObject)
+	return om.objectSpace[loc+2+wordIndex]
 }
 
 // StoreWord stores a raw 16-bit word at the given word index in the object.
 func (om *ObjectMemory) StoreWord(wordIndex int, ofObject uint16, withValue uint16) {
-	loc := om.Location(ofObject)
-	om.objectSpace[int(loc)+2+wordIndex] = withValue
+	loc := om.HeapAddress(ofObject)
+	om.objectSpace[loc+2+wordIndex] = withValue
 }
 
 // FetchByte returns the byte at the given byte index in the object.
@@ -264,7 +272,10 @@ func (om *ObjectMemory) ObjectTableEntryCount() int {
 func (om *ObjectMemory) InstantiateClass(classPointer uint16, instanceSize int, isPointers bool) uint16 {
 	// Object body: [size, class, field0, field1, ...]
 	bodySize := instanceSize + 2
-	location := uint16(len(om.objectSpace))
+	fullLocation := len(om.objectSpace)
+	// Compute segment and location within segment
+	segment := fullLocation / 65536
+	locationInSegment := fullLocation % 65536
 	// Extend object space
 	body := make([]uint16, bodySize)
 	body[0] = uint16(bodySize)
@@ -277,27 +288,25 @@ func (om *ObjectMemory) InstantiateClass(classPointer uint16, instanceSize int, 
 	}
 	om.objectSpace = append(om.objectSpace, body...)
 
+	var flags uint16
+	if isPointers {
+		flags = otPointerBit
+	}
+	flags |= uint16(segment<<otSegmentShift) & otSegmentMask
+
 	// Find a free OT entry
 	for i := 0; i < om.otEntryCount; i++ {
 		oop := uint16(i * 2)
 		if om.IsFree(oop) {
-			var flags uint16
-			if isPointers {
-				flags = otPointerBit
-			}
 			om.objectTable[otIndex(oop)] = flags
-			om.objectTable[otIndex(oop)+1] = location
+			om.objectTable[otIndex(oop)+1] = uint16(locationInSegment)
 			return oop
 		}
 	}
 	// No free entry — extend the OT
 	newOop := uint16(om.otEntryCount * 2)
 	om.otEntryCount++
-	var flags uint16
-	if isPointers {
-		flags = otPointerBit
-	}
-	om.objectTable = append(om.objectTable, flags, location)
+	om.objectTable = append(om.objectTable, flags, uint16(locationInSegment))
 	return newOop
 }
 
@@ -324,13 +333,13 @@ func (om *ObjectMemory) DumpObject(oop uint16) {
 	odd := w0&otOddLengthBit != 0
 	seg := (w0 & otSegmentMask) >> otSegmentShift
 	count := w0 >> otCountShift
-	fmt.Printf("  OT[%d]: w0=0x%04X w1=0x%04X | count=%d odd=%v ptr=%v free=%v seg=%d loc=%d\n",
-		idx/2, w0, w1, count, odd, ptr, free, seg, w1)
+	loc := int(seg)*65536 + int(w1)
+	fmt.Printf("  OT[%d]: w0=0x%04X w1=0x%04X | count=%d odd=%v ptr=%v free=%v seg=%d addr=%d\n",
+		idx/2, w0, w1, count, odd, ptr, free, seg, loc)
 	if free {
 		fmt.Printf("  (FREE entry)\n")
 		return
 	}
-	loc := int(w1)
 	if loc+1 >= len(om.objectSpace) {
 		fmt.Printf("  Location %d OUT OF BOUNDS (osLen=%d)\n", loc, len(om.objectSpace))
 		return

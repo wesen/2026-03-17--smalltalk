@@ -1571,6 +1571,15 @@ func (interp *Interpreter) returnBytecode() {
 // Run starts the interpreter from the active process in the image.
 func (interp *Interpreter) Run(maxCycles uint64) error {
 	// Find the active process from the scheduler
+	// Dump known-good objects to verify segment handling
+	fmt.Println("--- Checking known objects after segment fix ---")
+	fmt.Printf("nil (oop 2): ")
+	interp.memory.DumpObject(om.NilPointer)
+	fmt.Printf("SchedulerAssoc (oop 8): ")
+	interp.memory.DumpObject(om.SchedulerAssociationPointer)
+	fmt.Printf("SpecialSelectors (oop 48): class=0x%04X words=%d\n",
+		interp.fetchClassOf(om.SpecialSelectorsPointer), interp.fetchWordLengthOf(om.SpecialSelectorsPointer))
+
 	schedulerAssoc := om.SchedulerAssociationPointer
 	fmt.Printf("SchedulerAssoc (oop %d): valid=%v\n", schedulerAssoc, interp.memory.ValidOop(schedulerAssoc))
 	scheduler := interp.fetchPointer(ValueIndex, schedulerAssoc)
@@ -1580,8 +1589,8 @@ func (interp *Interpreter) Run(maxCycles uint64) error {
 	activeProcess := interp.fetchPointer(1, scheduler)
 	fmt.Printf("ActiveProcess (oop 0x%04X):\n", activeProcess)
 	interp.memory.DumpObject(activeProcess)
-	// Process has: nextLink (0), myList (1), suspendedContext (2), priority (3)
-	suspendedContext := interp.fetchPointer(2, activeProcess)
+	// Process inherits from Link (nextLink=0), then: suspendedContext (1), priority (2), myList (3)
+	suspendedContext := interp.fetchPointer(1, activeProcess)
 	fmt.Printf("SuspendedContext (oop 0x%04X): valid=%v\n",
 		suspendedContext, interp.memory.ValidOop(suspendedContext))
 	interp.activeContext = suspendedContext
