@@ -4,6 +4,7 @@ package interpreter
 
 import (
 	"fmt"
+	"strconv"
 
 	om "github.com/wesen/st80/pkg/objectmemory"
 )
@@ -684,6 +685,43 @@ func (interp *Interpreter) popInteger() int {
 	return 0
 }
 
+func (interp *Interpreter) positiveIntegerValueOf(oop uint16) (int, bool) {
+	if om.IsSmallInteger(oop) {
+		value := int(om.SmallIntegerValue(oop))
+		if value < 0 {
+			return 0, false
+		}
+		return value, true
+	}
+	if !interp.memory.ValidOop(oop) || interp.fetchClassOf(oop) != om.ClassLargePositiveIntegerPointer {
+		return 0, false
+	}
+	byteLen := interp.memory.FetchByteLengthOf(oop)
+	value := 0
+	for i := 0; i < byteLen; i++ {
+		b := int(interp.memory.FetchByte(i, oop))
+		if i >= 8 {
+			if b != 0 {
+				return 0, false
+			}
+			continue
+		}
+		shift := i * 8
+		if shift >= 8*strconv.IntSize {
+			if b != 0 {
+				return 0, false
+			}
+			continue
+		}
+		valuePart := b << shift
+		if valuePart>>shift != b {
+			return 0, false
+		}
+		value |= valuePart
+	}
+	return value, true
+}
+
 func (interp *Interpreter) pushInteger(integerValue int) {
 	if integerValue >= -16384 && integerValue <= 16383 {
 		interp.push(om.SmallIntegerOop(int16(integerValue)))
@@ -1266,8 +1304,14 @@ func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 		}
 		interp.push(result)
 	case 71: // basicNew:, new:
-		sz := interp.popInteger()
+		sizePointer := interp.popStack()
 		class := interp.popStack()
+		sz, ok := interp.positiveIntegerValueOf(sizePointer)
+		if !ok {
+			interp.unPop(2)
+			interp.primitiveFail()
+			return
+		}
 		if interp.success {
 			size := sz + interp.fixedFieldsOf(class)
 			var result uint16
@@ -1279,8 +1323,6 @@ func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 				result = interp.instantiateClassWithBytes(class, size)
 			}
 			interp.push(result)
-		} else {
-			interp.unPop(2)
 		}
 	case 72: // become:
 		otherPointer := interp.popStack()

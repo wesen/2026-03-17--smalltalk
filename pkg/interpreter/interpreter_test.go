@@ -258,6 +258,10 @@ func TestTrace2SendSelectorsMatch(t *testing.T) {
 	assertTraceSendSelectorsMatchUpTo(t, "data/trace2", 0)
 }
 
+func TestTrace3DisplayStartupSendSelectorsMatch(t *testing.T) {
+	assertTraceSendSelectorsMatchUpTo(t, "data/trace3", 757)
+}
+
 func TestTrace3SendSelectorsMatch(t *testing.T) {
 	t.Skip("diagnostic check retained while display/control-path trace alignment is still under active investigation")
 }
@@ -769,9 +773,15 @@ func TestDumpGraphicsMethodHeaders(t *testing.T) {
 		t.Skip("diagnostic test retained for manual investigation")
 	}
 	methodNames := loadOopNames(t, "data/method.oops")
+	classNames := loadOopNames(t, "data/class.oops")
 	interp := loadTestInterpreter(t)
 
 	methods := []uint16{
+		0x0350, // DisplayScreen class>>currentDisplay:
+		0x035E, // DisplayScreen class>>boundingBox
+		0x0360, // DisplayScreen class>>displayHeight:
+		0x0362, // DisplayScreen class>>displayExtent:
+		0x73A2, // DisplayScreen>>beDisplay
 		0x1148, // Form>>bits
 		0x113E, // Form>>offset
 		0x170C, // Form>>extent:offset:bits:
@@ -788,9 +798,196 @@ func TestDumpGraphicsMethodHeaders(t *testing.T) {
 			method, methodNames[method], interp.flagValueOf(method), interp.fieldIndexOf(method),
 			interp.literalCountOf(method), interp.temporaryCountOf(method),
 			interp.argumentCountOf(method), interp.memory.FetchByteLengthOf(method), interp.initialInstructionPointerOfMethod(method))
-		for i := 0; i < 32 && i < interp.memory.FetchByteLengthOf(method); i++ {
+		for i := 0; i < interp.literalCountOf(method); i++ {
+			lit := interp.literalOfMethod(i, method)
+			t.Logf("  literal[%d]=0x%04X string=%q class=0x%04X(%s)",
+				i, lit, symbolString(interp, lit), interp.fetchClassOf(lit), classNames[interp.fetchClassOf(lit)])
+			if interp.fetchClassOf(lit) == om.ClassAssociationPointer {
+				key := interp.fetchPointer(0, lit)
+				value := interp.fetchPointer(1, lit)
+				valueClass := uint16(0)
+				if om.IsSmallInteger(value) {
+					valueClass = om.ClassSmallIntegerPointer
+				} else if interp.memory.ValidOop(value) {
+					valueClass = interp.fetchClassOf(value)
+				}
+				t.Logf("    association key=0x%04X(%q) value=0x%04X class=0x%04X(%s)",
+					key, symbolString(interp, key), value, valueClass, classNames[valueClass])
+			}
+		}
+		for i := 0; i < interp.memory.FetchByteLengthOf(method); i++ {
 			t.Logf("  byte[%d]=%d", i, interp.fetchByte(i, method))
 		}
+	}
+}
+
+func TestDumpDisplayScreenDesignation(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	classNames := loadOopNames(t, "data/class.oops")
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	for interp.cycleCount = 0; interp.cycleCount < 500000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+		if interp.displayScreen != 0 {
+			break
+		}
+	}
+	if interp.displayScreen == 0 {
+		t.Fatalf("display screen was never designated by cycle %d", interp.cycleCount)
+	}
+
+	screen := interp.displayScreen
+	screenClass := interp.fetchClassOf(screen)
+	t.Logf("display designated at cycle=%d screen=0x%04X class=0x%04X(%s) activeMethod=0x%04X(%s)",
+		interp.cycleCount, screen, screenClass, classNames[screenClass], interp.method, methodNames[interp.method])
+	t.Logf("screen wordLen=%d fixedFields=%d pointers=%v words=%v indexable=%v spec=0x%04X",
+		interp.fetchWordLengthOf(screen), interp.fixedFieldsOf(screenClass), interp.isPointers(screenClass),
+		interp.isWords(screenClass), interp.isIndexable(screenClass), interp.instanceSpecificationOf(screenClass))
+	for i := 0; i < interp.fetchWordLengthOf(screen); i++ {
+		field := interp.fetchPointer(i, screen)
+		t.Logf("screen field[%d]=0x%04X", i, field)
+	}
+	if form, ok := interp.formWordsOf(screen); ok {
+		t.Logf("screen form width=%d height=%d raster=%d bits=0x%04X bitsWordLen=%d bitsClass=0x%04X(%s)",
+			form.width, form.height, (form.width-1)/16+1, form.bits, interp.fetchWordLengthOf(form.bits),
+			interp.fetchClassOf(form.bits), classNames[interp.fetchClassOf(form.bits)])
+	}
+}
+
+func TestDumpDisplayDesignationHistory(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	classNames := loadOopNames(t, "data/class.oops")
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	var previous uint16
+	for interp.cycleCount = 0; interp.cycleCount < 2000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		interp.dispatchOnThisBytecode()
+
+		if interp.displayScreen == 0 || interp.displayScreen == previous {
+			continue
+		}
+		screen := interp.displayScreen
+		screenClass := interp.fetchClassOf(screen)
+		t.Logf("cycle=%d designated screen=0x%04X class=0x%04X(%s) activeMethod=0x%04X(%s)",
+			interp.cycleCount, screen, screenClass, classNames[screenClass], interp.method, methodNames[interp.method])
+		if form, ok := interp.formWordsOf(screen); ok {
+			t.Logf("  form width=%d height=%d raster=%d bits=0x%04X bitsWordLen=%d bitsClass=0x%04X(%s)",
+				form.width, form.height, (form.width-1)/16+1, form.bits, interp.fetchWordLengthOf(form.bits),
+				interp.fetchClassOf(form.bits), classNames[interp.fetchClassOf(form.bits)])
+		}
+		previous = screen
+	}
+}
+
+func TestDumpCurrentDisplayBecomeOperands(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	classNames := loadOopNames(t, "data/class.oops")
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	for interp.cycleCount = 0; interp.cycleCount < 800; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		if interp.method == 0x0350 &&
+			((interp.cycleCount >= 137 && interp.cycleCount <= 154) ||
+				(interp.cycleCount >= 733 && interp.cycleCount <= 750)) {
+			argScreen := interp.fetchPointer(TempFrameStart, interp.activeContext)
+			t.Logf("cycle=%d method=0x%04X(%s) ip=%d sp=%d argScreen=0x%04X placeholder=0x0340",
+				interp.cycleCount, interp.method, methodNames[interp.method], interp.instructionPointer, interp.stackPointer, argScreen)
+			for _, oop := range []uint16{argScreen, 0x0340} {
+				class := interp.fetchClassOf(oop)
+				t.Logf("oop=0x%04X class=0x%04X(%s) wordLen=%d", oop, class, classNames[class], interp.fetchWordLengthOf(oop))
+				for i := 0; i < interp.fetchWordLengthOf(oop); i++ {
+					t.Logf("  field[%d]=0x%04X", i, interp.fetchPointer(i, oop))
+				}
+				if form, ok := interp.formWordsOf(oop); ok {
+					t.Logf("  form width=%d height=%d raster=%d bits=0x%04X bitsWordLen=%d",
+						form.width, form.height, (form.width-1)/16+1, form.bits, interp.fetchWordLengthOf(form.bits))
+				}
+			}
+		}
+		interp.dispatchOnThisBytecode()
+	}
+}
+
+func TestDumpDisplayStartupSendCycles(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	for interp.cycleCount = 0; interp.cycleCount < 100000; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		if selector, argCount, ok := decodeSendForCurrentBytecode(interp); ok {
+			name := symbolString(interp, selector)
+			if name == "currentDisplay:" || name == "restore" || name == "displayExtent:" || name == "displayHeight:" {
+				t.Logf("cycle=%d method=0x%04X(%s) ip=%d sp=%d selector=%s args=%d",
+					interp.cycleCount+1, interp.method, methodNames[interp.method], interp.instructionPointer, interp.stackPointer, name, argCount)
+			}
+		}
+		interp.dispatchOnThisBytecode()
+	}
+}
+
+func TestDumpDisplayStartupResumeWindow(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	for interp.cycleCount = 0; interp.cycleCount < 260; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+		if interp.cycleCount >= 145 && interp.cycleCount <= 220 {
+			t.Logf("cycle=%d activeContext=0x%04X method=0x%04X(%s) ip=%d sp=%d bytecode=%d",
+				interp.cycleCount, interp.activeContext, interp.method, methodNames[interp.method], interp.instructionPointer, interp.stackPointer, interp.currentBytecode)
+		}
+		interp.dispatchOnThisBytecode()
+	}
+}
+
+func TestDumpTrace3FirstMismatchUpTo750(t *testing.T) {
+	if os.Getenv("RUN_ST80_DIAGNOSTIC") == "" {
+		t.Skip("diagnostic test retained for manual investigation")
+	}
+	traceLines := loadTraceSendLines(t, "data/trace3")
+	methodNames := loadOopNames(t, "data/method.oops")
+	interp := loadTestInterpreter(t)
+
+	for interp.cycleCount = 0; interp.cycleCount < 750; interp.cycleCount++ {
+		interp.checkProcessSwitch()
+		interp.currentBytecode = interp.fetchBytecode()
+
+		traceCycle := interp.cycleCount + 1
+		if line, exists := traceLines[traceCycle]; exists {
+			selector, _, ok := decodeSendForCurrentBytecode(interp)
+			if !ok {
+				t.Fatalf("trace3 cycle %d expected send %q but bytecode=%d method=0x%04X(%s) was not a send",
+					traceCycle, line, interp.currentBytecode, interp.method, methodNames[interp.method])
+			}
+			selectorName := symbolString(interp, selector)
+			if selectorName == "" || !strings.Contains(line, selectorName) {
+				t.Fatalf("trace3 cycle %d mismatch: trace=%q actualSelector=%q method=0x%04X(%s) ip=%d sp=%d bytecode=%d",
+					traceCycle, line, selectorName, interp.method, methodNames[interp.method], interp.instructionPointer, interp.stackPointer, interp.currentBytecode)
+			}
+		}
+
+		interp.dispatchOnThisBytecode()
 	}
 }
 
