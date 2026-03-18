@@ -11,6 +11,8 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
+    - Path: cmd/st80-snapshot/main.go
+      Note: Command-line entrypoint for quick framebuffer diagnostics (commit ee69a09)
     - Path: cmd/st80-ui/main.go
       Note: |-
         Windowed UI entrypoint and runtime flags (commit 8e85254)
@@ -19,12 +21,18 @@ RelatedFiles:
       Note: |-
         Stepped execution API plus display snapshot export for the SDL host loop (commit 8e85254)
         Stepped interpreter API and display snapshot export (commit 8e85254)
+    - Path: pkg/ui/snapshot.go
+      Note: Direct framebuffer snapshot capture and PNG output (commit ee69a09)
     - Path: pkg/ui/ui.go
       Note: |-
         SDL host window, render loop, and bitmap conversion (commit 8e85254)
         SDL host window and display bitmap presentation loop (commit 8e85254)
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/capture-ui-screenshot.sh
       Note: Reusable off-screen screenshot helper for the SDL UI
+    - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/scripts/dump-display-snapshot.sh
+      Note: Ticket-local wrapper for direct framebuffer snapshot iteration
+    - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/display-snapshots/display-1000000.png
+      Note: Direct framebuffer PNG at one million cycles showing the current white 640x16 surface
     - Path: ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/various/ui-capture/st80-ui.png
       Note: First captured UI image showing the current visible state
 ExternalSources: []
@@ -33,6 +41,7 @@ LastUpdated: 2026-03-18T09:33:46.413235314-04:00
 WhatFor: ""
 WhenToUse: ""
 ---
+
 
 
 
