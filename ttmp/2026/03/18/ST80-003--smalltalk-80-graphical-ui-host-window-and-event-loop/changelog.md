@@ -225,3 +225,17 @@ Step 19: cleaned up the SDL debug stream by logging the created window ID once, 
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — Created-window logging, focus-change-only logging, human-readable window-event names, and lower default polling chunk
 - /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go — Lowered the default `cycles-per-frame` for interactive runs
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Detailed diary entry for the SDL debug cleanup
+
+
+## 2026-03-18
+
+Step 20: replaced the SDL host backend with Ebiten (`github.com/hajimehoshi/ebiten/v2 v2.9.9`), rewrote `st80-ui` around Ebiten's `Game` loop, removed the standalone SDL diagnostics, and added a new `ebiten-hello` diagnostic command for backend-level window/input checks.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — Replaced the SDL window, renderer, texture, and event loop with an Ebiten-backed host game that polls mouse/keyboard state each tick
+- /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go — Updated the UI flag help so `-event-debug` describes the new host-event semantics instead of raw SDL events
+- /home/manuel/code/wesen/2026-03-17--smalltalk/cmd/ebiten-hello/main.go — New standalone Ebiten backend diagnostic window
+- /home/manuel/code/wesen/2026-03-17--smalltalk/go.mod — Swapped the host-window dependency from `go-sdl2` to `ebiten/v2`
+- /home/manuel/code/wesen/2026-03-17--smalltalk/go.sum — Module graph updated after `go mod tidy`
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Detailed migration diary entry

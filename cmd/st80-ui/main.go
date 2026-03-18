@@ -15,7 +15,7 @@ func main() {
 	scale := flag.Int("scale", 2, "window scale factor")
 	title := flag.String("title", "Smalltalk-80", "window title")
 	inputDebug := flag.Bool("input-debug", false, "log coarse input queue/consumption counters as they change")
-	eventDebug := flag.Bool("event-debug", false, "log raw SDL input events as they are polled")
+	eventDebug := flag.Bool("event-debug", false, "log observed host input and focus changes")
 	flag.Parse()
 
 	if err := ui.Run(ui.Options{

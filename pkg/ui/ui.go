@@ -2,8 +2,11 @@ package ui
 
 import (
 	"fmt"
+	"image/color"
+	"time"
 
-	"github.com/veandco/go-sdl2/sdl"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/wesen/st80/pkg/image"
 	"github.com/wesen/st80/pkg/interpreter"
 )
@@ -20,7 +23,7 @@ type Options struct {
 }
 
 // Run boots the image, advances the interpreter in chunks, and displays the
-// designated Smalltalk display form in an SDL window until the window closes
+// designated Smalltalk display form in an Ebiten window until the window closes
 // or MaxCycles is reached.
 func Run(opts Options) error {
 	if opts.ImagePath == "" {
@@ -43,355 +46,215 @@ func Run(opts Options) error {
 	interp := interpreter.New(om)
 	interp.SetSnapshotPath(opts.ImagePath)
 
-	var runErr error
-	sdl.Main(func() {
-		runErr = runLoop(interp, opts)
-	})
-	return runErr
-}
+	game := &hostGame{
+		interp:        interp,
+		opts:          opts,
+		logicalWidth:  640,
+		logicalHeight: 480,
+		hostStart:     time.Now(),
+		lastMouseX:    -1,
+		lastMouseY:    -1,
+	}
 
-func runLoop(interp *interpreter.Interpreter, opts Options) error {
-	if err := doSDL(func() error {
-		return sdl.Init(sdl.INIT_VIDEO | sdl.INIT_EVENTS)
-	}); err != nil {
+	ebiten.SetWindowTitle(opts.WindowTitle)
+	ebiten.SetWindowSize(game.logicalWidth*int(opts.Scale), game.logicalHeight*int(opts.Scale))
+	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
+
+	if err := ebiten.RunGame(game); err != nil {
 		return err
 	}
-	defer func() {
-		_ = doSDL(func() error {
-			sdl.StopTextInput()
-			sdl.Quit()
-			return nil
-		})
-	}()
-	if err := doSDL(func() error {
-		sdl.StartTextInput()
-		return nil
-	}); err != nil {
-		return err
+	return nil
+}
+
+type hostGame struct {
+	interp *interpreter.Interpreter
+	opts   Options
+
+	logicalWidth  int
+	logicalHeight int
+
+	frame      *ebiten.Image
+	pixels32   []uint32
+	pixelBytes []byte
+
+	hostStart time.Time
+
+	lastInputStats  interpreter.InputStats
+	lastFocus       bool
+	lastMouseInside bool
+	lastMouseX      int
+	lastMouseY      int
+	createdLogged   bool
+
+	textRunes []rune
+}
+
+func (g *hostGame) Update() error {
+	if !g.createdLogged {
+		g.logEvent("created-window title=%q size=%dx%d", g.opts.WindowTitle, g.logicalWidth, g.logicalHeight)
+		g.createdLogged = true
 	}
 
-	var window *sdl.Window
-	var renderer *sdl.Renderer
-	var texture *sdl.Texture
-	var textureWidth int
-	var textureHeight int
-	var pixels []uint32
-	var lastInputStats interpreter.InputStats
-	var lastMouseFocusID uint32 = ^uint32(0)
-	var lastKeyboardFocusID uint32 = ^uint32(0)
-	defer func() {
-		_ = doSDL(func() error {
-			if texture != nil {
-				_ = texture.Destroy()
-			}
-			if renderer != nil {
-				_ = renderer.Destroy()
-			}
-			if window != nil {
-				_ = window.Destroy()
-			}
-			return nil
-		})
-	}()
+	g.pollInput()
 
-	for {
-		if opts.MaxCycles > 0 && interp.CycleCount() >= opts.MaxCycles {
-			return nil
-		}
+	if g.opts.MaxCycles > 0 && g.interp.CycleCount() >= g.opts.MaxCycles {
+		return ebiten.Termination
+	}
 
-		steps := opts.CyclesPerFrame
-		if opts.MaxCycles > 0 {
-			remaining := opts.MaxCycles - interp.CycleCount()
-			if remaining < steps {
-				steps = remaining
-			}
+	steps := g.opts.CyclesPerFrame
+	if g.opts.MaxCycles > 0 {
+		remaining := g.opts.MaxCycles - g.interp.CycleCount()
+		if remaining < steps {
+			steps = remaining
 		}
-		if err := interp.RunSteps(steps); err != nil {
+	}
+	if steps > 0 {
+		if err := g.interp.RunSteps(steps); err != nil {
 			return err
 		}
+	}
 
-		snapshot, ok := interp.DisplaySnapshot()
-		if ok {
-			cursor, hasCursor := interp.CursorSnapshot()
-			if texture == nil || snapshot.Width != textureWidth || snapshot.Height != textureHeight {
-				if err := doSDL(func() error {
-					if texture != nil {
-						_ = texture.Destroy()
-						texture = nil
-					}
-					if renderer != nil {
-						_ = renderer.Destroy()
-						renderer = nil
-					}
-					if window != nil {
-						_ = window.Destroy()
-						window = nil
-					}
+	if snapshot, ok := g.interp.DisplaySnapshot(); ok {
+		cursor, hasCursor := g.interp.CursorSnapshot()
+		g.ensureFrameSize(snapshot.Width, snapshot.Height)
+		copyDisplayBits(g.pixels32, snapshot, hasCursor, cursor)
+		packARGBToRGBA(g.pixelBytes, g.pixels32)
+		g.frame.WritePixels(g.pixelBytes)
+	}
 
-					var err error
-					window, renderer, err = sdl.CreateWindowAndRenderer(
-						int32(snapshot.Width)*opts.Scale,
-						int32(snapshot.Height)*opts.Scale,
-						sdl.WINDOW_SHOWN|sdl.WINDOW_RESIZABLE,
-					)
-					if err != nil {
-						return err
-					}
-					window.SetTitle(opts.WindowTitle)
-					window.Raise()
-					if opts.EventDebug {
-						if id, err := window.GetID(); err == nil {
-							fmt.Printf("[event-debug cycle=%d] created-window windowID=%d title=%q size=%dx%d\n",
-								interp.CycleCount(), id, opts.WindowTitle, snapshot.Width, snapshot.Height)
-						}
-					}
-					if err := renderer.SetLogicalSize(int32(snapshot.Width), int32(snapshot.Height)); err != nil {
-						return err
-					}
-					texture, err = renderer.CreateTexture(
-						sdl.PIXELFORMAT_ARGB8888,
-						sdl.TEXTUREACCESS_STREAMING,
-						int32(snapshot.Width),
-						int32(snapshot.Height),
-					)
-					if err != nil {
-						return err
-					}
-					if err := texture.SetScaleMode(sdl.ScaleModeNearest); err != nil {
-						return err
-					}
-					textureWidth = snapshot.Width
-					textureHeight = snapshot.Height
-					return nil
-				}); err != nil {
-					return err
-				}
-			}
-
-			if len(pixels) != snapshot.Width*snapshot.Height {
-				pixels = make([]uint32, snapshot.Width*snapshot.Height)
-			}
-			copyDisplayBits(pixels, snapshot, hasCursor, cursor)
+	if g.opts.InputDebug {
+		stats := g.interp.InputStats()
+		if stats != g.lastInputStats {
+			fmt.Printf("[input-debug cycle=%d] motions=%d buttons=%d keys=%d enqueued=%d dequeued=%d queue=%d\n",
+				g.interp.CycleCount(),
+				stats.MouseMotionsRecorded,
+				stats.MouseButtonsRecorded,
+				stats.DecodedKeysRecorded,
+				stats.WordsEnqueued,
+				stats.WordsDequeued,
+				stats.QueueDepth,
+			)
+			g.lastInputStats = stats
 		}
+	}
 
-		quit, err := processEventsAndPresent(interp, window, renderer, texture, pixels, textureWidth, textureHeight, opts.EventDebug, &lastMouseFocusID, &lastKeyboardFocusID)
-		if err != nil {
-			return err
+	if g.opts.MaxCycles > 0 && g.interp.CycleCount() >= g.opts.MaxCycles {
+		return ebiten.Termination
+	}
+
+	return nil
+}
+
+func (g *hostGame) Draw(screen *ebiten.Image) {
+	screen.Fill(color.White)
+	if g.frame != nil {
+		screen.DrawImage(g.frame, nil)
+	}
+}
+
+func (g *hostGame) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	return g.logicalWidth, g.logicalHeight
+}
+
+func (g *hostGame) ensureFrameSize(width int, height int) {
+	if width <= 0 || height <= 0 {
+		return
+	}
+	if g.frame != nil && width == g.logicalWidth && height == g.logicalHeight {
+		return
+	}
+	g.logicalWidth = width
+	g.logicalHeight = height
+	g.frame = ebiten.NewImage(width, height)
+	g.pixels32 = make([]uint32, width*height)
+	g.pixelBytes = make([]byte, width*height*4)
+	ebiten.SetWindowSize(width*int(g.opts.Scale), height*int(g.opts.Scale))
+	g.logEvent("resized logical=%dx%d scale=%d", width, height, g.opts.Scale)
+}
+
+func (g *hostGame) pollInput() {
+	focused := ebiten.IsFocused()
+	if focused != g.lastFocus {
+		g.logEvent("focus focused=%t", focused)
+		g.lastFocus = focused
+	}
+
+	x, y := ebiten.CursorPosition()
+	inside := x >= 0 && y >= 0 && x < g.logicalWidth && y < g.logicalHeight
+	if inside != g.lastMouseInside {
+		g.logEvent("mouse-inside inside=%t x=%d y=%d", inside, x, y)
+		g.lastMouseInside = inside
+	}
+	if inside {
+		g.interp.SetMousePoint(x, y)
+	}
+	if inside && (x != g.lastMouseX || y != g.lastMouseY) {
+		g.logEvent("mouse-motion x=%d y=%d", x, y)
+		g.interp.RecordMouseMotion(x, y, g.timestamp())
+	}
+	g.lastMouseX = x
+	g.lastMouseY = y
+
+	g.pollMouseButton(ebiten.MouseButtonLeft, "left", 128, x, y, inside)
+	g.pollMouseButton(ebiten.MouseButtonMiddle, "middle", 129, x, y, inside)
+	g.pollMouseButton(ebiten.MouseButtonRight, "right", 130, x, y, inside)
+
+	g.textRunes = ebiten.AppendInputChars(g.textRunes[:0])
+	for _, r := range g.textRunes {
+		if r < 0 || r > 0x7F {
+			continue
 		}
-		if quit {
-			return nil
+		g.logEvent("text-input text=%q", string(r))
+		g.interp.RecordDecodedKey(uint16(r), g.timestamp())
+	}
+
+	g.pollSpecialKey(ebiten.KeyBackspace, "Backspace", 8)
+	g.pollSpecialKey(ebiten.KeyTab, "Tab", 9)
+	g.pollSpecialKey(ebiten.KeyEnter, "Enter", 13)
+	g.pollSpecialKey(ebiten.KeyEscape, "Escape", 27)
+	g.pollSpecialKey(ebiten.KeyDelete, "Delete", 127)
+}
+
+func (g *hostGame) pollMouseButton(button ebiten.MouseButton, name string, parameter uint16, x int, y int, inside bool) {
+	if inpututil.IsMouseButtonJustPressed(button) {
+		g.logEvent("mouse-button button=%s state=pressed x=%d y=%d", name, x, y)
+		if inside {
+			g.interp.RecordMouseButton(parameter, true, x, y, g.timestamp())
 		}
-		if opts.InputDebug {
-			stats := interp.InputStats()
-			if stats != lastInputStats {
-				fmt.Printf("[input-debug cycle=%d] motions=%d buttons=%d keys=%d enqueued=%d dequeued=%d queue=%d\n",
-					interp.CycleCount(),
-					stats.MouseMotionsRecorded,
-					stats.MouseButtonsRecorded,
-					stats.DecodedKeysRecorded,
-					stats.WordsEnqueued,
-					stats.WordsDequeued,
-					stats.QueueDepth,
-				)
-				lastInputStats = stats
-			}
+	}
+	if inpututil.IsMouseButtonJustReleased(button) {
+		g.logEvent("mouse-button button=%s state=released x=%d y=%d", name, x, y)
+		if inside {
+			g.interp.RecordMouseButton(parameter, false, x, y, g.timestamp())
 		}
 	}
 }
 
-func processEventsAndPresent(interp *interpreter.Interpreter, window *sdl.Window, renderer *sdl.Renderer, texture *sdl.Texture, pixels []uint32, width int, height int, eventDebug bool, lastMouseFocusID *uint32, lastKeyboardFocusID *uint32) (bool, error) {
-	quit := false
-	err := doSDL(func() error {
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch e := event.(type) {
-			case *sdl.QuitEvent:
-				if eventDebug {
-					fmt.Printf("[event-debug cycle=%d] quit\n", interp.CycleCount())
-				}
-				quit = true
-			case *sdl.MouseMotionEvent:
-				if eventDebug {
-					fmt.Printf("[event-debug cycle=%d] mouse-motion x=%d y=%d state=0x%X ts=%d\n",
-						interp.CycleCount(), e.X, e.Y, e.State, e.Timestamp)
-				}
-				logicalX, logicalY, ok := mapWindowToLogicalPoint(window, width, height, e.X, e.Y)
-				if ok {
-					interp.RecordMouseMotion(logicalX, logicalY, e.Timestamp)
-				}
-			case *sdl.MouseButtonEvent:
-				if eventDebug {
-					fmt.Printf("[event-debug cycle=%d] mouse-button button=%d state=%d x=%d y=%d ts=%d\n",
-						interp.CycleCount(), e.Button, e.State, e.X, e.Y, e.Timestamp)
-				}
-				logicalX, logicalY, ok := mapWindowToLogicalPoint(window, width, height, e.X, e.Y)
-				if ok {
-					interp.SetMousePoint(logicalX, logicalY)
-					if parameter, ok := mouseButtonParameter(e.Button); ok {
-						interp.RecordMouseButton(parameter, e.State == sdl.PRESSED, logicalX, logicalY, e.Timestamp)
-					}
-				}
-			case *sdl.TextInputEvent:
-				if eventDebug {
-					fmt.Printf("[event-debug cycle=%d] text-input text=%q ts=%d\n",
-						interp.CycleCount(), e.GetText(), e.Timestamp)
-				}
-				for _, r := range e.GetText() {
-					if r < 0 || r > 0x7F {
-						continue
-					}
-					interp.RecordDecodedKey(uint16(r), e.Timestamp)
-				}
-			case *sdl.KeyboardEvent:
-				if eventDebug {
-					fmt.Printf("[event-debug cycle=%d] keyboard type=%d repeat=%d sym=%d ts=%d\n",
-						interp.CycleCount(), e.Type, e.Repeat, e.Keysym.Sym, e.Timestamp)
-				}
-				if e.Type == sdl.KEYDOWN && e.Repeat == 0 {
-					if parameter, ok := specialKeyParameter(e.Keysym.Sym); ok {
-						interp.RecordDecodedKey(parameter, e.Timestamp)
-					}
-				}
-			case *sdl.WindowEvent:
-				if eventDebug {
-					fmt.Printf("[event-debug cycle=%d] window event=%s windowID=%d data1=%d data2=%d\n",
-						interp.CycleCount(), windowEventName(e.Event), e.WindowID, e.Data1, e.Data2)
-				}
-			}
-		}
-		if eventDebug && window != nil {
-			mouseFocusID := focusWindowID(sdl.GetMouseFocus)
-			if lastMouseFocusID != nil && mouseFocusID != *lastMouseFocusID {
-				fmt.Printf("[event-debug cycle=%d] mouse-focus windowID=%s\n", interp.CycleCount(), formatFocusID(mouseFocusID))
-				*lastMouseFocusID = mouseFocusID
-			}
-			keyboardFocusID := focusWindowID(sdl.GetKeyboardFocus)
-			if lastKeyboardFocusID != nil && keyboardFocusID != *lastKeyboardFocusID {
-				fmt.Printf("[event-debug cycle=%d] keyboard-focus windowID=%s\n", interp.CycleCount(), formatFocusID(keyboardFocusID))
-				*lastKeyboardFocusID = keyboardFocusID
-			}
-		}
-		if renderer == nil || texture == nil || width <= 0 || height <= 0 || len(pixels) == 0 {
-			return nil
-		}
-		if err := texture.UpdateRGBA(nil, pixels, width); err != nil {
-			return err
-		}
-		if err := renderer.Clear(); err != nil {
-			return err
-		}
-		if err := renderer.Copy(texture, nil, nil); err != nil {
-			return err
-		}
-		renderer.Present()
-		return nil
-	})
-	return quit, err
-}
-
-func focusWindowID(getFocus func() *sdl.Window) uint32 {
-	focused := getFocus()
-	if focused == nil {
-		return 0
-	}
-	id, err := focused.GetID()
-	if err != nil {
-		return 0
-	}
-	return id
-}
-
-func formatFocusID(id uint32) string {
-	if id == 0 {
-		return "none"
-	}
-	return fmt.Sprintf("%d", id)
-}
-
-func windowEventName(event sdl.WindowEventID) string {
-	switch event {
-	case sdl.WINDOWEVENT_SHOWN:
-		return "shown"
-	case sdl.WINDOWEVENT_HIDDEN:
-		return "hidden"
-	case sdl.WINDOWEVENT_EXPOSED:
-		return "exposed"
-	case sdl.WINDOWEVENT_MOVED:
-		return "moved"
-	case sdl.WINDOWEVENT_RESIZED:
-		return "resized"
-	case sdl.WINDOWEVENT_SIZE_CHANGED:
-		return "size-changed"
-	case sdl.WINDOWEVENT_MINIMIZED:
-		return "minimized"
-	case sdl.WINDOWEVENT_MAXIMIZED:
-		return "maximized"
-	case sdl.WINDOWEVENT_RESTORED:
-		return "restored"
-	case sdl.WINDOWEVENT_ENTER:
-		return "enter"
-	case sdl.WINDOWEVENT_LEAVE:
-		return "leave"
-	case sdl.WINDOWEVENT_FOCUS_GAINED:
-		return "focus-gained"
-	case sdl.WINDOWEVENT_FOCUS_LOST:
-		return "focus-lost"
-	case sdl.WINDOWEVENT_CLOSE:
-		return "close"
-	case sdl.WINDOWEVENT_TAKE_FOCUS:
-		return "take-focus"
-	case sdl.WINDOWEVENT_HIT_TEST:
-		return "hit-test"
-	default:
-		return fmt.Sprintf("%d", event)
+func (g *hostGame) pollSpecialKey(key ebiten.Key, name string, parameter uint16) {
+	if inpututil.IsKeyJustPressed(key) {
+		g.logEvent("keyboard key=%s", name)
+		g.interp.RecordDecodedKey(parameter, g.timestamp())
 	}
 }
 
-func mapWindowToLogicalPoint(window *sdl.Window, logicalWidth int, logicalHeight int, x int32, y int32) (int, int, bool) {
-	if window == nil || logicalWidth <= 0 || logicalHeight <= 0 {
-		return 0, 0, false
-	}
-	windowWidth, windowHeight := window.GetSize()
-	if windowWidth <= 0 || windowHeight <= 0 {
-		return 0, 0, false
-	}
-	logicalX := int(int64(x) * int64(logicalWidth) / int64(windowWidth))
-	logicalY := int(int64(y) * int64(logicalHeight) / int64(windowHeight))
-	if logicalX >= logicalWidth {
-		logicalX = logicalWidth - 1
-	}
-	if logicalY >= logicalHeight {
-		logicalY = logicalHeight - 1
-	}
-	return logicalX, logicalY, true
+func (g *hostGame) timestamp() uint32 {
+	return uint32(time.Since(g.hostStart).Milliseconds())
 }
 
-func mouseButtonParameter(button sdl.Button) (uint16, bool) {
-	switch button {
-	case sdl.ButtonLeft:
-		return 128, true
-	case sdl.ButtonMiddle:
-		return 129, true
-	case sdl.ButtonRight:
-		return 130, true
-	default:
-		return 0, false
+func (g *hostGame) logEvent(format string, args ...any) {
+	if !g.opts.EventDebug {
+		return
 	}
+	fmt.Printf("[event-debug cycle=%d] %s\n", g.interp.CycleCount(), fmt.Sprintf(format, args...))
 }
 
-func specialKeyParameter(sym sdl.Keycode) (uint16, bool) {
-	switch sym {
-	case sdl.K_BACKSPACE:
-		return 8, true
-	case sdl.K_TAB:
-		return 9, true
-	case sdl.K_RETURN, sdl.K_RETURN2:
-		return 13, true
-	case sdl.K_ESCAPE:
-		return 27, true
-	case sdl.K_DELETE:
-		return 127, true
-	default:
-		return 0, false
+func packARGBToRGBA(dst []byte, src []uint32) {
+	for i, pixel := range src {
+		base := i * 4
+		dst[base+0] = byte(pixel >> 16)
+		dst[base+1] = byte(pixel >> 8)
+		dst[base+2] = byte(pixel)
+		dst[base+3] = byte(pixel >> 24)
 	}
 }
 
@@ -439,12 +302,4 @@ func overlayCursorBits(dst []uint32, displayWidth int, displayHeight int, cursor
 			}
 		}
 	}
-}
-
-func doSDL(fn func() error) error {
-	var err error
-	sdl.Do(func() {
-		err = fn()
-	})
-	return err
 }

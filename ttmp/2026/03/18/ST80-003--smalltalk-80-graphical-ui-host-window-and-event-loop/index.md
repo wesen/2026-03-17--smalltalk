@@ -22,9 +22,9 @@ WhenToUse: ""
 
 ## Overview
 
-This ticket begins after the interpreter/runtime stabilized with a real BitBlt implementation. Its purpose is to expose the designated Smalltalk display form in a host SDL window, then expand that first visible UI milestone into full interactive input/time integration.
+This ticket begins after the interpreter/runtime stabilized with a real BitBlt implementation. Its purpose is to expose the designated Smalltalk display form in a host graphical window, then expand that first visible UI milestone into full interactive input/time integration.
 
-Current state: a working SDL host-window command exists in `cmd/st80-ui`, the interpreter can now run in stepped chunks and export display snapshots, and the full UI loop has been validated under SDL’s dummy video driver. Mouse, keyboard, cursor, and timer integration remain open.
+Current state: a working Ebiten host-window command exists in `cmd/st80-ui`, the interpreter can now run in stepped chunks and export display snapshots, and the SDL-specific host loop has been replaced. Mouse, keyboard, cursor, and timer integration now live behind the Ebiten backend, while live desktop-session verification remains open.
 
 ## Key Links
 

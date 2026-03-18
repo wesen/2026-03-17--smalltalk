@@ -2109,3 +2109,160 @@ cannot use e.Event (variable of uint32 type sdl.WindowEventID) as uint8 value in
   - mouse-focus ID
   - keyboard-focus ID
 - The focus IDs now remain silent unless they actually change.
+
+## Step 20: Replace SDL with Ebiten
+
+### Prompt / goal
+Replace the `go-sdl2` host backend with `github.com/hajimehoshi/ebiten/v2`, keep the Smalltalk interpreter-facing UI semantics intact, and remove the SDL-specific commands/dependency instead of leaving two parallel backends in the repo.
+
+### Inferred user intent
+Stop spending more time fighting SDL/X11 edge cases on this machine and move the graphical host window onto a different Go-native backend with a simpler update/input model.
+
+### What I did
+- Checked the current UI surface:
+  - [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go)
+  - [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go)
+  - [ui_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui_test.go)
+- Confirmed the full SDL footprint in code with:
+
+```bash
+rg -n "go-sdl2|veandco|sdl" . 
+```
+
+- Resolved the current Ebiten version with:
+
+```bash
+go list -m -json github.com/hajimehoshi/ebiten/v2@latest
+```
+
+- Result:
+  - `github.com/hajimehoshi/ebiten/v2 v2.9.9`
+
+- Pulled the dependency and API docs:
+
+```bash
+go get github.com/hajimehoshi/ebiten/v2@v2.9.9
+go doc github.com/hajimehoshi/ebiten/v2 Game
+go doc github.com/hajimehoshi/ebiten/v2 RunGame
+go doc github.com/hajimehoshi/ebiten/v2 CursorPosition
+go doc github.com/hajimehoshi/ebiten/v2 AppendInputChars
+go doc github.com/hajimehoshi/ebiten/v2 IsFocused
+go doc github.com/hajimehoshi/ebiten/v2 SetWindowSize
+go doc github.com/hajimehoshi/ebiten/v2 Termination
+go doc github.com/hajimehoshi/ebiten/v2/inpututil
+```
+
+- Replaced the SDL implementation in [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) with an Ebiten `Game`:
+  - `Run` now loads the image, configures the window, and calls `ebiten.RunGame`
+  - the interpreter still advances in `CyclesPerFrame` chunks
+  - display snapshots still come from `interp.DisplaySnapshot()`
+  - cursor overlay still uses the existing bitmap helper path
+  - event/input handling now polls Ebiten state once per update tick
+- Preserved the interpreter-facing host semantics:
+  - mouse motion still calls `RecordMouseMotion`
+  - button edges still call `RecordMouseButton`
+  - printable text still flows through decoded-key recording
+  - special editing keys still map through the same Smalltalk-side parameters
+- Updated [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/st80-ui/main.go) so `-event-debug` describes the new backend semantics rather than "raw SDL input events."
+- Removed the standalone SDL diagnostics:
+  - deleted [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/sdl-hello/main.go)
+  - deleted [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/sdl-hello-raw/main.go)
+- Added a new standalone Ebiten diagnostic command:
+  - [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/ebiten-hello/main.go)
+- Cleaned the module graph with:
+
+```bash
+gofmt -w pkg/ui/ui.go cmd/st80-ui/main.go cmd/ebiten-hello/main.go
+go mod tidy
+```
+
+### Why
+- The SDL backend had already reached the point where the remaining host-side debugging was dominating the UI work.
+- Ebiten gives a simpler and more opinionated main loop:
+  - fixed-timestep `Update`
+  - direct keyboard/mouse polling
+  - direct logical-size window layout
+- That matches what this VM host actually needs: one bitmap, one update loop, and a small amount of input translation.
+
+### What worked
+- The SDL dependency is gone from code and module metadata:
+
+```bash
+rg -n "go-sdl2|veandco|github.com/veandco|\\bsdl\\b" go.mod go.sum pkg cmd
+```
+
+- That search now returns nothing.
+- Targeted validation passed:
+
+```bash
+go test ./pkg/ui ./cmd/st80-ui ./cmd/ebiten-hello
+```
+
+- Output:
+
+```text
+ok  	github.com/wesen/st80/pkg/ui	0.016s
+?   	github.com/wesen/st80/cmd/st80-ui	[no test files]
+?   	github.com/wesen/st80/cmd/ebiten-hello	[no test files]
+```
+
+- The existing cursor-overlay test in [ui_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui_test.go) still passes without modification to the pixel-overlay logic.
+
+### What did not work or remains open
+- I started a wider `go test ./...` run after the targeted backend validation. It was still traversing the heavier interpreter suite at the time of this entry, so the targeted pass is the concrete validation result recorded here.
+- The live desktop-session behavior under Ebiten still needs manual verification. Replacing SDL removes that backend, but it does not by itself prove that the machine-specific input issue is gone.
+
+### What I learned
+- The UI code was isolated enough that the backend swap was straightforward once the VM-facing interface was held constant.
+- The right unit of replacement was the entire host loop, not a piecemeal renderer swap.
+- Ebiten's `CursorPosition`, `AppendInputChars`, `IsFocused`, and `inpututil` helpers are enough for the current Smalltalk host integration without needing a lower-level event queue abstraction.
+
+### What was tricky
+- The old SDL path had raw event timestamps; the Ebiten path does not expose the same event objects, so the host timestamp is now derived from time since the UI process started.
+- The old SDL path used window-size-aware coordinate mapping. Ebiten's cursor position is already reported in logical coordinates, which simplifies the mapping but means the semantics of `-event-debug` necessarily changed from "raw backend events" to "observed host input state changes."
+- I had to decide whether to keep the SDL diagnostics around "just in case." I chose not to. Keeping them would have left the repo in an ambiguous half-migrated state.
+
+### What warrants a second pair of eyes
+- Review [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) for:
+  - the new `hostGame` lifecycle
+  - the logical-size resize behavior
+  - the input translation from Ebiten polling to interpreter calls
+- Review [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/ebiten-hello/main.go) to confirm it is the right minimal backend diagnostic to keep around.
+
+### Future follow-up
+- Run:
+
+```bash
+go run ./cmd/ebiten-hello
+go run ./cmd/st80-ui -event-debug -input-debug
+```
+
+- Confirm whether:
+  - mouse motion is now visible in the backend diagnostic
+  - the VM host receives input and changes input-debug counters
+  - the real desktop-session behavior is meaningfully better than it was under SDL
+
+### Code review instructions
+- Start with [go.mod](/home/manuel/code/wesen/2026-03-17--smalltalk/go.mod) to confirm the dependency migration.
+- Review [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go) for the host-loop replacement.
+- Review [main.go](/home/manuel/code/wesen/2026-03-17--smalltalk/cmd/ebiten-hello/main.go) for the new diagnostic path.
+- Confirm the deleted SDL commands are intentional and complete.
+
+### Technical details
+- New host backend:
+  - `github.com/hajimehoshi/ebiten/v2 v2.9.9`
+- Ebiten APIs used directly:
+  - `RunGame`
+  - `CursorPosition`
+  - `AppendInputChars`
+  - `IsFocused`
+  - `SetWindowSize`
+  - `SetWindowTitle`
+  - `SetWindowResizingMode`
+  - `Termination`
+  - `inpututil.IsMouseButtonJustPressed`
+  - `inpututil.IsMouseButtonJustReleased`
+  - `inpututil.IsKeyJustPressed`
+- SDL-only commands removed:
+  - `cmd/sdl-hello`
+  - `cmd/sdl-hello-raw`
