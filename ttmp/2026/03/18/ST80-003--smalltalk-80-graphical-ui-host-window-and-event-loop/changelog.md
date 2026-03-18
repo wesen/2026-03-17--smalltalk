@@ -128,3 +128,16 @@ Step 11: implemented host clock/timer primitives `98`, `99`, and `100`, storing 
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added second-clock, millisecond-clock, and signal-at-milliseconds primitives plus host clock state
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Added direct tests for byte-order correctness and immediate/future timer signaling
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/07-timer-primitives-byte-order-and-semaphore-initialization-note.md — Intern-facing notes on the timer primitive semantics and the fresh-semaphore `ExcessSignals` initialization detail
+
+
+## 2026-03-18
+
+Step 12: added host-side cursor snapshot/overlay support so the SDL renderer can OR the designated Smalltalk cursor form into the presented framebuffer instead of ignoring cursor state entirely.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added `CursorSnapshot` export for the designated cursor form and location
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — The display conversion path now overlays cursor bits after expanding the framebuffer
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/snapshot.go — Snapshot rendering now uses the same cursor overlay path as the SDL host loop
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui_test.go — Added a focused regression for cursor overlay composition
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/08-host-cursor-overlay-note.md — Notes on the chosen OR-style host cursor rendering behavior

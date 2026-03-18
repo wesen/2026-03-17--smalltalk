@@ -1247,3 +1247,115 @@ go test ./pkg/interpreter -run 'TestPrimitive(SecondClockIntoStoresLittleEndianS
 ```bash
 go test ./pkg/interpreter -run 'TestPrimitive(SecondClockIntoStoresLittleEndianSeconds|MillisecondClockIntoStoresLittleEndianTicks|SignalAtMillisecondsSignalsImmediatelyWhenPastDue|SignalAtMillisecondsSchedulesFutureSignal|InputSemaphoreStoresSemaphoreAndReturnsReceiver|SampleIntervalStoresMillisecondsAndReturnsReceiver|InputWordReturnsQueuedWord)|TestRecord(MouseMotionQueuesTimedCoordinatesAndSignalsSemaphore|MouseMotionRespectsSampleInterval|DecodedKeyQueuesOnAndOffWords)|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles'
 ```
+
+## Step 12: Host Cursor Overlay Support
+
+After input and timers, the remaining obvious UI mismatch was the cursor. The interpreter was already tracking:
+
+- the designated cursor form via `beCursor`
+- the current cursor location via `cursorLocPut:` / cursor-link behavior
+
+but the host window still ignored all of that and rendered only the raw display bitmap. The Blue Book description is explicit that the cursor is ORed into the display on update, so the host window was still missing part of the visible Smalltalk UI even though the underlying VM state already existed.
+
+I implemented this as a host overlay instead of trying to mutate the display form in object memory. The interpreter now exports a cursor snapshot in the same style as the display snapshot, and the UI layer overlays those 1-bit cursor words on top of the expanded ARGB framebuffer. That keeps the object memory honest and makes the host rendering path reflect the intended display semantics without turning cursor display into another in-memory `BitBlt`.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 10)
+
+**Assistant interpretation:** Keep closing the remaining visible UI/runtime gaps instead of stopping at partial interactivity.
+
+**Inferred user intent:** Make the host window reflect more of the real Smalltalk UI state, not just the display buffer in isolation.
+
+### What I did
+- Added `CursorSnapshot` in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go).
+- Added `CursorSnapshot()` on the interpreter so the UI can fetch:
+  - cursor form OOP
+  - cursor x/y
+  - cursor width/height
+  - cursor raster
+  - copied cursor words
+- Updated [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go):
+  - fetch cursor snapshot alongside the display snapshot
+  - overlay cursor bits after display expansion
+  - clip overlay to the visible display bounds
+- Updated [snapshot.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/snapshot.go) so direct non-SDL framebuffer snapshots use the same cursor overlay path as the live SDL UI.
+- Added [ui_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui_test.go) with:
+  - `TestCopyDisplayBitsOverlaysCursorBits`
+- Ran formatting:
+
+```bash
+gofmt -w pkg/interpreter/interpreter.go pkg/ui/ui.go pkg/ui/snapshot.go pkg/ui/ui_test.go
+```
+
+- Ran focused validation:
+
+```bash
+go test ./pkg/ui ./pkg/interpreter -run 'TestCopyDisplayBitsOverlaysCursorBits|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles|TestPrimitive(SecondClockIntoStoresLittleEndianSeconds|MillisecondClockIntoStoresLittleEndianTicks|SignalAtMillisecondsSignalsImmediatelyWhenPastDue|SignalAtMillisecondsSchedulesFutureSignal)'
+SDL_VIDEODRIVER=dummy go run ./cmd/st80-ui -max-cycles 50000 -cycles-per-frame 500
+```
+
+### Why
+- The host UI was still visibly incomplete while ignoring the designated Smalltalk cursor.
+- The Blue Book semantics are simple here: cursor bits are ORed into the displayed screen image.
+- Doing this as a host overlay is less invasive than mutating the display bitmap in object memory and avoids mixing transient presentation state into the VM’s persistent image memory.
+
+### What worked
+- The renderer now has access to the real cursor form and location.
+- The display conversion path and snapshot path now share the same overlay behavior.
+- The focused UI regression passes.
+- The dummy SDL UI smoke run still exits cleanly.
+
+### What didn't work
+- The first cursor-overlay edit broke the non-SDL snapshot build because `copyDisplayBits` gained cursor parameters and [snapshot.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/snapshot.go) still called the old signature.
+- The build failure was:
+
+```text
+pkg/ui/snapshot.go:61:42: not enough arguments in call to copyDisplayBits
+    have ([]uint32, interpreter.DisplaySnapshot)
+    want ([]uint32, interpreter.DisplaySnapshot, bool, interpreter.CursorSnapshot)
+```
+
+- That was a simple missed call-site update, not a design problem.
+- I have not yet captured a real desktop screenshot proving a visible cursor shape/location in a live session.
+
+### What I learned
+- The cursor path fits naturally into the existing snapshot/export boundary. It did not require a separate rendering subsystem.
+- Sharing the overlay logic between `st80-ui` and `st80-snapshot` is important; otherwise the debug path and the live path drift apart.
+- Cursor display is another place where “host rendering behavior” should be explicit and testable, not implied.
+
+### What was tricky to build
+- The tricky part was choosing the layering. It is tempting to say “the cursor is part of the screen, so just modify the display words,” but that would make the exported framebuffer less faithful to the actual VM object memory. The cleaner split is:
+  - display form snapshot from VM memory
+  - cursor form snapshot from VM memory
+  - OR-style composition in the host renderer
+- The other small trap was making sure the direct snapshot path used exactly the same composition routine as the SDL path.
+
+### What warrants a second pair of eyes
+- Review the decision to render cursor bits as black ORed pixels. That matches the current 1-bit rendering convention, but should still be visually confirmed in a live session.
+- Review whether the cursor origin semantics need an offset adjustment once real cursor motion is inspected visually.
+
+### What should be done in the future
+- Verify visible cursor behavior on a real desktop session.
+- Check whether the image expects any cursor hotspot offset beyond the raw cursor location fields.
+- If needed, add a richer cursor-specific diagnostic snapshot once live interaction is exercised more heavily.
+
+### Code review instructions
+- Start in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `CursorSnapshot`
+  - `CursorSnapshot()`
+- Then review [ui.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go):
+  - `copyDisplayBits`
+  - `overlayCursorBits`
+- Then review [snapshot.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/snapshot.go) and [ui_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui_test.go).
+
+### Technical details
+- Rendering rule used here:
+  - each set cursor bit overwrites the target pixel to black
+  - unset cursor bits leave the underlying display pixel unchanged
+- Validation commands for this step:
+
+```bash
+go test ./pkg/ui ./pkg/interpreter -run 'TestCopyDisplayBitsOverlaysCursorBits|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles|TestPrimitive(SecondClockIntoStoresLittleEndianSeconds|MillisecondClockIntoStoresLittleEndianTicks|SignalAtMillisecondsSignalsImmediatelyWhenPastDue|SignalAtMillisecondsSchedulesFutureSignal)'
+SDL_VIDEODRIVER=dummy go run ./cmd/st80-ui -max-cycles 50000 -cycles-per-frame 500
+```
