@@ -439,6 +439,49 @@ func TestPrimitiveInputWordReturnsQueuedWord(t *testing.T) {
 	}
 }
 
+func TestPrimitiveObjectAtPutFailsForZeroIndex(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	rcvr := interp.instantiateClassWithPointers(om.ClassArrayPointer, 2)
+	value := om.TruePointer
+	trueClassBefore := interp.fetchClassOf(om.TruePointer)
+
+	interp.push(rcvr)
+	interp.push(om.SmallIntegerOop(0))
+	interp.push(value)
+	interp.initPrimitive()
+	interp.dispatchStorageManagementPrimitives()
+
+	if interp.success {
+		t.Fatalf("expected objectAt:put: with index 0 to fail")
+	}
+	if got := interp.fetchClassOf(om.TruePointer); got != trueClassBefore {
+		t.Fatalf("expected True class to remain 0x%04X, got 0x%04X", trueClassBefore, got)
+	}
+}
+
+func TestPrimitiveInstVarAtPutFailsBeyondFixedFields(t *testing.T) {
+	interp := loadTestInterpreter(t)
+	point := interp.instantiateClassWithPointers(om.ClassPointPointer, 2)
+	value := om.TruePointer
+
+	interp.push(point)
+	interp.push(om.SmallIntegerOop(3))
+	interp.push(value)
+	interp.initPrimitive()
+	interp.primitiveIndex = 74
+	interp.dispatchStorageManagementPrimitives()
+
+	if interp.success {
+		t.Fatalf("expected instVarAt:put: beyond fixed fields to fail")
+	}
+	if got := interp.fetchPointer(PointXIndex, point); got != om.NilPointer {
+		t.Fatalf("expected point x to remain nil, got 0x%04X", got)
+	}
+	if got := interp.fetchPointer(PointYIndex, point); got != om.NilPointer {
+		t.Fatalf("expected point y to remain nil, got 0x%04X", got)
+	}
+}
+
 func TestPrimitiveSnapshotWritesImageAndReturnsReceiver(t *testing.T) {
 	interp := loadTestInterpreter(t)
 	snapshotPath := filepath.Join(t.TempDir(), "snapshot.image")

@@ -2401,3 +2401,152 @@ go run ./cmd/st80-ui -event-debug -input-debug
 ### Technical details
 - The user-triggered crash happened after live Ebiten mouse motion, around cycle `1,640,000`.
 - The report strongly suggests the next bug is reachable only once real input is flowing into the image.
+
+## Step 22: Hard-stop silent singleton corruption
+
+### Prompt / goal
+Use the richer panic data from the live Ebiten crash to identify the real corruption shape and remove the class of bug that allowed it to happen silently.
+
+### What the richer panic revealed
+The key user report was:
+
+```text
+panic: Recursive not understood error encountered: selector=0x002A("doesNotUnderstand:") lookupClass=0x6458 receiver=0x0002 class=0x6480("") sendReceiver=0x0006 sendClass=0x6458("") activeContext=0xFFFC homeContext=0xFFFC method=0x830C ip=8 sp=8 bytecode=208 argCount=1
+```
+
+I then resolved the important OOPs:
+
+```bash
+rg -n "16r6458|16r6480|16r830C" data/class.oops data/method.oops
+```
+
+Result:
+
+- `0x6458` is not a class OOP. It is method OOP `<True>not`.
+- `0x6480` is `UndefinedObject`.
+- `0x830C` is `<Object>~~`.
+
+That means the failing send path was:
+
+- method `<Object>~~`
+- receiver path produced `true` (`0x0006`)
+- the method then sent `not`
+- but `fetchClassOf(true)` returned `0x6458`, the method OOP for `<True>not`
+
+So the actual bug is not "True forgot `not`."
+
+The actual bug is:
+
+> the singleton object for `true` had its class word overwritten with a method OOP
+
+That is a silent heap-corruption problem.
+
+### Why this immediately changed the debugging strategy
+A singleton class word becoming a method OOP is exactly the kind of outcome you get from a bad field index write, especially an index of `0` passed through `index-1`, which lands on field `-1` and therefore on the class word.
+
+I reviewed [objectmemory.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go) and found a major structural weakness:
+
+- `FetchPointer`
+- `StorePointer`
+- `FetchWord`
+- `StoreWord`
+- `FetchByte`
+- `StoreByte`
+
+were only checking whether the computed address stayed inside the *entire object space*, not whether the access stayed inside the *target object's own bounds*.
+
+That means a bad field index could silently scribble over a neighboring object's header or class word.
+
+### What I changed in object memory
+- Added per-object bounds checks in [objectmemory.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go) for:
+  - `FetchPointer`
+  - `StorePointer`
+  - `FetchWord`
+  - `StoreWord`
+  - `FetchByte`
+  - `StoreByte`
+- The new panic messages now include:
+  - target OOP
+  - requested field/word/byte index
+  - object-local length
+  - location
+  - value for stores
+
+This means the next bad write should fail where it happens, not many cycles later when a corrupted singleton is used.
+
+### What I changed in the reflective primitives
+I also hardened the obvious user-visible entry points that could produce exactly this kind of class-word overwrite:
+
+- `objectAt:`
+- `objectAt:put:`
+- `instVarAt:`
+- `instVarAt:put:`
+
+in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go).
+
+New behavior:
+
+- `objectAt:` / `objectAt:put:` now require `1 <= index <= fetchWordLengthOf(receiver)`
+- `instVarAt:` / `instVarAt:put:` now require `1 <= index <= fixedFieldsOf(receiver class)`
+- invalid indices now primitive-fail instead of falling through to a raw `index-1` store/fetch
+
+### Why
+- Even with stronger object-memory guards, the VM should not need a panic to reject obviously invalid reflective indices.
+- Primitive failure is the right first line of defense.
+- The object-memory bounds checks are the second line of defense in case some other internal path is still wrong.
+
+### Tests added
+In [objectmemory_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory_test.go):
+
+- `TestStorePointerPanicsWhenFieldIndexIsNegative`
+- `TestStorePointerPanicsWhenFieldIndexExceedsObjectLength`
+- `TestStoreBytePanicsWhenByteIndexExceedsObjectLength`
+
+In [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+
+- `TestPrimitiveObjectAtPutFailsForZeroIndex`
+- `TestPrimitiveInstVarAtPutFailsBeyondFixedFields`
+
+### Validation
+Ran:
+
+```bash
+gofmt -w pkg/objectmemory/objectmemory.go pkg/objectmemory/objectmemory_test.go
+gofmt -w pkg/interpreter/interpreter.go pkg/interpreter/interpreter_test.go
+go test ./pkg/interpreter ./pkg/objectmemory ./pkg/ui ./cmd/st80-ui ./cmd/ebiten-hello -run 'TestPrimitiveObjectAtPutFailsForZeroIndex|TestPrimitiveInstVarAtPutFailsBeyondFixedFields|TestPrimitiveMousePointReturnsConfiguredPoint|TestPrimitiveInputWordReturnsQueuedWord|TestCopyDisplayBitsOverlaysCursorBits|TestStorePointerPanicsWhenFieldIndexIsNegative|TestStorePointerPanicsWhenFieldIndexExceedsObjectLength|TestStoreBytePanicsWhenByteIndexExceedsObjectLength'
+```
+
+Result:
+
+```text
+ok  	github.com/wesen/st80/pkg/interpreter	0.027s
+ok  	github.com/wesen/st80/pkg/objectmemory	0.005s
+ok  	github.com/wesen/st80/pkg/ui	0.038s
+?   	github.com/wesen/st80/cmd/st80-ui	[no test files]
+?   	github.com/wesen/st80/cmd/ebiten-hello	[no test files]
+```
+
+### What I learned
+- The richer panic was worth it immediately.
+- The corruption signature is highly consistent with a bad reflective field index rather than a random allocator failure.
+- The most important fix in this slice is not the primitive checks by themselves; it is removing silent adjacent-object corruption as a tolerated failure mode in object memory.
+
+### What should happen next
+- Re-run the live Ebiten UI and repeat the menu click.
+- Expected outcomes:
+  - either the old crash disappears because the bad index now primitive-fails harmlessly
+  - or a new, earlier bounds panic identifies the exact store/fetch site that was previously corrupting `true`
+
+### Code review instructions
+- Review [objectmemory.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go) for the new per-object bounds checks.
+- Review [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) for:
+  - `checkObjectFieldBounds`
+  - `checkInstanceVariableBounds`
+  - the updated storage-management primitive cases
+- Review the new regressions in:
+  - [objectmemory_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory_test.go)
+  - [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go)
+
+### Technical details
+- The key semantic clue was that `fetchClassOf(true)` returned method OOP `0x6458` (`<True>not`) instead of a class OOP.
+- That points strongly at a class-word overwrite, which is exactly what a negative field index can do.

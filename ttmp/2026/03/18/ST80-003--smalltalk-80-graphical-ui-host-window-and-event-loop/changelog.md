@@ -249,3 +249,16 @@ Step 21: after the first successful live Ebiten input run exposed a VM-side cras
 
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added recursive-DNU diagnostic formatting with selector, receiver, class, context, IP/SP, and bytecode detail
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Recorded the crash report and why the next patch is diagnostic-first
+
+
+## 2026-03-18
+
+Step 22: used the richer panic to identify that `true`'s class word had been silently corrupted, then hardened object-memory field/byte bounds and added primitive-level bounds checks for `objectAt:` / `objectAt:put:` / `instVarAt:` / `instVarAt:put:` so bad indices fail or trap at the actual offending access instead of silently overwriting neighboring singleton objects.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory.go — Added per-object bounds checks for pointer, word, and byte fetch/store accessors
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/objectmemory/objectmemory_test.go — Added regressions for negative and oversized object-memory accesses
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added reflective primitive bounds checks for `objectAt:` / `objectAt:put:` / `instVarAt:` / `instVarAt:put:`
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Added regressions proving the reflective primitives no longer accept corrupting zero/oversized indices
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/01-diary.md — Recorded the new diagnosis and defensive fix path

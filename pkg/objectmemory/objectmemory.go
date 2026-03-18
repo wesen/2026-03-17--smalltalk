@@ -267,6 +267,11 @@ func (om *ObjectMemory) FetchByteLengthOf(oop uint16) int {
 // Field index 0 is the first field after the class.
 func (om *ObjectMemory) FetchPointer(fieldIndex int, ofObject uint16) uint16 {
 	loc := om.HeapAddress(ofObject)
+	wordLen := om.FetchWordLengthOf(ofObject)
+	if fieldIndex < 0 || fieldIndex >= wordLen {
+		panic(fmt.Sprintf("FetchPointer: OOP 0x%04X field %d out of bounds (wordLen=%d, loc=%d)",
+			ofObject, fieldIndex, wordLen, loc))
+	}
 	addr := loc + 2 + fieldIndex
 	if addr < 0 || addr >= len(om.objectSpace) {
 		panic(fmt.Sprintf("FetchPointer: OOP 0x%04X field %d: addr %d out of bounds (os=%d, loc=%d)",
@@ -278,6 +283,11 @@ func (om *ObjectMemory) FetchPointer(fieldIndex int, ofObject uint16) uint16 {
 // StorePointer stores an OOP at the given field index in the object.
 func (om *ObjectMemory) StorePointer(fieldIndex int, ofObject uint16, withValue uint16) {
 	loc := om.HeapAddress(ofObject)
+	wordLen := om.FetchWordLengthOf(ofObject)
+	if fieldIndex < 0 || fieldIndex >= wordLen {
+		panic(fmt.Sprintf("StorePointer: OOP 0x%04X field %d out of bounds (wordLen=%d, loc=%d, value=0x%04X)",
+			ofObject, fieldIndex, wordLen, loc, withValue))
+	}
 	addr := loc + 2 + fieldIndex
 	if addr < 0 || addr >= len(om.objectSpace) {
 		panic(fmt.Sprintf("StorePointer: OOP 0x%04X field %d: addr %d out of bounds (os=%d, loc=%d)",
@@ -289,17 +299,32 @@ func (om *ObjectMemory) StorePointer(fieldIndex int, ofObject uint16, withValue 
 // FetchWord returns the raw 16-bit word at the given word index in the object.
 func (om *ObjectMemory) FetchWord(wordIndex int, ofObject uint16) uint16 {
 	loc := om.HeapAddress(ofObject)
+	wordLen := om.FetchWordLengthOf(ofObject)
+	if wordIndex < 0 || wordIndex >= wordLen {
+		panic(fmt.Sprintf("FetchWord: OOP 0x%04X word %d out of bounds (wordLen=%d, loc=%d)",
+			ofObject, wordIndex, wordLen, loc))
+	}
 	return om.objectSpace[loc+2+wordIndex]
 }
 
 // StoreWord stores a raw 16-bit word at the given word index in the object.
 func (om *ObjectMemory) StoreWord(wordIndex int, ofObject uint16, withValue uint16) {
 	loc := om.HeapAddress(ofObject)
+	wordLen := om.FetchWordLengthOf(ofObject)
+	if wordIndex < 0 || wordIndex >= wordLen {
+		panic(fmt.Sprintf("StoreWord: OOP 0x%04X word %d out of bounds (wordLen=%d, loc=%d, value=0x%04X)",
+			ofObject, wordIndex, wordLen, loc, withValue))
+	}
 	om.objectSpace[loc+2+wordIndex] = withValue
 }
 
 // FetchByte returns the byte at the given byte index in the object.
 func (om *ObjectMemory) FetchByte(byteIndex int, ofObject uint16) byte {
+	byteLen := om.FetchByteLengthOf(ofObject)
+	if byteIndex < 0 || byteIndex >= byteLen {
+		panic(fmt.Sprintf("FetchByte: OOP 0x%04X byte %d out of bounds (byteLen=%d)",
+			ofObject, byteIndex, byteLen))
+	}
 	wordIndex := byteIndex / 2
 	w := om.FetchWord(wordIndex, ofObject)
 	if byteIndex%2 == 0 {
@@ -310,6 +335,11 @@ func (om *ObjectMemory) FetchByte(byteIndex int, ofObject uint16) byte {
 
 // StoreByte stores a byte at the given byte index in the object.
 func (om *ObjectMemory) StoreByte(byteIndex int, ofObject uint16, withValue byte) {
+	byteLen := om.FetchByteLengthOf(ofObject)
+	if byteIndex < 0 || byteIndex >= byteLen {
+		panic(fmt.Sprintf("StoreByte: OOP 0x%04X byte %d out of bounds (byteLen=%d, value=0x%02X)",
+			ofObject, byteIndex, byteLen, withValue))
+	}
 	wordIndex := byteIndex / 2
 	w := om.FetchWord(wordIndex, ofObject)
 	if byteIndex%2 == 0 {

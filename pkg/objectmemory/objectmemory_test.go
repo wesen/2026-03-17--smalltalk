@@ -66,3 +66,42 @@ func TestInstantiatePanicsWhenObjectSpaceWouldWrapPastSegmentLimit(t *testing.T)
 
 	om.InstantiateClass(ClassArrayPointer, 1, true)
 }
+
+func TestStorePointerPanicsWhenFieldIndexIsNegative(t *testing.T) {
+	om := New(nil, nil)
+	oop := om.InstantiateClass(ClassArrayPointer, 2, true)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected StorePointer negative-index panic, got none")
+		}
+	}()
+
+	om.StorePointer(-1, oop, NilPointer)
+}
+
+func TestStorePointerPanicsWhenFieldIndexExceedsObjectLength(t *testing.T) {
+	om := New(nil, nil)
+	oop := om.InstantiateClass(ClassArrayPointer, 2, true)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected StorePointer oversized-index panic, got none")
+		}
+	}()
+
+	om.StorePointer(2, oop, NilPointer)
+}
+
+func TestStoreBytePanicsWhenByteIndexExceedsObjectLength(t *testing.T) {
+	om := New(nil, nil)
+	oop := om.InstantiateClassWithBytes(ClassStringPointer, 3)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected StoreByte oversized-index panic, got none")
+		}
+	}()
+
+	om.StoreByte(3, oop, 0x41)
+}

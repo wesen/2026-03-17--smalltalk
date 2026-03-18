@@ -1490,6 +1490,19 @@ func (interp *Interpreter) subscriptStoring(array uint16, index int, class uint1
 	}
 }
 
+func (interp *Interpreter) checkObjectFieldBounds(index int, oop uint16) {
+	if index < 1 || index > interp.fetchWordLengthOf(oop) {
+		interp.success = false
+	}
+}
+
+func (interp *Interpreter) checkInstanceVariableBounds(index int, oop uint16) {
+	class := interp.fetchClassOf(oop)
+	if index < 1 || index > interp.fixedFieldsOf(class) {
+		interp.success = false
+	}
+}
+
 // ---- Storage management primitives ----
 
 func (interp *Interpreter) dispatchStorageManagementPrimitives() {
@@ -1498,19 +1511,27 @@ func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 		index := interp.popPositiveInteger()
 		rcvr := interp.popStack()
 		if interp.success {
+			interp.checkObjectFieldBounds(index, rcvr)
+		}
+		if interp.success {
 			interp.push(interp.fetchPointer(index-1, rcvr))
 		} else {
 			interp.unPop(2)
+			interp.primitiveFail()
 		}
 	case 69: // objectAt:put:
 		value := interp.popStack()
 		index := interp.popPositiveInteger()
 		rcvr := interp.popStack()
 		if interp.success {
+			interp.checkObjectFieldBounds(index, rcvr)
+		}
+		if interp.success {
 			interp.storePointer(index-1, rcvr, value)
 			interp.push(value)
 		} else {
 			interp.unPop(3)
+			interp.primitiveFail()
 		}
 	case 70: // basicNew, new
 		class := interp.popStack()
@@ -1554,19 +1575,27 @@ func (interp *Interpreter) dispatchStorageManagementPrimitives() {
 		index := interp.popPositiveInteger()
 		rcvr := interp.popStack()
 		if interp.success {
+			interp.checkInstanceVariableBounds(index, rcvr)
+		}
+		if interp.success {
 			interp.push(interp.fetchPointer(index-1, rcvr))
 		} else {
 			interp.unPop(2)
+			interp.primitiveFail()
 		}
 	case 74: // instVarAt:put:
 		value := interp.popStack()
 		index := interp.popPositiveInteger()
 		rcvr := interp.popStack()
 		if interp.success {
+			interp.checkInstanceVariableBounds(index, rcvr)
+		}
+		if interp.success {
 			interp.storePointer(index-1, rcvr, value)
 			interp.push(value)
 		} else {
 			interp.unPop(3)
+			interp.primitiveFail()
 		}
 	case 75: // asOop, hash
 		rcvr := interp.popStack()
