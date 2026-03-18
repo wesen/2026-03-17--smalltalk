@@ -232,7 +232,9 @@ func (interp *Interpreter) fetchBytecode() byte {
 // ---- CompiledMethod access (Blue Book p.577-580) ----
 
 func (interp *Interpreter) headerOf(methodPointer uint16) uint16 {
-	return interp.fetchPointer(HeaderIndex, methodPointer)
+	// CompiledMethod headers are stored as SmallIntegers; decode the 15-bit
+	// payload before applying the Blue Book bit layout.
+	return uint16(om.SmallIntegerValue(interp.fetchPointer(HeaderIndex, methodPointer)))
 }
 
 func (interp *Interpreter) literal(offset int) uint16 {
@@ -281,7 +283,7 @@ func (interp *Interpreter) fieldIndexOf(methodPointer uint16) int {
 
 func (interp *Interpreter) headerExtensionOf(methodPointer uint16) uint16 {
 	literalCount := interp.literalCountOf(methodPointer)
-	return interp.literalOfMethod(literalCount-2, methodPointer)
+	return uint16(om.SmallIntegerValue(interp.literalOfMethod(literalCount-2, methodPointer)))
 }
 
 func (interp *Interpreter) argumentCountOf(methodPointer uint16) int {
@@ -326,7 +328,7 @@ func (interp *Interpreter) hash(objectPointer uint16) int {
 }
 
 func (interp *Interpreter) instanceSpecificationOf(classPointer uint16) uint16 {
-	return interp.fetchPointer(InstanceSpecificationIndex, classPointer)
+	return uint16(om.SmallIntegerValue(interp.fetchPointer(InstanceSpecificationIndex, classPointer)))
 }
 
 func (interp *Interpreter) isPointers(classPointer uint16) bool {
