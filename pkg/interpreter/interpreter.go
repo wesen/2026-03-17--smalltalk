@@ -1420,6 +1420,8 @@ func (interp *Interpreter) dispatchInputOutputPrimitives() {
 	switch interp.primitiveIndex {
 	case 92: // cursorLink:
 		interp.primitiveCursorLink()
+	case 96: // copyBits
+		interp.primitiveCopyBits()
 	case 101: // beCursor
 		interp.primitiveBeCursor()
 	case 102: // beDisplay
@@ -1460,6 +1462,14 @@ func (interp *Interpreter) primitiveCursorLink() {
 		interp.primitiveFail()
 		return
 	}
+	interp.push(rcvr)
+}
+
+func (interp *Interpreter) primitiveCopyBits() {
+	// Temporary headless implementation: report success and return the BitBlt
+	// receiver so the image can continue past display/update paths while the
+	// real BitBlt engine is still pending.
+	rcvr := interp.popStack()
 	interp.push(rcvr)
 }
 
