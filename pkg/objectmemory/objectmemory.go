@@ -144,6 +144,15 @@ func (om *ObjectMemory) setOtEntryWord1(oop uint16, value uint16) {
 	om.objectTable[otIndex(oop)+1] = value
 }
 
+// FreeObject marks an object table entry reusable for future allocations.
+// The object body remains in object space; only the OOP slot is recycled.
+func (om *ObjectMemory) FreeObject(oop uint16) {
+	if IsSmallInteger(oop) || !om.ValidOop(oop) {
+		return
+	}
+	om.setOtEntryWord0(oop, otFreeBit)
+}
+
 // SwapPointersOf implements the Blue Book pointer swap used by become:.
 // It swaps the object body location and shape bits while preserving each OOP's
 // reference count and free-state metadata.

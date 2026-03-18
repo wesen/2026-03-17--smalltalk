@@ -175,8 +175,22 @@ func (interp *Interpreter) instantiateClassWithBytes(classPointer uint16, instan
 // ---- Context management (Blue Book p.582-585) ----
 
 func (interp *Interpreter) isBlockContext(contextPointer uint16) bool {
+	if om.IsSmallInteger(contextPointer) || !interp.memory.ValidOop(contextPointer) {
+		return false
+	}
 	methodOrArguments := interp.fetchPointer(MethodIndex, contextPointer)
 	return om.IsSmallInteger(methodOrArguments)
+}
+
+func (interp *Interpreter) isMethodContext(contextPointer uint16) bool {
+	if om.IsSmallInteger(contextPointer) || !interp.memory.ValidOop(contextPointer) {
+		return false
+	}
+	methodPointer := interp.fetchPointer(MethodIndex, contextPointer)
+	if om.IsSmallInteger(methodPointer) || !interp.memory.ValidOop(methodPointer) {
+		return false
+	}
+	return interp.fetchClassOf(methodPointer) == om.ClassCompiledMethodPointer
 }
 
 func (interp *Interpreter) fetchContextRegisters() {
@@ -520,14 +534,54 @@ func (interp *Interpreter) returnValueTo(resultPointer uint16, contextPointer ui
 }
 
 func (interp *Interpreter) returnToActiveContext(aContext uint16) {
+	oldContext := interp.activeContext
 	interp.nilContextFields()
 	interp.activeContext = aContext
 	interp.fetchContextRegisters()
+	interp.maybeRecycleContext(oldContext, interp.activeContext)
 }
 
 func (interp *Interpreter) nilContextFields() {
 	interp.storePointer(SenderIndex, interp.activeContext, om.NilPointer)
 	interp.storePointer(InstructionPointerIndex, interp.activeContext, om.NilPointer)
+}
+
+func (interp *Interpreter) contextReachableFrom(root uint16, target uint16, visited map[uint16]bool) bool {
+	if root == om.NilPointer || om.IsSmallInteger(root) || visited[root] || !interp.memory.ValidOop(root) {
+		return false
+	}
+	if root == target {
+		return true
+	}
+	if !interp.isMethodContext(root) && !interp.isBlockContext(root) {
+		return false
+	}
+	visited[root] = true
+
+	fieldCount := interp.fetchWordLengthOf(root)
+	for i := 0; i < fieldCount; i++ {
+		field := interp.fetchPointer(i, root)
+		if field == target {
+			return true
+		}
+		if interp.contextReachableFrom(field, target, visited) {
+			return true
+		}
+	}
+	return false
+}
+
+func (interp *Interpreter) maybeRecycleContext(context uint16, activeRoot uint16) {
+	if om.IsSmallInteger(context) || !interp.memory.ValidOop(context) {
+		return
+	}
+	if !interp.isMethodContext(context) {
+		return
+	}
+	if interp.contextReachableFrom(activeRoot, context, map[uint16]bool{}) {
+		return
+	}
+	interp.memory.FreeObject(context)
 }
 
 func (interp *Interpreter) sender() uint16 {
@@ -567,6 +621,18 @@ func (interp *Interpreter) pushInteger(integerValue int) {
 	} else {
 		interp.success = false
 	}
+}
+
+func (interp *Interpreter) characterCodeOf(character uint16) (byte, bool) {
+	if !interp.memory.ValidOop(character) || interp.fetchClassOf(character) != om.ClassCharacterPointer {
+		return 0, false
+	}
+	for i := 0; i < 256; i++ {
+		if interp.fetchPointer(i, om.CharacterTablePointer) == character {
+			return byte(i), true
+		}
+	}
+	return 0, false
 }
 
 // ---- Primitive dispatch (Blue Book p.620-621) ----
@@ -1019,7 +1085,33 @@ func (interp *Interpreter) primitiveStringAt() {
 }
 
 func (interp *Interpreter) primitiveStringAtPut() {
-	interp.primitiveFail() // Complex, defer
+	value := interp.popStack()
+	index := interp.popInteger()
+	rcvr := interp.popStack()
+	if !interp.success {
+		interp.unPop(3)
+		return
+	}
+	class := interp.fetchClassOf(rcvr)
+	if interp.isPointers(class) || interp.isWords(class) {
+		interp.unPop(3)
+		interp.primitiveFail()
+		return
+	}
+	interp.checkIndexableBoundsOf(index, rcvr, class)
+	if !interp.success {
+		interp.unPop(3)
+		return
+	}
+	code, ok := interp.characterCodeOf(value)
+	if !ok {
+		interp.unPop(3)
+		interp.primitiveFail()
+		return
+	}
+	fixedFields := interp.fixedFieldsOf(class)
+	interp.memory.StoreByte(index+fixedFields-1, rcvr, code)
+	interp.push(value)
 }
 
 func (interp *Interpreter) checkIndexableBoundsOf(index int, array uint16, class uint16) {
@@ -1195,7 +1287,11 @@ func (interp *Interpreter) dispatchControlPrimitives() {
 func (interp *Interpreter) primitiveBlockCopy() {
 	blockArgumentCount := interp.popStack()
 	ctx := interp.popStack()
-	contextSize := TempFrameStart + 12 // small context
+	methodContext := ctx
+	if interp.isBlockContext(ctx) {
+		methodContext = interp.fetchPointer(HomeIndex, ctx)
+	}
+	contextSize := interp.fetchWordLengthOf(methodContext)
 	newContext := interp.instantiateClassWithPointers(om.ClassBlockContextPointer, contextSize)
 	// initialIP is set to instructionPointer + 3 (skip jump after blockCopy)
 	initialIP := om.SmallIntegerOop(int16(interp.instructionPointer + 3))
@@ -1203,11 +1299,7 @@ func (interp *Interpreter) primitiveBlockCopy() {
 	interp.storePointer(InstructionPointerIndex, newContext, initialIP)
 	interp.storePointer(StackPointerIndex, newContext, om.SmallIntegerOop(0))
 	interp.storePointer(BlockArgumentCountIndex, newContext, blockArgumentCount)
-	if interp.isBlockContext(ctx) {
-		interp.storePointer(HomeIndex, newContext, interp.fetchPointer(HomeIndex, ctx))
-	} else {
-		interp.storePointer(HomeIndex, newContext, ctx)
-	}
+	interp.storePointer(HomeIndex, newContext, methodContext)
 	interp.push(newContext)
 }
 
@@ -1232,8 +1324,7 @@ func (interp *Interpreter) primitiveValue() {
 	interp.storePointer(StackPointerIndex, blockContext,
 		om.SmallIntegerOop(int16(interp.argumentCount)))
 	interp.storePointer(CallerIndex, blockContext, interp.activeContext)
-	interp.activeContext = blockContext
-	interp.fetchContextRegisters()
+	interp.newActiveContext(blockContext)
 }
 
 func (interp *Interpreter) primitivePerform() {
@@ -1736,7 +1827,7 @@ func (interp *Interpreter) commonSelectorPrimitive() bool {
 	bc := int(interp.currentBytecode)
 	interp.initPrimitive()
 	argCount := int(om.SmallIntegerValue(interp.fetchPointer((bc-176)*2+1, om.SpecialSelectorsPointer)))
-	receiverClass := interp.fetchClassOf(interp.stackValue(argCount))
+	interp.argumentCount = argCount
 	switch bc {
 	case 198: // ==
 		arg := interp.popStack()
@@ -1752,12 +1843,12 @@ func (interp *Interpreter) commonSelectorPrimitive() bool {
 		interp.push(interp.fetchClassOf(rcvr))
 		return true
 	case 200: // blockCopy:
-		if receiverClass == om.ClassMethodContextPointer || receiverClass == om.ClassBlockContextPointer {
+		if interp.isMethodContext(interp.stackValue(argCount)) || interp.isBlockContext(interp.stackValue(argCount)) {
 			interp.primitiveBlockCopy()
 			return interp.success
 		}
 	case 201, 202: // value, value:
-		if receiverClass == om.ClassBlockContextPointer {
+		if interp.isBlockContext(interp.stackValue(argCount)) {
 			interp.primitiveValue()
 			return interp.success
 		}
