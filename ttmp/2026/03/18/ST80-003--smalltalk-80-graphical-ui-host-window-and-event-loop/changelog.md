@@ -117,3 +117,14 @@ Step 10: implemented the active input-event buffer primitives (`93`, `94`, `95`)
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Added regressions for input semaphore registration, sample interval handling, buffered word return, mouse-motion event words, and decoded-keypress encoding
 - /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/ui/ui.go — SDL loop now feeds mouse motion, mouse buttons, text input, and editing keys into the interpreter input queue
 - /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/06-input-event-buffer-oop-zero-sentinel-bug-writeup.md — Intern-facing writeup of the first-pass input semaphore signaling bug
+
+
+## 2026-03-18
+
+Step 11: implemented host clock/timer primitives `98`, `99`, and `100`, storing 32-bit little-endian time words into byte objects and wiring millisecond-deadline semaphore signaling through the interpreter scheduler.
+
+### Related Files
+
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go — Added second-clock, millisecond-clock, and signal-at-milliseconds primitives plus host clock state
+- /home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go — Added direct tests for byte-order correctness and immediate/future timer signaling
+- /home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/07-timer-primitives-byte-order-and-semaphore-initialization-note.md — Intern-facing notes on the timer primitive semantics and the fresh-semaphore `ExcessSignals` initialization detail

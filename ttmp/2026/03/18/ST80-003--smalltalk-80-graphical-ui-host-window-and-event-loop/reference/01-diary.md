@@ -1125,3 +1125,125 @@ SDL_VIDEODRIVER=dummy go test ./pkg/ui ./cmd/st80-ui
   - type `4`: device off
   - type `5`: absolute time + two trailing words
 - The specific first-pass bug fix was changing the input-semaphore signal guard from “non-zero and non-nil” to “non-nil”, because OOP `0` can still be a valid allocated object.
+
+## Step 11: Host Clock And Timer Primitive Support
+
+After the active input buffer landed, the remaining host-runtime gap was the clock side of the same subsystem. The Blue Book groups `primitiveTimeWordsInto`, `primitiveTickWordsInto`, and `primitiveSignalAtTick` with the I/O primitives for a reason: the image needs both incoming events and a notion of host time in order to wake waiting processes, poll delays, and maintain the rest of the interactive runtime.
+
+I implemented the timer slice narrowly and kept it test-driven. That meant: add explicit host clock state inside the interpreter, store 32-bit values into byte-indexable objects in a consistent byte order, and drive scheduled semaphore signaling through the interpreter’s existing deferred-signal path. The focused tests also exposed one subtle fixture issue: when I allocate a fresh `Semaphore` for tests, its `ExcessSignals` field starts as `nil`, but `synchronousSignal` expects SmallInteger zero there. That was a test-fixture initialization problem, not a runtime-spec problem, and I recorded it because it is easy to trip over again later.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 10)
+
+**Assistant interpretation:** Continue filling in the remaining VM/host boundary without stopping after the active input work.
+
+**Inferred user intent:** Reduce the remaining “stub” surface area in the UI/runtime path by implementing the next spec-backed subsystem instead of leaving the host loop half-wired.
+
+### What I did
+- Extended [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go) with host clock state:
+  - `timeNow`
+  - `tickStart`
+  - `timerSemaphore`
+  - `timerTickDeadline`
+  - `timerActive`
+- Implemented:
+  - `primitiveSecondClockInto` for primitive `98`
+  - `primitiveMillisecondClockInto` for primitive `99`
+  - `primitiveSignalAtMilliseconds` for primitive `100`
+- Added supporting helpers:
+  - `isByteIndexableWithLengthAtLeast`
+  - `storeUint32LE`
+  - `fetchUint32LE`
+  - `currentSecondClock`
+  - `currentMillisecondClock`
+- Updated `checkProcessSwitch` so an armed timer deadline turns into a deferred semaphore signal at the scheduler boundary.
+- Added direct tests in [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - `TestPrimitiveSecondClockIntoStoresLittleEndianSeconds`
+  - `TestPrimitiveMillisecondClockIntoStoresLittleEndianTicks`
+  - `TestPrimitiveSignalAtMillisecondsSignalsImmediatelyWhenPastDue`
+  - `TestPrimitiveSignalAtMillisecondsSchedulesFutureSignal`
+- Added `newTestSemaphore` so timer and signal tests use a correctly initialized `Semaphore` object with `ExcessSignals` set to SmallInteger zero.
+- Ran formatting:
+
+```bash
+gofmt -w pkg/interpreter/interpreter.go pkg/interpreter/interpreter_test.go
+```
+
+- Ran focused validation:
+
+```bash
+go test ./pkg/interpreter -run 'TestPrimitive(SecondClockIntoStoresLittleEndianSeconds|MillisecondClockIntoStoresLittleEndianTicks|SignalAtMillisecondsSignalsImmediatelyWhenPastDue|SignalAtMillisecondsSchedulesFutureSignal|InputSemaphoreStoresSemaphoreAndReturnsReceiver|SampleIntervalStoresMillisecondsAndReturnsReceiver|InputWordReturnsQueuedWord)|TestRecord(MouseMotionQueuesTimedCoordinatesAndSignalsSemaphore|MouseMotionRespectsSampleInterval|DecodedKeyQueuesOnAndOffWords)|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles'
+```
+
+### Why
+- The Blue Book explicitly specifies `98`, `99`, and `100` as part of the same I/O boundary as the input primitives.
+- The UI/runtime bridge was still incomplete while these remained stubs.
+- Timer signaling belongs in the same deferred scheduler path as other asynchronous semaphore signals, so it was best to integrate it there instead of inventing a separate wakeup mechanism.
+
+### What worked
+- Primitive `98` now writes seconds-since-1901 into the first four bytes of the target object.
+- Primitive `99` now writes the host millisecond clock into the first four bytes of the target object.
+- Primitive `100` now:
+  - signals immediately if the requested deadline has already passed
+  - arms a future deadline otherwise
+  - clears any waiting timer if the first argument is not a valid `Semaphore`
+- The future-timer path now wakes through `checkProcessSwitch`, which matches the interpreter’s existing asynchronous-signal model.
+- Focused tests are green.
+
+### What didn't work
+- The first future-timer test failed because the freshly allocated `Semaphore` fixture had `ExcessSignals = nil` instead of SmallInteger zero.
+- The exact failure was:
+
+```text
+--- FAIL: TestPrimitiveSignalAtMillisecondsSchedulesFutureSignal (0.00s)
+    interpreter_test.go:613: expected scheduled timer to signal semaphore once, got excessSignals=2
+```
+
+- That was not a bug in the timer implementation. It was a fixture-construction bug in the test.
+- I have not yet done a live desktop-session audit of delayed-process wakeups using the new timer primitives.
+
+### What I learned
+- The object-memory byte conventions in this VM are easiest to keep straight if I treat 16-bit and 32-bit positive integers consistently as little-endian byte sequences.
+- The scheduler boundary remains the right place to turn host-side asynchronous conditions into Smalltalk-visible semaphore signals.
+- Freshly instantiated pointer objects are not automatically valid fixtures for every class; class-specific fields sometimes need explicit initialization in tests.
+
+### What was tricky to build
+- The trickiest part was not writing bytes. It was choosing where the timer should actually fire. Firing it directly inside the primitive would skip the interpreter’s normal deferred-signal path. Firing it inside `checkProcessSwitch` keeps timer wakeups aligned with the same scheduling rules used for input-event semaphores.
+- The second tricky part was separating runtime bugs from fixture bugs. The initial timer failure looked like a double-signal issue in the implementation, but the real problem was that the test `Semaphore` object started in an impossible state for `synchronousSignal`.
+
+### What warrants a second pair of eyes
+- Review the choice to encode the 32-bit clock words as little-endian byte sequences. It is internally consistent with the existing integer boxing helpers, but it is worth keeping under review when the image-side consumers are exercised more heavily.
+- Review whether `currentSecondClock` should remain UTC-based or should eventually follow a more image-specific/local-time convention once more time behavior is exercised.
+- Review whether the timer wakeup should be checked only in `checkProcessSwitch` or also somewhere else if later behavior shows missed opportunities.
+
+### What should be done in the future
+- Exercise the live image paths that consume these timer primitives and confirm delayed wakeups behave correctly in the running UI.
+- Keep auditing byte-order assumptions anywhere the image exchanges raw multi-byte values with the host.
+- If needed, widen tests beyond focused unit coverage into longer runtime scenarios involving `Delay` / scheduler wakeups.
+
+### Code review instructions
+- Start in [interpreter.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter.go):
+  - `primitiveSecondClockInto`
+  - `primitiveMillisecondClockInto`
+  - `primitiveSignalAtMilliseconds`
+  - `storeUint32LE`
+  - `fetchUint32LE`
+  - the timer check at the top of `checkProcessSwitch`
+- Then review [interpreter_test.go](/home/manuel/code/wesen/2026-03-17--smalltalk/pkg/interpreter/interpreter_test.go):
+  - the four new timer tests
+  - `newTestSemaphore`
+- Then read [07-timer-primitives-byte-order-and-semaphore-initialization-note.md](/home/manuel/code/wesen/2026-03-17--smalltalk/ttmp/2026/03/18/ST80-003--smalltalk-80-graphical-ui-host-window-and-event-loop/reference/07-timer-primitives-byte-order-and-semaphore-initialization-note.md).
+
+### Technical details
+- Blue Book reference used in this step:
+  - I/O primitive time/tick/timer behavior on pages `651` to `652`
+- The runtime choices made here are:
+  - seconds clock: current UTC time minus `1901-01-01T00:00:00Z`
+  - millisecond clock: elapsed host time since interpreter creation
+  - timer wakeup: checked in `checkProcessSwitch`
+- The focused regression command for this step was:
+
+```bash
+go test ./pkg/interpreter -run 'TestPrimitive(SecondClockIntoStoresLittleEndianSeconds|MillisecondClockIntoStoresLittleEndianTicks|SignalAtMillisecondsSignalsImmediatelyWhenPastDue|SignalAtMillisecondsSchedulesFutureSignal|InputSemaphoreStoresSemaphoreAndReturnsReceiver|SampleIntervalStoresMillisecondsAndReturnsReceiver|InputWordReturnsQueuedWord)|TestRecord(MouseMotionQueuesTimedCoordinatesAndSignalsSemaphore|MouseMotionRespectsSampleInterval|DecodedKeyQueuesOnAndOffWords)|TestDisplaySnapshotShowsRenderedPixelsAt5000Cycles'
+```
